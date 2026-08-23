@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Boss Rush — Duelo de Magias</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===================== TELA DE LOADING ===================== -->
+<div id="tela-loading" class="tela ativa">
+  <div class="fundo-decorado-loading">
+    <span class="estrela e1"></span><span class="estrela e2"></span><span class="estrela e3"></span><span class="estrela e4"></span>
+    <span class="estrela e5"></span><span class="estrela e6"></span><span class="estrela e7"></span><span class="estrela e8"></span>
+  </div>
+  <div class="bloco-loading-topo">
+    <h1 class="titulo-jogo">Boss Rush<span class="subtitulo-jogo">Duelo de Magias</span></h1>
+    <div class="tag-versao">v1.0</div>
+    <p class="frase-loading">Carregando os feitiços...</p>
+  </div>
+  <div class="barra-loading-container"><div id="barra-loading" class="barra-loading"></div></div>
+  <div id="loading-percent">0%</div>
+  <button id="btn-entrar" class="btn-principal escondido">Entrar</button>
+</div>
+
+<!-- ===================== MENU PRINCIPAL ===================== -->
+<div id="tela-menu" class="tela">
+  <div class="fundo-decorado-menu">
+    <div class="orbe-menu o1"></div><div class="orbe-menu o2"></div><div class="orbe-menu o3"></div>
+  </div>
+  <div class="topo-menu">
+    <div class="moedas-topo">
+      <span>🪙 <span id="moedas-menu">0</span></span>
+      <span>💎 <span id="diamantes-menu">0</span></span>
+    </div>
+    <div class="menu-secundario">
+      <button class="btn-secundario" data-tela="tela-loja">🛒 Loja</button>
+      <button class="btn-secundario" data-tela="tela-temas">🖼️ Cenários</button>
+      <button class="btn-secundario" data-tela="tela-inventario">🎒 Inventário</button>
+      <button class="btn-secundario" data-tela="tela-boss-info">📖 Bosses</button>
+    </div>
+  </div>
+  <div class="menu-centro">
+    <h1 class="titulo-jogo pequeno">Boss Rush</h1>
+    <p class="frase-menu">Escolha seu boss e mostre quem manda na arena.</p>
+    <button id="btn-play" class="btn-play">JOGAR</button>
+  </div>
+</div>
+
+<!-- ===================== SELEÇÃO DE BOSS ===================== -->
+<div id="tela-bosses" class="tela">
+  <button class="btn-voltar" data-voltar="tela-menu">←</button>
+  <h2>Escolha seu adversário</h2>
+  <div id="grid-bosses" class="grid-bosses"></div>
+</div>
+
+<!-- ===================== LOJA ===================== -->
+<div id="tela-loja" class="tela">
+  <button class="btn-voltar" data-voltar="tela-menu">←</button>
+  <h2>Loja</h2>
+  <div class="abas-loja">
+    <button class="aba-loja ativa" data-aba="skill1">Skill 1</button>
+    <button class="aba-loja" data-aba="skill2">Skill 2</button>
+    <button class="aba-loja" data-aba="ultimate">Ultimate</button>
+    <button class="aba-loja" data-aba="imagens">Personagens</button>
+    <button class="aba-loja" data-aba="melhorias">Melhorias</button>
+  </div>
+  <div id="loja-conteudo"></div>
+</div>
+
+<!-- ===================== CENÁRIOS ===================== -->
+<div id="tela-temas" class="tela">
+  <button class="btn-voltar" data-voltar="tela-menu">←</button>
+  <h2>Cenários</h2>
+  <p class="aviso-fase">O cenário equipado vale só para a próxima luta.</p>
+  <div id="temas-conteudo"></div>
+</div>
+
+<!-- ===================== INVENTÁRIO ===================== -->
+<div id="tela-inventario" class="tela">
+  <button class="btn-voltar" data-voltar="tela-menu">←</button>
+  <h2>Inventário</h2>
+  <div id="inventario-conteudo"></div>
+</div>
+
+<!-- ===================== INFO DOS BOSSES ===================== -->
+<div id="tela-boss-info" class="tela">
+  <button class="btn-voltar" data-voltar="tela-menu">←</button>
+  <h2>Bosses</h2>
+  <div id="boss-info-conteudo"></div>
+</div>
+
+<!-- ===================== INTRO 3,2,1,FIGHT ===================== -->
+<div id="tela-fight-intro" class="overlay-cheio escondido">
+  <div id="fight-intro-numero" class="fight-intro-numero"></div>
+</div>
+
+<!-- ===================== TELA DE JOGO / BATALHA ===================== -->
+<div id="tela-jogo" class="tela tela-jogo">
+  <button id="btn-pause" class="btn-pause">⏸️</button>
+  <div class="hud-topo">
+    <div class="barra-vida-wrap"><div class="barra-fundo"><div id="barraPlay" class="barra-vida barra-play"></div></div></div>
+    <span id="nome-boss-hud" class="nome-boss-hud">Boss</span>
+    <div class="barra-vida-wrap"><div class="barra-fundo"><div id="barraEnemy" class="barra-vida barra-enemy"></div></div></div>
+  </div>
+  <span id="nome-player-hud" style="display:none;"></span>
+
+  <div id="viewport-jogo">
+    <div id="area-jogo">
+      <canvas id="jogo" width="800" height="600"></canvas>
+      <div id="camada-sprites"></div>
+    </div>
+  </div>
+
+  <div class="controles">
+    <div class="dpad">
+      <div class="dpad-linha"><button id="Cima" class="botao-controle">▲</button></div>
+      <div class="dpad-linha">
+        <button id="Esquerda" class="botao-controle">◀</button>
+        <button id="Baixo" class="botao-controle">▼</button>
+        <button id="Direita" class="botao-controle">▶</button>
+      </div>
+    </div>
+    <div class="botoes-skill">
+      <button id="ataque" class="botao-skill skill1">SKILL 1</button>
+      <button id="skill2" class="botao-skill skill2">SKILL 2</button>
+      <div class="wrap-ultimate">
+        <div class="barra-fundo barra-ultimate-fundo"><div id="barra-ultimate" class="barra-ultimate"></div></div>
+        <button id="ultimate" class="botao-skill skill-ultimate">ULT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL PAUSE ===================== -->
+<div id="modal-pause" class="overlay-modal escondido">
+  <div class="modal-caixa">
+    <h2>Pausado</h2>
+    <button id="btn-continuar" class="btn-modal">▶️ Continuar</button>
+    <button id="btn-musica" class="btn-modal">🔊 Música: Ligada</button>
+    <button id="btn-sair" class="btn-modal btn-perigo">🚪 Sair da luta</button>
+  </div>
+</div>
+
+<!-- ===================== MODAL CONFIRMAR SAÍDA ===================== -->
+<div id="modal-confirmar-saida" class="overlay-modal escondido">
+  <div class="modal-caixa">
+    <h2>Sair da luta?</h2>
+    <p class="aviso-saida">Você perde o progresso dessa batalha.</p>
+    <button id="btn-confirmar-sair" class="btn-modal btn-perigo">Sair</button>
+    <button id="btn-cancelar-sair" class="btn-modal">Cancelar</button>
+  </div>
+</div>
+
+<!-- ===================== MODAL ULTIMATE (cutscene) ===================== -->
+<div id="modal-ultimate" class="escondido">
+  <div class="legenda-ultimate" id="legenda-ultimate"></div>
+  <video id="video-ultimate" class="video-ultimate" playsinline></video>
+  <video id="video-ultimate-split" class="video-ultimate escondido" playsinline></video>
+  <button id="btn-skip-ultimate" class="btn-skip">Pular ⏭️</button>
+</div>
+
+<script src="menu.js"></script>
+<script src="batalha.js"></script>
+</body>
+</html>
