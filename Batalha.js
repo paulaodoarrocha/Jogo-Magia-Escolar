@@ -1,8 +1,8 @@
 const skill1Defs = {
   BalaMagicaSkill1: { largura: 70, altura: 70, velocidade: 6, dano: 25, gif: "BalaMagicaSkill1.gif" },
-  artOnlineSkill1: { largura: 92, altura: 92, velocidade: 6.5, dano: 36, gif: "artOnlineSkill1.gif" },
-  BlackholeSkill1: { largura: 130, altura: 130, velocidade: 7, dano: 67, gif: "BlackholeSkill1.gif" },
-  DragaoSkill1: { largura: 210, altura: 110, velocidade: 7, dano: 120, gif: "DragaoSkill1.gif" },
+  artOnlineSkill1: { largura: 92, altura: 92, velocidade: 6.5, dano: 45, gif: "artOnlineSkill1.gif" },
+  BlackholeSkill1: { largura: 130, altura: 130, velocidade: 7, dano: 90, gif: "BlackholeSkill1.gif" },
+  DragaoSkill1: { largura: 210, altura: 110, velocidade: 7, dano: 280, gif: "DragaoSkill1.gif" },
 };
 
 const skill2Defs = {
@@ -30,7 +30,7 @@ const cooldownSkill2Inimigo = {
 const statsPorTier = {
   1: { vida: 800, recompensaMoedas: 50, recompensaDiamantes: 1, chanceDiamante: 0.5, danoUltimateFixo: 150,
     overridesDano: { BalaMagicaSkill1: { dano: 20, velocidade: 5.5 } } },
-  2: { vida: 2300, recompensaMoedas: 150, recompensaDiamantes: 3, chanceDiamante: 0.5, danoUltimateFixo: 300,
+  2: { vida: 2000, recompensaMoedas: 150, recompensaDiamantes: 3, chanceDiamante: 0.5, danoUltimateFixo: 250,
     overridesDano: { artOnlineSkill1: { dano: 50, velocidade: 5.8 } } },
   3: { vida: 3800, recompensaMoedas: 300, recompensaDiamantes: 5, chanceDiamante: 0.5, danoUltimateFixo: 500,
     overridesDano: { BlackholeSkill1: { dano: 100, velocidade: 6.2 } } },
