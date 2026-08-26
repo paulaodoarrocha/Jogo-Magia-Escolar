@@ -7,11 +7,11 @@ const skill1Defs = {
 
 const skill2Defs = {
   BasicoSkill2: { tipo: "esfera", largura: 110, altura: 110, velocidade: 6, dano: 180, gif: "BasicoSkill2.gif" },
-  FogoSkill2: { tipo: "esfera", largura: 125, altura: 125, velocidade: 6.4, dano: 260, gif: "FogoSkill2.gif" },
-  BombaSkill2: { tipo: "esfera", largura: 140, altura: 140, velocidade: 6.2, dano: 380, gif: "BombaSkill2.gif" },
-  MeteoroSkill2: { tipo: "esfera", largura: 190, altura: 190, velocidade: 7.5, dano: 500, gif: "MeteoroSkill2.gif" },
-  SolSkill2: { tipo: "esfera", largura: 205, altura: 205, velocidade: 7.5, dano: 700, gif: "SolSkill2.gif" },
-  ExplosionSkill2: { tipo: "esfera", largura: 175, altura: 175, velocidade: 7.8, dano: 1000, gif: "ExplosionSkill2.gif" },
+  FogoSkill2: { tipo: "esfera", largura: 125, altura: 125, velocidade: 6.4, dano: 360, gif: "FogoSkill2.gif" },
+  BombaSkill2: { tipo: "esfera", largura: 140, altura: 140, velocidade: 6.2, dano: 580, gif: "BombaSkill2.gif" },
+  MeteoroSkill2: { tipo: "esfera", largura: 190, altura: 190, velocidade: 7.5, dano: 700, gif: "MeteoroSkill2.gif" },
+  SolSkill2: { tipo: "esfera", largura: 205, altura: 205, velocidade: 7.5, dano: 900, gif: "SolSkill2.gif" },
+  ExplosionSkill2: { tipo: "esfera", largura: 175, altura: 175, velocidade: 7.8, dano: 1900, gif: "ExplosionSkill2.gif" },
   DragaoFinalSkill2: { tipo: "feixe", comprimento: 340, largura: 140, dano: 350, gif: "DragaoFinalSkill2.gif" },
 };
 
@@ -30,7 +30,7 @@ const cooldownSkill2Inimigo = {
 const statsPorTier = {
   1: { vida: 800, recompensaMoedas: 50, recompensaDiamantes: 1, chanceDiamante: 0.5, danoUltimateFixo: 150,
     overridesDano: { BalaMagicaSkill1: { dano: 20, velocidade: 5.5 } } },
-  2: { vida: 2000, recompensaMoedas: 150, recompensaDiamantes: 3, chanceDiamante: 0.5, danoUltimateFixo: 250,
+  2: { vida: 1600, recompensaMoedas: 200, recompensaDiamantes: 3, chanceDiamante: 0.5, danoUltimateFixo: 250,
     overridesDano: { artOnlineSkill1: { dano: 50, velocidade: 5.8 } } },
   3: { vida: 3800, recompensaMoedas: 300, recompensaDiamantes: 5, chanceDiamante: 0.5, danoUltimateFixo: 500,
     overridesDano: { BlackholeSkill1: { dano: 100, velocidade: 6.2 } } },
