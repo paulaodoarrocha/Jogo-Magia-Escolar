@@ -149,7 +149,7 @@ document.getElementById('btn-enviar-recuperacao').addEventListener('click', asyn
 // Se já tem sessão ativa, pula direto pro jogo
 (async function () {
   const { data } = await supabaseClient.auth.getSession();
-  if (data.session) window.location.href = 'index.html';
+  if (data.session) window.location.href = 'Game.html';
 })();
 </script>
 </body>
