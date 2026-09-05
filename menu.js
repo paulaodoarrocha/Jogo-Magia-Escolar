@@ -1311,8 +1311,73 @@ function showConfig(type){
   if(type==='updates')c.innerHTML='<div class="config-detail"><h3>📜 Registro de Atualizações</h3><p class="muted"><b>Update 2 — Giro Diário & Hunge</b><br>🎡 Giro Diário • 🐾 Pet Hunge • 🐾 ChucroHunge • 🧪 Poções • 🎁 Login Diário • 🎵 áudio separado • 🛠️ correções de Banner e coleção.</p><p class="muted"><b>Codes:</b><br>🔑 UPDATE1 → 500 🪙<br>🔑 RELEASE → 500 🪙 + 10 💎 + 1 🎁 giro<br>Cada code pode ser usado uma vez.</p></div>';
   if(type==='codes')c.innerHTML='<div class="config-detail"><h3>🔑 CODES</h3><input id="code-input" class="code-input" placeholder="Digite seu code"><button class="modal-action" onclick="redeemCode()">RESGATAR</button></div>';
   if(type==='feedback')c.innerHTML='<div class="config-detail"><textarea id="feedback-input" class="feedback-input" placeholder="Sugestões, melhorias ou bugs..."></textarea><button class="modal-action" onclick="sendFeedback()">ENVIAR FEEDBACK</button></div>';
-  if(type==='player')c.innerHTML='<div class="config-detail"><p>Nome atual: <b>PauloLordy</b></p></div>';
+  if(type==='player'){
+  c.innerHTML='<div class="config-detail" id="perfil-box"><p>Carregando perfil...</p></div>';
+  carregarPerfilSupabase();
+  }
 }
+
+async function carregarPerfilSupabase() {
+  const box = document.getElementById('perfil-box');
+  if (!box || !window.supabaseClient || !window.currentUserId) return;
+
+  const { data: player } = await window.supabaseClient
+    .from('Player')
+    .select('username, avatar_emoji, name_color')
+    .eq('user_id', window.currentUserId)
+    .single();
+
+  const avatares = ['🧙','🔥','❄️','⚡','🌑','🌟'];
+  const idCurto = window.currentUserId.slice(0, 8);
+
+  box.innerHTML = `
+    <div style="text-align:center">
+      <div id="perfil-avatar" style="font-size:48px;margin-bottom:8px">${player?.avatar_emoji || '🧙'}</div>
+      <p style="color:${player?.name_color || '#ffffff'};font-weight:800;font-size:18px">${player?.username || 'Jogador'}</p>
+      <p style="opacity:.6;font-size:12px">ID: ${idCurto}</p>
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;margin:12px 0">
+      ${avatares.map(a => `<button class="setting-option" onclick="mudarAvatar('${a}')" style="padding:8px 10px">${a}</button>`).join('')}
+    </div>
+    <div style="text-align:center;margin-bottom:12px">
+      <label style="font-size:13px;opacity:.7">Cor do nome: </label>
+      <input type="color" id="input-cor-nome" value="${player?.name_color || '#ffffff'}" onchange="mudarCorNome(this.value)">
+    </div>
+    <button class="setting-option" onclick="mudarConta()">🔁 Mudar de conta</button>
+    <button class="setting-option" style="color:#ff6b6b" onclick="deletarConta()">🗑️ Deletar conta</button>
+    .select('username, avatar_emoji, name_color, playtime_seconds')
+  `;
+}
+
+async function mudarAvatar(emoji) {
+  document.getElementById('perfil-avatar').textContent = emoji;
+  await window.supabaseClient.from('Player').update({ avatar_emoji: emoji }).eq('user_id', window.currentUserId);
+}
+
+async function mudarCorNome(cor) {
+  await window.supabaseClient.from('Player').update({ name_color: cor }).eq('user_id', window.currentUserId);
+  carregarPerfilSupabase();
+  atualizarPerfilVisual();
+}
+
+async function mudarConta() {
+  await window.supabaseClient.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+async function deletarConta() {
+  if (!confirm('Tem certeza que quer deletar sua conta? Isso apaga todo o seu progresso.')) return;
+  if (!confirm('Essa ação NÃO pode ser desfeita. Confirma mesmo assim?')) return;
+  const digitado = prompt('Digite EXCLUIR (em maiúsculas) para confirmar de vez:');
+  if (digitado !== 'EXCLUIR') return alert('Cancelado.');
+
+  await window.supabaseClient.from('Player').delete().eq('user_id', window.currentUserId);
+  await window.supabaseClient.auth.signOut();
+  alert('Conta deletada.');
+  window.location.href = 'login.html';
+}
+
+
 function redeemCode(){const r=redeemCodeValue(document.getElementById('code-input')?.value);alert(r.msg);if(r.ok){const i=document.getElementById('code-input');if(i)i.value='';}}
 function sendFeedback(){
   const el = document.getElementById('feedback-input');
@@ -1391,3 +1456,100 @@ window.renderUpgrades = renderUpgrades;
 window.renderThemes = renderThemes;
 window.renderDailyWheel = renderDailyWheel;
 window.renderGamepasses = renderGamepasses;
+
+document.getElementById('btn-perfil-topo')?.addEventListener('click', () => {
+  document.getElementById('modal-config').classList.remove('hidden');
+  showConfig('player');
+});
+
+async function aplicarPerfilNoJogo() {
+  if (!window.supabaseClient || !window.currentUserId) return;
+
+  const { data: player } = await window.supabaseClient
+    .from('Player')
+    .select('username, name_color, avatar_emoji')
+    .eq('user_id', window.currentUserId)
+    .single();
+
+  if (!player) return;
+
+  const btnPerfilTopo = document.getElementById('btn-perfil-topo');
+if (btnPerfilTopo) btnPerfilTopo.textContent = avatar;
+  
+  const nome = player.username || jogador.nome;
+  const cor = player.name_color || '#ffffff';
+  const avatar = player.avatar_emoji || 'P';
+
+  jogador.nome = nome;
+
+  const nomeMenu = document.getElementById('nome-menu');
+  if (nomeMenu) { nomeMenu.textContent = nome; nomeMenu.style.color = cor; }
+
+  const nomeHud = document.getElementById('nome-player-hud');
+  if (nomeHud) { nomeHud.textContent = nome; nomeHud.style.color = cor; }
+
+  const avatarEl = document.querySelector('.profile-avatar');
+  if (avatarEl) avatarEl.textContent = avatar;
+}
+
+window.addEventListener('load', aplicarPerfilNoJogo);
+window.atualizarPerfilVisual = aplicarPerfilNoJogo;
+
+let segundosDeSessao = 0;
+setInterval(() => { segundosDeSessao++; }, 1000);
+
+async function salvarTempoDeJogo() {
+  if (!window.supabaseClient || !window.currentUserId || segundosDeSessao === 0) return;
+  const { data } = await window.supabaseClient.from('Player').select('playtime_seconds').eq('user_id', window.currentUserId).single();
+  const totalAtual = (data?.playtime_seconds || 0) + segundosDeSessao;
+  await window.supabaseClient.from('Player').update({ playtime_seconds: totalAtual }).eq('user_id', window.currentUserId);
+  segundosDeSessao = 0;
+}
+
+setInterval(salvarTempoDeJogo, 30000);
+window.addEventListener('beforeunload', salvarTempoDeJogo);
+
+
+async function renderPerfilGrande() {
+  if (!window.supabaseClient || !window.currentUserId) return;
+
+  const { data: player } = await window.supabaseClient
+    .from('Player')
+    .select('username, avatar_emoji, name_color, playtime_seconds')
+    .eq('user_id', window.currentUserId)
+    .single();
+
+  const avatar = player?.avatar_emoji || '🧙';
+  const nome = player?.username || jogador.nome;
+  const cor = player?.name_color || '#ffffff';
+  const segundos = player?.playtime_seconds || 0;
+  const horas = Math.floor(segundos / 3600);
+  const minutos = Math.floor((segundos % 3600) / 60);
+
+  document.getElementById('pg-avatar').textContent = avatar;
+  document.getElementById('pg-nome').textContent = nome;
+  document.getElementById('pg-nome').style.color = cor;
+  document.getElementById('pg-id').textContent = 'ID: ' + window.currentUserId.slice(0, 8);
+  document.getElementById('pg-cor-input').value = cor;
+  document.getElementById('pg-tempo').textContent = `⏱️ Tempo jogado: ${horas}h ${minutos}min`;
+
+  document.getElementById('tela-perfil-grande').classList.add('active');
+}
+
+function fecharPerfilGrande() {
+  document.getElementById('tela-perfil-grande').classList.remove('active');
+}
+
+async function mudarAvatarGrande(emoji) {
+  document.getElementById('pg-avatar').textContent = emoji;
+  document.getElementById('btn-perfil-topo').textContent = emoji;
+  await window.supabaseClient.from('Player').update({ avatar_emoji: emoji }).eq('user_id', window.currentUserId);
+}
+
+async function mudarCorNomeGrande(cor) {
+  document.getElementById('pg-nome').style.color = cor;
+  await window.supabaseClient.from('Player').update({ name_color: cor }).eq('user_id', window.currentUserId);
+  aplicarPerfilNoJogo();
+}
+
+document.getElementById('btn-perfil-topo')?.addEventListener('click', renderPerfilGrande);

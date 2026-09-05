@@ -1,156 +1,747 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>Arcane Clash — Entrar</title>
-<style>
-  *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#161c33,#070912);font-family:system-ui,sans-serif;color:#fff}
-  .login-content{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:360px;padding:20px}
-  .brand-mark{font-size:26px;font-weight:900;letter-spacing:2px;background:linear-gradient(135deg,#7b5cff,#42efff);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .brand-sub{font-size:12px;letter-spacing:4px;color:#8ea2ff;opacity:.8}
-  .login-box{margin-top:18px;width:100%;background:rgba(20,24,45,.85);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;backdrop-filter:blur(6px)}
-  .login-tabs{display:flex;gap:8px;margin-bottom:16px}
-  .login-tab{flex:1;padding:10px;border-radius:10px;border:none;background:rgba(255,255,255,.06);color:#9aa3c7;font-weight:700;cursor:pointer;font-size:14px}
-  .login-tab.active{background:linear-gradient(135deg,#7b5cff,#42efff);color:#0a0d1c}
-  .login-form{display:flex;flex-direction:column;gap:10px}
-  .login-form.hidden{display:none}
-  .login-form input{padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#fff;font-size:15px}
-  .login-form input::placeholder{color:#6b7399}
-  .btn-primary{padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#7b5cff,#42efff);color:#0a0d1c;font-weight:800;font-size:15px;cursor:pointer}
-  .login-link{background:none;border:none;color:#8ea2ff;font-size:13px;margin-top:4px;cursor:pointer}
-  .login-erro{margin-top:12px;color:#ff6b6b;font-size:13px;text-align:center}
-  .login-erro.hidden{display:none}
-  .login-ok{color:#5cffb0}
-</style>
-</head>
-<body>
+<html lang="pt-BR">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" name="viewport"/>
+  <meta content="#070912" name="theme-color"/>
+  <title>
+   Arcane Clash — Duelo de Magias
+  </title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&amp;family=Rajdhani:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+  <link href="style.css" rel="stylesheet"/>
+  <link href="visual.css" rel="stylesheet"/>
+  <style>
+    html,body{margin:0;width:100%;min-height:100%;overflow:hidden}
+    .screen{position:fixed;inset:0;display:none}
+    .screen.active{display:flex}
+    .hidden{display:none!important;visibility:hidden!important;pointer-events:none!important}
+    #tela-loading{position:fixed;inset:0;overflow:hidden}
+    #tela-loading .loading-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    #tela-loading .loading-content{position:relative;z-index:5}
+    #modal-ultimate.hidden,#modal-pause.hidden,#modal-config.hidden,#modal-confirmar-saida.hidden{display:none!important}
+  </style>
+ </head>
+ <body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (async function () {
+  const puloRedirect = sessionStorage.getItem('acabouDeLogar') === '1';
+  if (puloRedirect) sessionStorage.removeItem('acabouDeLogar');
 
-<div class="login-content">
-  <div class="brand-mark">ARCANE CLASH</div>
-  <div class="brand-sub">DUEL OF MAGIC</div>
+  const sb = window.supabase.createClient(
+    'https://nwithfitohtygvxrysgv.supabase.co',
+    'sb_publishable_-JX98qu3_yPXqGp--R-aMw_nSHDBCOR'
+  );
 
-  <div class="login-box">
-    <div class="login-tabs">
-      <button class="login-tab active" id="tab-entrar" type="button">Entrar</button>
-      <button class="login-tab" id="tab-cadastrar" type="button">Cadastrar</button>
-    </div>
+  const { data } = await sb.auth.getSession();
 
-    <div id="form-entrar" class="login-form">
-      <input type="email" id="login-email" placeholder="E-mail" autocomplete="email">
-      <input type="password" id="login-senha" placeholder="Senha" autocomplete="current-password">
-      <button class="btn-primary" id="btn-fazer-login" type="button">ENTRAR</button>
-      <button class="login-link" id="btn-esqueci-senha" type="button">Esqueci minha senha</button>
-    </div>
-
-    <div id="form-cadastrar" class="login-form hidden">
-      <input type="text" id="cadastro-nome" placeholder="Nome de usuário (máx 15)" maxlength="15">
-      <input type="email" id="cadastro-email" placeholder="E-mail" autocomplete="email">
-      <input type="password" id="cadastro-senha" placeholder="Senha (mín 8 caracteres)" autocomplete="new-password">
-      <button class="btn-primary" id="btn-fazer-cadastro" type="button">CRIAR CONTA</button>
-    </div>
-
-    <div id="form-recuperar" class="login-form hidden">
-      <input type="email" id="recuperar-email" placeholder="Digite seu e-mail cadastrado">
-      <button class="btn-primary" id="btn-enviar-recuperacao" type="button">ENVIAR LINK</button>
-      <button class="login-link" id="btn-voltar-login" type="button">Voltar</button>
-    </div>
-
-    <div id="login-erro" class="login-erro hidden"></div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = 'https://nwithfitohtygvxrysgv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_-JX98qu3_yPXqGp--R-aMw_nSHDBCOR';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-function mostrarErro(msg, ok) {
-  const el = document.getElementById('login-erro');
-  el.textContent = msg;
-  el.className = ok ? 'login-erro login-ok' : 'login-erro';
-}
-function limparErro() {
-  document.getElementById('login-erro').className = 'login-erro hidden';
-}
-function mostrarFormulario(nome) {
-  ['form-entrar', 'form-cadastrar', 'form-recuperar'].forEach((id) => {
-    document.getElementById(id).classList.add('hidden');
-  });
-  document.getElementById(nome).classList.remove('hidden');
-  limparErro();
-}
-
-document.getElementById('tab-entrar').addEventListener('click', () => {
-  document.getElementById('tab-entrar').classList.add('active');
-  document.getElementById('tab-cadastrar').classList.remove('active');
-  mostrarFormulario('form-entrar');
-});
-document.getElementById('tab-cadastrar').addEventListener('click', () => {
-  document.getElementById('tab-cadastrar').classList.add('active');
-  document.getElementById('tab-entrar').classList.remove('active');
-  mostrarFormulario('form-cadastrar');
-});
-document.getElementById('btn-esqueci-senha').addEventListener('click', () => mostrarFormulario('form-recuperar'));
-document.getElementById('btn-voltar-login').addEventListener('click', () => {
-  document.getElementById('tab-entrar').classList.add('active');
-  document.getElementById('tab-cadastrar').classList.remove('active');
-  mostrarFormulario('form-entrar');
-});
-
-document.getElementById('btn-fazer-login').addEventListener('click', async () => {
-  limparErro();
-  const email = document.getElementById('login-email').value.trim();
-  const senha = document.getElementById('login-senha').value;
-  if (!email || !senha) return mostrarErro('Preencha e-mail e senha.');
-
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
-  if (error) return mostrarErro('E-mail ou senha incorretos.');
-
-  window.location.href = 'index.html';
-});
-
-document.getElementById('btn-fazer-cadastro').addEventListener('click', async () => {
-  limparErro();
-  const nome = document.getElementById('cadastro-nome').value.trim();
-  const email = document.getElementById('cadastro-email').value.trim();
-  const senha = document.getElementById('cadastro-senha').value;
-
-  if (!nome || nome.length > 15) return mostrarErro('Nome inválido (máx 15 caracteres).');
-  if (!email) return mostrarErro('Digite um e-mail.');
-  if (!senha || senha.length < 8) return mostrarErro('Senha precisa ter no mínimo 8 caracteres.');
-
-  const { data, error } = await supabaseClient.auth.signUp({ email, password: senha });
-  if (error) return mostrarErro('Erro ao criar conta: ' + error.message);
-
-  const userId = data.user?.id;
-  if (userId) {
-    await supabaseClient.from('Player').insert({ user_id: userId, username: nome });
+  if (!data.session && !puloRedirect) {
+    window.location.href = 'login.html';
+    return;
   }
 
-  window.location.href = 'index.html';
-});
+  window.supabaseClient = sb;
+  let uid = data.session?.user?.id;
+  if (!uid) {
+    const { data: userData } = await sb.auth.getUser();
+    uid = userData?.user?.id;
+  }
+  window.currentUserId = uid;
+  })();
+  </script>
+   
+  <div class="screen active" id="tela-loading">
+   <video autoplay="" class="loading-video" id="video-loading" loop="" muted="" playsinline="" preload="auto" src="GameInicial.mp4">
+   </video>
+   <div class="loading-shade">
+   </div>
+   <div class="loading-content transparent-entry">
+    <div class="brand-mark">
+     ARCANE CLASH
+    </div>
+    <div class="brand-sub">
+     DUEL OF MAGIC
+    </div>
+    <div class="loading-copy">
+     Preparando a arena...
+    </div>
+    <div class="loading-bar">
+     <div id="barra-loading">
+     </div>
+    </div>
+    <div id="loading-percent">
+     0%
+    </div>
+    <button class="btn-primary hidden" id="btn-entrar" type="button" onclick="if(window.entrarNoJogo){window.entrarNoJogo()}else{document.getElementById('tela-loading').classList.remove('active');document.getElementById('tela-menu').classList.add('active')}">
+     ENTRAR NA ARENA
+    </button>
+   </div>
+  </div>
+  <div class="screen dashboard" id="tela-menu">
+   <header class="topbar">
+    <div class="brand-mini">
+     <span>
+      ARCANE
+     </span>
+     <b>
+      CLASH
+     </b>
+    </div>
+    <div class="resource-bar">
+     <div class="resource">
+      <span>
+       🪙
+      </span>
+      <strong id="moedas-menu">
+       0
+      </strong>
+     </div>
+     <div class="resource">
+      <span>
+       💎
+      </span>
+      <strong id="diamantes-menu">
+       0
+      </strong>
+     </div>
+    </div>
+     <button class="icon-btn" id="btn-perfil-topo" style="font-size:20px">🧙</button>
+    <button aria-label="Configurações" class="icon-btn" id="btn-config">
+     ⚙
+    </button>
+   </header>
+   <main class="game-layout">
+    <aside class="side-nav">
+     <div class="side-title">
+      NAVEGAR
+     </div>
+     <button class="nav-card" data-badge-target="loja" data-tela="tela-loja">
+      <span>
+       🛒
+      </span>
+      <b>
+       Loja
+      </b>
+      <small>
+       Skills e melhorias
+      </small>
+     </button>
+     <button class="nav-card" data-badge-target="temas" data-tela="tela-temas">
+      <span>
+       🌌
+      </span>
+      <b>
+       Cenários
+      </b>
+      <small>
+       Escolha sua arena
+      </small>
+     </button>
+     <button class="nav-card" data-badge-target="melhorias" data-tela="tela-melhorias">
+      <span>
+       ❤️‍🔥
+      </span>
+      <b>
+       Melhorias
+      </b>
+      <small>
+       Evolua sua vida
+      </small>
+     </button>
+     <button class="nav-card" data-badge-target="inventario" data-tela="tela-inventario">
+      <span>
+       🎒
+      </span>
+      <b>
+       Inventário
+      </b>
+      <small>
+       Seus equipamentos
+      </small>
+     </button>
+     <button class="nav-card" data-badge-target="bosses" data-tela="tela-bosses">
+      <span>
+       ☠
+      </span>
+      <b>
+       Bosses
+      </b>
+      <small>
+       Vida e recompensas
+      </small>
+     </button>
+    </aside>
+    <section class="home-center">
+     <div class="hero-glow">
+     </div>
+     <div class="hero-copy">
+      <div class="eyebrow">
+       A BATALHA COMEÇA AGORA
+      </div>
+      <h1>
+       ARCANE
+       <br/>
+       <em>
+        CLASH
+       </em>
+      </h1>
+      <p>
+       Monte seu arsenal, evolua seu personagem e enfrente os 10 bosses.
+      </p>
+     </div>
+     <div class="center-grid">
+      <button class="feature-card feature-banner" data-badge-target="banner" data-tela="tela-banner">
+       <span class="feature-icon">
+        🎴
+       </span>
+       <b>
+        Banner
+       </b>
+       <small>
+        Invocar personagens
+       </small>
+      </button>
+      <button class="feature-card daily-wheel-feature-card" data-tela="tela-giro-diario">
+       <span class="feature-icon">🎡</span>
+       <b>Giro Diário</b>
+       <small>1 giro grátis a cada 24h</small>
+      </button>
+      <button class="feature-card" data-tela="tela-gamepass">
+       <span class="feature-icon">
+        ✦
+       </span>
+       <b>
+        Game Pass
+       </b>
+       <small>
+        Vantagens premium
+       </small>
+      </button>
+      <button class="feature-card" data-badge-target="personagens" data-tela="tela-personagens">
+       <span class="feature-icon">
+        ♟
+       </span>
+       <b>
+        Personagens
+       </b>
+       <small>
+        Equipar e fundir
+       </small>
+      </button>
+      <button class="feature-card" data-badge-target="missoes" data-tela="tela-missoes">
+       <span class="feature-icon">
+        ☑
+       </span>
+       <b>
+        Missões
+       </b>
+       <small>
+        Ganhe recompensas
+       </small>
+      </button>
+     </div>
+     <button class="battle-cta" id="btn-play" type="button">
+      <span>
+       ⚔
+      </span>
+      <b>
+       ENTRAR NA BATALHA
+      </b>
+      <small>
+       A batalha Pela Vanessa
+      </small>
+     </button>
+    </section>
+    <aside class="right-rail">
+     <div class="profile-panel">
+      <div class="profile-avatar">
+       P
+      </div>
+      <div>
+       <small>
+        JOGADOR
+       </small>
+       <b id="nome-menu">
+        PauloLordy
+       </b>
+      </div>
+     </div>
+     <button class="rail-btn" data-badge-target="personagens" data-tela="tela-personagens">
+      PERSONAGENS
+      <span>
+       ›
+      </span>
+     </button>
+     <button class="rail-btn" data-badge-target="missoes" data-tela="tela-missoes">
+      MISSÕES
+      <span>
+       ›
+      </span>
+     </button>
+     <div class="daily-panel">
+      <small>
+       GIRO GRÁTIS
+      </small>
+      <b id="daily-status">
+       Disponível
+      </b>
+      <span>
+       A cada 24 horas
+      </span>
+     </div>
+     <div class="hint-panel">
+      Dica: desvie dos ataques e use sua Ultimate no momento certo.
+     </div>
+    </aside>
+   </main>
+  </div>
+  <section class="screen panel-screen" id="tela-banner">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      SISTEMA DE INVOCação
+     </small>
+     <h2>
+      BANNER
+     </h2>
+    </div>
+    <button class="info-btn" id="btn-banner-info">
+     INFO
+    </button>
+   </div>
+   <div class="banner-stage">
+    <img alt="Banner" class="banner-photo" src="BannerFoto.png"/>
+    <div class="banner-overlay">
+     <span>
+      PERSONAGENS
+     </span>
+     <b>
+      GIRE E DESCUBRA
+     </b>
+     <small>
+      As maiores raridades estão esperando.
+     </small>
+    </div>
+   </div>
+   <div class="banner-actions">
+    <button class="gacha-btn primary" id="btn-girar-1">
+     <b>GIRAR</b>
+     <small>🪙 500</small>
+    </button>
+    <button class="gacha-btn" id="btn-girar-4">
+     <b>
+      GIRAR (4)
+     </b>
+     <small>
+      🪙 1.800
+     </small>
+    </button>
+    <button class="gacha-btn auto" id="btn-auto">
+     <b>
+      AUTOMÁTICO
+     </b>
+     <small id="auto-state">
+      DESLIGADO
+     </small>
+    </button>
+   </div>
+   <div class="banner-footer">
+    <span id="inventario-banner-label">Inventário: 0/50</span>
+   </div>
+   <div class="gacha-result hidden" id="gacha-result">
+   </div>
+  </section>
+  <section class="screen panel-screen modal-page hidden" id="tela-banner-info">
+  </section>
+  <section class="screen panel-screen" id="tela-giro-diario">
+   <button class="back-btn" data-voltar="tela-menu">←</button>
+   <div class="panel-head"><div><small>RECOMPENSA DIÁRIA</small><h2>GIRO DIÁRIO</h2></div></div>
+   <div id="daily-wheel-content" class="boot-content"></div>
+  </section>
+  <section class="screen panel-screen" id="tela-gamepass">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      VANTAGENS
+     </small>
+     <h2>
+      GAME PASS
+     </h2>
+    </div>
+   </div>
+   <div class="gamepass-grid" id="gamepass-conteudo">
+   </div>
+  </section>
+  <section class="screen panel-screen" id="tela-personagens">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      COLEÇÃO
+     </small>
+     <h2>
+      PERSONAGENS
+      <span id="personagens-contador">
+      </span>
+     </h2>
+    </div>
+   </div>
+   <div class="characters-grid boot-content" id="personagens-conteudo"><div class="empty-state boot-loader"><div class="empty-icon">🎴</div><b>CARREGANDO COLEÇÃO...</b></div></div>
+   <button class="btn-primary" id="btn-fundir">
+    ✦ FUNDIR 5 IGUAIS
+   </button>
+  </section>
+  <section class="screen panel-screen" id="tela-missoes">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      PROGRESSO
+     </small>
+     <h2>
+      MISSÕES
+     </h2>
+    </div>
+   </div>
+   <div class="missions-list" id="missoes-conteudo">
+   </div>
+  </section>
+  <section class="screen panel-screen" id="tela-bosses">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      ARENA
+     </small>
+     <h2>
+      ESCOLHA O BOSS
+     </h2>
+    </div>
+    <button class="small-btn primary" type="button" onclick="show('tela-boss-info')">📖 ENCICLOPÉDIA</button>
+   </div>
+   <div class="boss-grid" id="grid-bosses">
+   </div>
+  </section>
+  <section class="screen panel-screen" id="tela-loja">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      EQUIPAMENTO
+     </small>
+     <h2>
+      LOJA
+     </h2>
+    </div>
+   </div>
+   <div id="loja-conteudo" class="boot-content"><div class="empty-state boot-loader"><div class="empty-icon">⚡</div><b>CARREGANDO ARSENAL...</b></div></div>
+  </section>
+  <section class="screen panel-screen" id="tela-temas">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      ARENAS
+     </small>
+     <h2>
+      CENÁRIOS
+     </h2>
+    </div>
+   </div>
+   <div id="temas-conteudo" class="boot-content"><div class="empty-state boot-loader"><div class="empty-icon">🌌</div><b>CARREGANDO CENÁRIOS...</b></div></div>
+  </section>
+  <section class="screen panel-screen" id="tela-melhorias">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      PROGRESSÃO
+     </small>
+     <h2>
+      MELHORIAS
+     </h2>
+    </div>
+   </div>
+   <div id="melhorias-conteudo" class="boot-content"><div class="empty-state boot-loader"><div class="empty-icon">❤️</div><b>CARREGANDO MELHORIAS...</b></div></div>
+  </section>
+  <section class="screen panel-screen" id="tela-inventario">
+   <button class="back-btn" data-voltar="tela-menu" type="button">←</button>
+   <div class="panel-head">
+    <div><small>ARSENAL</small><h2>INVENTÁRIO</h2></div>
+   </div>
+   <div id="inventario-conteudo" class="boot-content">
+    <div class="empty-state boot-loader"><div class="empty-icon">🎒</div><b>CARREGANDO INVENTÁRIO...</b></div>
+   </div>
+  </section>
+  <section class="screen panel-screen" id="tela-boss-info">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      ENCICLOPÉDIA
+     </small>
+     <h2>
+      BOSSES
+     </h2>
+    </div>
+   </div>
+   <div id="boss-info-conteudo">
+   </div>
+  </section>
+  <div class="overlay hidden" id="modal-config">
+   <div class="modal-box settings-box">
+    <button class="modal-close" id="btn-fechar-config">
+     ×
+    </button>
+    <small>
+     SISTEMA
+    </small>
+    <h2>
+     CONFIGURAÇÕES
+    </h2>
+    <div class="settings-grid">
+     <button class="setting-option" data-config="updates">
+      🆕 Updates
+     </button>
+     <button class="setting-option" data-config="codes">
+      🔑 Codes
+     </button>
+     <button class="setting-option" data-config="feedback">
+      💬 Feedback
+     </button>
+     <button class="setting-option" data-config="player">
+      👤 Informações
+     </button>
+     <button class="setting-option" id="btn-silenciar-lobby">
+      🔊 Música: ligada
+     </button>
+    </div>
+    <div id="config-detalhe">
+    </div>
+   </div>
+  </div>
+  <div class="fight-intro hidden" id="tela-fight-intro">
+   <div class="fight-intro-title">PREPARE-SE</div>
+   <div id="fight-intro-numero">
+   </div>
+  </div>
+  <div aria-live="polite" class="toast-area" id="toast-area">
+  </div>
+  <div class="screen battle-screen" id="tela-jogo">
+   <button class="pause-btn" id="btn-pause">
+    Ⅱ
+   </button>
+   <div class="battle-timer" id="timer-batalha">99</div>
+   <div class="battle-hud">
+    <div class="fighter-hud player">
+     <div class="health-head">
+      <span id="nome-player-hud">
+       PauloLordy
+      </span>
+      <b id="vida-player-text">
+       0/0
+      </b>
+     </div>
+     <div class="health-bar">
+      <i id="barraPlay">
+      </i>
+     </div>
+    </div>
+    <div class="fighter-hud boss">
+     <div class="health-head">
+      <span id="nome-boss-hud">
+       Boss
+      </span>
+      <b id="vida-boss-text">
+       0/0
+      </b>
+     </div>
+     <div class="health-bar">
+      <i id="barraEnemy">
+      </i>
+     </div>
+    </div>
+   </div>
+   <div class="battle-message" id="mensagens-batalha">
+   </div>
+   <div id="viewport-jogo">
+    <div id="area-jogo">
+     <canvas height="700" id="jogo" width="1100">
+     </canvas>
+     <div id="camada-sprites">
+     </div>
+    </div>
+   </div>
+   <div class="battle-controls">
+    <div class="dpad">
+     <button id="Cima">
+      ▲
+     </button>
+     <div>
+      <button id="Esquerda">
+       ◀
+      </button>
+      <button id="Baixo">
+       ▼
+      </button>
+      <button id="Direita">
+       ▶
+      </button>
+     </div>
+    </div>
+    <div class="skill-bar">
+     <button class="skill-button skill1" id="ataque">
+      <img id="skill1-icon" src="RelampagoSkill1.gif"/>
+      <b>
+       SKILL 1
+      </b>
+      <span id="cooldown-skill1">
+      </span>
+     </button>
+     <button class="skill-button skill2" id="skill2">
+      <img id="skill2-icon" src="RaioSkill2.gif"/>
+      <b>
+       SKILL 2 <small class="key-hint">Y</small>
+      </b>
+      <span id="cooldown-skill2">
+      </span>
+     </button>
+     <div class="ult-wrap">
+      <div class="ult-charge">
+       <i id="barra-ultimate">
+       </i>
+      </div>
+      <button class="skill-button ultimate" id="ultimate">
+       <b>
+        ULT <small class="key-hint">U</small>
+       </b>
+      </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div class="overlay hidden" id="modal-pause">
+   <div class="modal-box">
+    <h2>
+     PAUSADO
+    </h2>
+    <button class="modal-action" id="btn-continuar">
+     CONTINUAR
+    </button>
+    <button class="modal-action" id="btn-musica">
+     🔊 Música: ligada
+    </button>
+    <button class="modal-action danger" id="btn-sair">
+     SAIR DA LUTA
+    </button>
+   </div>
+  </div>
+  <div class="overlay hidden" id="modal-confirmar-saida">
+   <div class="modal-box">
+    <h2>
+     Sair da luta?
+    </h2>
+    <p>
+     Você perderá o progresso desta batalha.
+    </p>
+    <button class="modal-action danger" id="btn-confirmar-sair">
+     SAIR
+    </button>
+    <button class="modal-action" id="btn-cancelar-sair">
+     CANCELAR
+    </button>
+   </div>
+  </div>
+  <div class="ultimate-modal hidden" id="modal-ultimate">
+   <div id="legenda-ultimate">
+   </div>
+   <video id="video-ultimate" playsinline="">
+   </video>
+   <video class="hidden" id="video-ultimate-split" playsinline="">
+   </video>
+   <button id="btn-skip-ultimate">
+    PULAR
+   </button>
+  </div>
+  <script>
+   function ajustarAlturaReal(){document.documentElement.style.setProperty('--altura-real',window.innerHeight+'px')}window.addEventListener('resize',ajustarAlturaReal);window.addEventListener('orientationchange',ajustarAlturaReal);ajustarAlturaReal();
+  </script>
+  <script src="features.js">
+  </script>
+  <script src="menu.js">
+  </script>
+  <script src="batalha.js">
+  </script>
+  <script>
+    (function(){
+      function abrirMenuSeguro(){
+        var loading=document.getElementById('tela-loading');
+        var menu=document.getElementById('tela-menu');
+        if(!menu)return;
+        document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+        if(loading)loading.classList.remove('active');
+        menu.classList.remove('hidden');
+        menu.classList.add('active');
+        try{ if(window.updateResources) window.updateResources(); }catch(e){}
+        try{ if(window.setLobbyMusic) window.setLobbyMusic(true); }catch(e){}
+      }
+      var b=document.getElementById('btn-entrar');
+      if(b){b.classList.remove('hidden');b.disabled=false;}
+      setTimeout(function(){var b2=document.getElementById('btn-entrar');if(b2){b2.classList.remove('hidden');b2.disabled=false;}},2200);
+    })();
+ 
+  </script>
 
-document.getElementById('btn-enviar-recuperacao').addEventListener('click', async () => {
-  limparErro();
-  const email = document.getElementById('recuperar-email').value.trim();
-  if (!email) return mostrarErro('Digite seu e-mail.');
 
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + window.location.pathname.replace('login.html', 'index.html')
-  });
+<div id="tela-perfil-grande">
+  <div class="perfil-card">
+    <button class="perfil-fechar" onclick="fecharPerfilGrande()">×</button>
+    <div class="perfil-avatar-grande" id="pg-avatar">🧙</div>
+    <div class="perfil-nome-grande" id="pg-nome">Jogador</div>
+    <div class="perfil-id-grande" id="pg-id">ID: ...</div>
 
-  if (error) return mostrarErro('Erro ao enviar. Tente novamente.');
-  mostrarErro('Link enviado! Confira seu e-mail (e o spam).', true);
-});
+    <div style="display:flex;gap:6px;justify-content:center;margin:12px 0;flex-wrap:wrap">
+      <button class="setting-option" onclick="mudarAvatarGrande('🧙')">🧙</button>
+      <button class="setting-option" onclick="mudarAvatarGrande('🔥')">🔥</button>
+      <button class="setting-option" onclick="mudarAvatarGrande('❄️')">❄️</button>
+      <button class="setting-option" onclick="mudarAvatarGrande('⚡')">⚡</button>
+      <button class="setting-option" onclick="mudarAvatarGrande('🌑')">🌑</button>
+      <button class="setting-option" onclick="mudarAvatarGrande('🌟')">🌟</button>
+    </div>
 
-// Se já tem sessão ativa, pula direto pro jogo
-(async function () {
-  const { data } = await supabaseClient.auth.getSession();
-  if (data.session) window.location.href = 'Game.html';
-})();
-</script>
-</body>
+    <div style="margin-bottom:14px">
+      <label style="font-size:13px;opacity:.7">Cor do nome: </label>
+      <input type="color" id="pg-cor-input" onchange="mudarCorNomeGrande(this.value)">
+    </div>
+
+    <p id="pg-tempo" style="opacity:.6;font-size:12px;margin-bottom:16px">⏱️ Tempo jogado: 0h 0min</p>
+
+    <button class="setting-option" onclick="mudarConta()">🔁 Mudar de conta</button>
+    <button class="setting-option" style="color:#ff6b6b" onclick="deletarConta()">🗑️ Deletar conta</button>
+  </div>
+</div>
+   
+ </body>
 </html>
