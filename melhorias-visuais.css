@@ -1,0 +1,285 @@
+/* =====================================================================
+   MELHORIAS VISUAIS — ARCANE CLASH (v2 — correção de bugs)
+   Carregado por ÚLTIMO. Corrige 2 bugs reais encontrados na v1:
+   1) #tela-gamepass .store-pass-card tinha regras com ID (mais fortes
+      que classe) que venciam a v1 — agora eu uso o MESMO nível de
+      especificidade (#tela-gamepass ...) pra garantir que eu vença.
+   2) A v1 criava uma fita "GAME PASS" duplicada (a antiga + a minha),
+      ficando sobreposta/feia — removido o duplicado, só melhorei a
+      que já existia.
+   Sem color-mix() nesta versão (troquei por cores diretas) pra evitar
+   qualquer dúvida de compatibilidade. Nenhuma lógica/JS foi tocada.
+   ===================================================================== */
+
+/* ---------- 1) BASE RESPONSIVA ---------- */
+html { font-size: clamp(13px, 1.1vw + 8px, 18px); }
+
+.characters-grid{
+  display:grid!important;
+  gap: clamp(8px, 1.4vw, 16px)!important;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(120px,26vw,175px), 1fr))!important;
+}
+
+/* Temas e skills/ultimates do inventário: 2 colunas */
+.shop-grid,
+.inventory-item-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2, 1fr)!important;
+  gap: clamp(8px, 2vw, 14px)!important;
+}
+@media (max-width:300px){
+  .shop-grid,.inventory-item-grid{grid-template-columns:1fr!important;}
+}
+
+/* Game pass: estilo vitrine (cartão vertical, tipo Roblox) — cards "gordos" no celular, mais colunas só quando cabe */
+#tela-gamepass .store-product-list{
+  display:grid!important;
+  grid-template-columns:repeat(2, 1fr)!important;
+  gap: clamp(8px, 2.4vw, 14px)!important;
+}
+@media (min-width:480px) and (max-width:719px){
+  #tela-gamepass .store-product-list{grid-template-columns:repeat(3,1fr)!important;}
+}
+@media (min-width:720px){
+  #tela-gamepass .store-product-list{grid-template-columns:repeat(4,1fr)!important;}
+}
+@media (min-width:1400px){ /* TV / telão */
+  .characters-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))!important;}
+}
+
+/* ---------- 2) CARDS DE PERSONAGEM ---------- */
+.character-card,.pull-card,.inventory-item-card,.pet-style-card,.loadout-card,.fusion-overlay-card{
+  position:relative!important;
+  border-radius:20px!important;
+  overflow:hidden!important;
+  background:linear-gradient(160deg, rgba(255,255,255,.06), rgba(6,8,18,.88))!important;
+  border:1.5px solid var(--rarity,#8ea2ff)!important;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.4),
+    0 0 16px var(--rarity,#8ea2ff)!important;
+  transition:transform .2s ease, box-shadow .2s ease, filter .2s ease!important;
+}
+.character-card:hover,.pull-card:hover,.inventory-item-card:hover,.pet-style-card:hover{
+  transform:translateY(-4px) scale(1.015)!important;
+  filter:brightness(1.1)!important;
+}
+
+/* graduação por tier — sombra cresce, aura pulsa nas raras */
+.tier-baixa{ box-shadow:0 10px 20px rgba(0,0,0,.35), 0 0 8px var(--rarity,#fff)!important; }
+.tier-media{ box-shadow:0 12px 26px rgba(0,0,0,.38), 0 0 18px var(--rarity,#fff)!important; }
+.tier-alta{
+  border-width:2px!important;
+  box-shadow:0 14px 32px rgba(0,0,0,.42), 0 0 22px var(--rarity,#fff), 0 0 42px var(--rarity,#fff)!important;
+  animation:acPulseAlta 2.6s ease-in-out infinite;
+}
+@keyframes acPulseAlta{
+  0%,100%{ filter:brightness(1); }
+  50%{ filter:brightness(1.12); }
+}
+@media (prefers-reduced-motion: reduce){ .tier-alta{ animation:none!important; } }
+
+/* ---------- 3) NOME DO PERSONAGEM COM VÁRIAS CORES CRESCENDO POR RARIDADE ---------- */
+/* Uso sombras coloridas empilhadas (funciona em qualquer navegador,
+   diferente de gradiente-no-texto que ficava parecendo 1 cor só) */
+
+/* comum/incomum/raro: cor sólida da raridade, brilho simples */
+.tier-baixa h3{
+  color:var(--rarity,#fff)!important;
+  -webkit-text-fill-color:var(--rarity,#fff)!important;
+  text-shadow:0 0 8px var(--rarity,#fff)!important;
+}
+/* épico/lendário/mítico: texto branco + 2 cores no halo (rarity + dourado) */
+.tier-media h3{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  background:none!important;
+  text-shadow:
+    -1px 0 6px var(--rarity,#fff),
+     1px 0 6px #ffd35a,
+     0 0 14px var(--rarity,#fff)!important;
+}
+/* secreto pra cima: texto branco + 3 cores no halo (rarity + dourado + rosa/ciano), com leve pulso */
+.tier-alta h3{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  background:none!important;
+  text-shadow:
+    -2px 0 7px var(--rarity,#fff),
+     2px 0 7px #ff4fba,
+     0 -2px 7px #ffd35a,
+     0 0 18px var(--rarity,#fff)!important;
+  animation:acNomeShine 2.4s ease-in-out infinite;
+}
+@keyframes acNomeShine{
+  0%,100%{ filter:brightness(1) saturate(1); }
+  50%{ filter:brightness(1.25) saturate(1.3); }
+}
+@media (prefers-reduced-motion: reduce){ .tier-alta h3{ animation:none!important; } }
+
+.rarity-label{ text-shadow:0 0 8px var(--rarity,#fff)!important; letter-spacing:.03em; }
+
+/* ---------- 3b) BOSSES (por rank) e TEMAS — mesma ideia, várias cores no halo ---------- */
+.boss-card.rank-f h3,.boss-card.rank-e h3,.boss-card.rank-c h3,.boss-card.rank-b h3{
+  color:var(--rank,#fff)!important;
+  -webkit-text-fill-color:var(--rank,#fff)!important;
+  text-shadow:0 0 8px var(--rank,#fff)!important;
+}
+.boss-card.rank-a h3,.boss-card.rank-aa h3{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:
+    -1px 0 6px var(--rank,#fff),
+     1px 0 6px #ffd35a,
+     0 0 14px var(--rank,#fff)!important;
+}
+.boss-card.rank-s h3,.boss-card.rank-ss h3,.boss-card.rank-sss h3,.boss-card.rank-z h3{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:
+    -2px 0 7px var(--rank,#fff),
+     2px 0 7px #ff4fba,
+     0 -2px 7px #ffd35a,
+     0 0 18px var(--rank,#fff)!important;
+  animation:acNomeShine 2.4s ease-in-out infinite;
+}
+/* temas (arenas): cor sólida + halo simples */
+.theme-card h3{
+  color:var(--rarity,#fff)!important;
+  -webkit-text-fill-color:var(--rarity,#fff)!important;
+  text-shadow:0 0 8px var(--rarity,#fff)!important;
+}
+
+.character-card.equipped{
+  border-color:#5cf0a6!important;
+  box-shadow:0 0 0 2px rgba(92,240,166,.55) inset, 0 0 20px rgba(92,240,166,.45)!important;
+}
+
+/* ---------- 4) GAME PASSES (escopo #tela-gamepass = mesma força das regras antigas) ---------- */
+#tela-gamepass .store-product-card,
+#tela-gamepass .store-pass-card{
+  position:relative!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  text-align:center!important;
+  justify-content:flex-start!important;
+  gap:6px!important;
+  min-height:0!important;
+  height:auto!important;
+  padding:14px 10px 12px!important;
+  border-radius:18px!important;
+  border-color:var(--pass-color,#53eaff)!important;
+  background:linear-gradient(150deg, rgba(255,255,255,.06), rgba(6,9,20,.92))!important;
+  box-shadow:0 10px 22px rgba(0,0,0,.4), 0 0 16px var(--pass-color,#53eaff)!important;
+  transition:transform .2s ease, box-shadow .2s ease!important;
+}
+#tela-gamepass .store-product-card:hover,
+#tela-gamepass .store-pass-card:hover{
+  transform:translateY(-4px) scale(1.01)!important;
+  box-shadow:0 16px 30px rgba(0,0,0,.45), 0 0 26px var(--pass-color,#53eaff)!important;
+}
+/* layout interno vira coluna: ícone em cima, texto no meio, botão embaixo (sem vazar) */
+#tela-gamepass .store-product-icon{
+  width:56px!important;height:56px!important;
+  min-width:0!important;
+  font-size:1.5rem!important;
+  border-radius:16px!important;
+  background:radial-gradient(circle, var(--pass-color,#53eaff), rgba(4,8,18,.4))!important;
+  box-shadow:0 0 16px var(--pass-color,#53eaff)!important;
+  margin-top:6px!important;
+}
+#tela-gamepass .store-product-info{
+  width:100%!important;
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+}
+#tela-gamepass .store-product-info small{ font-size:.55rem!important; }
+#tela-gamepass .store-pass-card h3,
+#tela-gamepass .store-product-info h3{
+  font-size:.82rem!important;
+  margin:2px 0!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  color:#fff!important;
+  text-shadow:0 0 10px var(--pass-color,#53eaff)!important;
+}
+#tela-gamepass .store-product-info p{
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+  overflow:hidden!important;
+  font-size:.62rem!important;
+  margin:0 0 4px!important;
+}
+#tela-gamepass .store-price-line{
+  justify-content:center!important;
+  flex-wrap:wrap!important;
+}
+#tela-gamepass .store-buy-btn{
+  width:100%!important;
+  min-width:0!important;
+  margin-top:auto!important;
+  font-size:clamp(.66rem,3vw,.85rem)!important;
+  padding:10px 4px!important;
+  letter-spacing:.01em!important;
+  white-space:nowrap!important;
+  min-height:40px!important;
+}
+/* NÃO recriamos a fita "GAME PASS" — só deixamos a que já existe mais nítida */
+#tela-gamepass .store-pass-card::before{
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));
+}
+/* cor de cada pass quando não vier definida */
+#tela-gamepass .store-product-list .store-product-card:nth-of-type(6n+1){ --pass-color:#ffd34e; }
+#tela-gamepass .store-product-list .store-product-card:nth-of-type(6n+2){ --pass-color:#5ecbff; }
+#tela-gamepass .store-product-list .store-product-card:nth-of-type(6n+3){ --pass-color:#ff6bd6; }
+#tela-gamepass .store-product-list .store-product-card:nth-of-type(6n+4){ --pass-color:#7cff9e; }
+#tela-gamepass .store-product-list .store-product-card:nth-of-type(6n+5){ --pass-color:#b58cff; }
+#tela-gamepass .store-product-list .store-product-card:nth-of-type(6n+6){ --pass-color:#ff9d4d; }
+
+#tela-gamepass .store-buy-btn{
+  background:linear-gradient(135deg,#39d9ff,#9a6cff)!important;
+  box-shadow:0 6px 14px rgba(0,0,0,.35)!important;
+}
+
+/* ---------- 5) SKILL 1 / SKILL 2 / ULTIMATE (barra de batalha) ---------- */
+.skill-button{
+  position:relative!important;
+  overflow:hidden!important;
+  border-radius:20px!important;
+  transition:transform .12s ease, box-shadow .18s ease!important;
+}
+.skill-button:active{ transform:scale(.93)!important; }
+
+.skill-button.skill1{
+  border:2px solid #48c4ff!important;
+  background:radial-gradient(120% 140% at 50% 0%, rgba(72,196,255,.3), rgba(8,12,26,.94))!important;
+  box-shadow:0 0 16px rgba(72,196,255,.4)!important;
+}
+.skill-button.skill2{
+  border:2px solid #b85aff!important;
+  background:radial-gradient(120% 140% at 50% 0%, rgba(184,90,255,.3), rgba(8,12,26,.94))!important;
+  box-shadow:0 0 16px rgba(184,90,255,.4)!important;
+}
+.skill-button.ultimate{
+  border:2px solid #ffc43c!important;
+  background:radial-gradient(120% 140% at 50% 0%, rgba(255,150,60,.34), rgba(20,8,8,.94))!important;
+  box-shadow:0 0 20px rgba(255,170,50,.5)!important;
+  animation:acUltGlow 2.2s ease-in-out infinite;
+}
+@keyframes acUltGlow{
+  0%,100%{ box-shadow:0 0 16px rgba(255,170,50,.4); }
+  50%{ box-shadow:0 0 26px rgba(255,190,80,.65); }
+}
+@media (prefers-reduced-motion: reduce){ .skill-button.ultimate{ animation:none!important; } }
+
+.skill-button b{ text-shadow:0 0 8px rgba(0,0,0,.7)!important; }
+.ult-charge{ border-radius:12px!important; overflow:hidden; box-shadow:0 0 8px rgba(255,190,80,.4)!important; }
+#barra-ultimate{
+  background:linear-gradient(90deg,#ffb347,#ff5fae)!important;
+  box-shadow:0 0 10px rgba(255,150,120,.6)!important;
+}
+.cooldown-skill{ background:rgba(4,6,14,.65)!important; font-weight:800!important; }

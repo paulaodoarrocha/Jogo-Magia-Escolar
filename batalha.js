@@ -372,7 +372,32 @@ let tempoRestanteBatalha = 99;
 let ultimoSegundoTimer = 0;
 const TEMPO_LIMITE_BATALHA = 99;
 
+let battleSessionId = null;
+let finalizandoBatalha = false;
+window.arcaneDamagePromises = window.arcaneDamagePromises || new Set();
+
+function registrarDanoServidor(dano) {
+  const battleId = window.arcaneBattleId || battleSessionId;
+  const valor = Number(dano || 0);
+  if (!battleId || !Number.isFinite(valor) || valor <= 0 || !window.supabaseClient) return Promise.resolve();
+
+  const promessa = window.supabaseClient.rpc('registrar_dano_batalha', {
+    p_battle_id: battleId,
+    p_dano: valor
+  }).then(({ error }) => {
+    if (error) console.error('Erro ao registrar dano no servidor:', error);
+  }).catch(error => {
+    console.error('Erro ao registrar dano no servidor:', error);
+  });
+
+  window.arcaneDamagePromises.add(promessa);
+  promessa.finally(() => window.arcaneDamagePromises.delete(promessa));
+  return promessa;
+}
+window.registrarDanoServidor = registrarDanoServidor;
+
 function iniciarBatalha(boss, jogador, inventario, corAura) {
+  finalizandoBatalha = false;
   bossAtual = boss;
   jogadorAtual = jogador;
   if(window.playBossMusic)playBossMusic(boss.id);
@@ -455,6 +480,9 @@ function continuarBatalha() {
 }
 function pararBatalha() {
   jogoAtivo = false;
+  finalizandoBatalha = false;
+  window.arcaneBattleId = null;
+  window.arcaneBattleStartedAt = 0;
   pararTimerCooldownUi();
   pausado = false;
   if (rafBatalhaId !== null) { cancelAnimationFrame(rafBatalhaId); rafBatalhaId = null; }
@@ -535,12 +563,25 @@ function desenharBatalha() {
       this.dataset.src = fallback;
     };
   }
-  const bossSprite = posicionarSprite("inimigo", bossAtual.nome + ".jpg", inimigoX, inimigoY, TAMANHO_BOSS, TAMANHO_BOSS, "sprite-boss", x < inimigoX);
+  const imagensBoss = {
+    1: 'Arlan.jpg',
+    2: 'Marcos.jpg',
+    3: 'Miguel.jpg',
+    4: 'Carlos.jpg',
+    5: 'Lucas.jpg',
+    6: 'Davi.jpg',
+    7: 'Arthur.jpg',
+    8: 'Vinicius.jpg',
+    9: 'Guilerme.jpg',
+    10: 'Paulo.jpg'
+  };
+  const imagemBoss = imagensBoss[Number(bossAtual?.id)] || (bossAtual?.nome ? bossAtual.nome + '.jpg' : 'Arlan.jpg');
+  const bossSprite = posicionarSprite("inimigo", imagemBoss, inimigoX, inimigoY, TAMANHO_BOSS, TAMANHO_BOSS, "sprite-boss", x < inimigoX);
   if (bossSprite && bossSprite.tagName === "IMG") {
     bossSprite.onerror = function () {
       this.onerror = null;
-      this.src = bossAtual.imagem;
-      this.dataset.src = bossAtual.imagem;
+      this.src = imagemBoss;
+      this.dataset.src = imagemBoss;
     };
   }
 
@@ -855,6 +896,7 @@ function atualizarBatalha(timestamp) {
     if (distanciaEntre(p.x, p.y, inimigoX, inimigoY) < 60) {
       vidaEnemy = Math.max(vidaEnemy - p.dano, 0);
       if(typeof registrarDanoMissao==='function')registrarDanoMissao(p.dano);
+      registrarDanoServidor(p.dano);
       registrarGolpe("player");
       piscarDano("inimigo");
       criarNumeroDano(p.dano, inimigoX, inimigoY - 60, "#ff8a8a");
@@ -885,6 +927,7 @@ function atualizarBatalha(timestamp) {
       if (f.dono === "player") {
         vidaEnemy = Math.max(vidaEnemy - f.dano, 0);
         if(typeof registrarDanoMissao==='function')registrarDanoMissao(f.dano);
+        registrarDanoServidor(f.dano);
         registrarGolpe("player");
         piscarDano("inimigo");
         criarNumeroDano(f.dano, inimigoX, inimigoY - 60, "#ff8a8a");
@@ -914,36 +957,32 @@ function atualizarBatalha(timestamp) {
 
 const chanceDropUltimatePorTier = { 4: 0.09, 5: 0.10, 6: 0.20, 7: 0.30, 8: 0.40, 9: 0.50, 10: 0.85 };
 
-function checarFimDaBatalha() {
-  if (!jogoAtivo) return;
+async function checarFimDaBatalha() {
+  if (!jogoAtivo || finalizandoBatalha) return;
 
   if (vidaEnemy <= 0) {
+    finalizandoBatalha = true;
     jogoAtivo = false;
     pararTimerCooldownUi();
+
     const tier = bossAtual.tier;
     const statsBoss = statsPorTier[tier];
     const moedasGanhas = statsBoss.recompensaMoedas;
     const diamantesBase = statsBoss.recompensaDiamantes;
     const diamantesGanhos = Math.random() < statsBoss.chanceDiamante ? diamantesBase : 0;
 
-    const chanceUltimate = chanceDropUltimatePorTier[tier];
-    if (chanceUltimate && Math.random() < chanceUltimate) {
-      const naoPossuidas = bosses.map(function (b) { return "Ultimate" + b.id; })
-        .filter(function (id) { return !inventarioAtual.possuidos.includes(id); });
-      if (naoPossuidas.length > 0) {
-        const sorteada = naoPossuidas[Math.floor(Math.random() * naoPossuidas.length)];
-        inventarioAtual.possuidos.push(sorteada);
-        if (typeof salvarProgresso === "function") salvarProgresso();
-        alert("Drop! Você ganhou a " + sorteada + "!");
-      }
+    const pendentes = Array.from(window.arcaneDamagePromises || []);
+    if (pendentes.length) await Promise.allSettled(pendentes);
+
+    if (typeof aoVencerBatalha === 'function') {
+      await aoVencerBatalha(bossAtual.id, moedasGanhas, diamantesGanhos);
+    } else {
+      console.error('aoVencerBatalha não está disponível.');
     }
-    if (tier === 9 && Math.random() < 0.05 && !inventarioAtual.possuidos.includes("BlackholeSkill2")) {
-      inventarioAtual.possuidos.push("BlackholeSkill2");
-      if (typeof salvarProgresso === "function") salvarProgresso();
-      alert("DROP RARO! BlackholeSkill2 — 5% no Boss 9!");
-    }
-    aoVencerBatalha(bossAtual.id, moedasGanhas, diamantesGanhos);
-  } else if (vidaPlay <= 0) {
+    return;
+  }
+
+  if (vidaPlay <= 0) {
     jogoAtivo = false;
     pararTimerCooldownUi();
     aoPerderBatalha();
@@ -1210,7 +1249,9 @@ function dispararCutsceneUltimate(dono) {
   }
 
   const numeroVideo = Number(numero || bossAtual?.id || 1);
+  const ULTIMATE_VIDEO_OVERRIDE = { Ultimate5: 'lucasUltimate.mp4', Ultimate10: 'pauloUltimate.mp4' };
   const candidatos = [
+    ...(ULTIMATE_VIDEO_OVERRIDE[ultimateId] ? [ULTIMATE_VIDEO_OVERRIDE[ultimateId]] : []),
     'Boss' + numeroVideo + '.mp4',
     (ultimateConfig?.nome || nomeUltimate) + 'Ultimate.mp4',
     (ultimateConfig?.nome || nomeUltimate) + 'Ultimate.gif',
@@ -1241,6 +1282,7 @@ function aplicarDanoUltimate(dono) {
     golpesCausadosPlayer = 0; golpesRecebidosPlayer = 0;
     vidaEnemy = Math.max(vidaEnemy - danoUltimate, 0);
     if(typeof registrarDanoMissao==='function')registrarDanoMissao(danoUltimate);
+    registrarDanoServidor(danoUltimate);
     tremerTela();
     piscarDano("inimigo");
     criarNumeroDano(danoUltimate, inimigoX, inimigoY - 90, "#ffd23f");

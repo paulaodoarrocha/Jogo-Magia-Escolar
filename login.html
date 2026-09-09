@@ -86,36 +86,24 @@ function mostrarFormulario(nome) {
 }
 
 document.getElementById('tab-entrar').addEventListener('click', () => {
+  mostrarFormulario('form-entrar');
   document.getElementById('tab-entrar').classList.add('active');
   document.getElementById('tab-cadastrar').classList.remove('active');
-  mostrarFormulario('form-entrar');
 });
+
 document.getElementById('tab-cadastrar').addEventListener('click', () => {
+  mostrarFormulario('form-cadastrar');
   document.getElementById('tab-cadastrar').classList.add('active');
   document.getElementById('tab-entrar').classList.remove('active');
-  mostrarFormulario('form-cadastrar');
-});
-document.getElementById('btn-esqueci-senha').addEventListener('click', () => mostrarFormulario('form-recuperar'));
-document.getElementById('btn-voltar-login').addEventListener('click', () => {
-  document.getElementById('tab-entrar').classList.add('active');
-  document.getElementById('tab-cadastrar').classList.remove('active');
-  mostrarFormulario('form-entrar');
 });
 
-document.getElementById('btn-fazer-login').addEventListener('click', async () => {
-  limparErro();
-  const email = document.getElementById('login-email').value.trim();
-  const senha = document.getElementById('login-senha').value;
-  if (!email || !senha) return mostrarErro('Preencha e-mail e senha.');
-
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
-  if (error) return mostrarErro('E-mail ou senha incorretos.');
-
-  sessionStorage.setItem('acabouDeLogar','1'); window.location.href = 'index.html';
+document.getElementById('btn-esqueci-senha').addEventListener('click', () => {
+  mostrarFormulario('form-recuperar');
 });
-
+  
 document.getElementById('btn-fazer-cadastro').addEventListener('click', async () => {
   limparErro();
+
   const nome = document.getElementById('cadastro-nome').value.trim();
   const email = document.getElementById('cadastro-email').value.trim();
   const senha = document.getElementById('cadastro-senha').value;
@@ -124,41 +112,22 @@ document.getElementById('btn-fazer-cadastro').addEventListener('click', async ()
   if (!email) return mostrarErro('Digite um e-mail.');
   if (!senha || senha.length < 8) return mostrarErro('Senha precisa ter no mínimo 8 caracteres.');
 
-  const { data, error } = await supabaseClient.auth.signUp({ email, password: senha });
-  if (error) return mostrarErro('Erro ao criar conta: ' + error.message);
-
-  const userId = data.user?.id;
-if (userId) {
-  const { error: erroInsert } = await supabaseClient
-    .from('Player')
-    .upsert({ user_id: userId, username: nome }, { onConflict: 'user_id' });
-
-  if (erroInsert) {
-    mostrarErro('Conta criada, mas houve um erro salvando o perfil: ' + erroInsert.message);
-    return;
-  }
-}
-  sessionStorage.setItem('acabouDeLogar','1'); window.location.href = 'index.html';
-});
-
-document.getElementById('btn-enviar-recuperacao').addEventListener('click', async () => {
-  limparErro();
-  const email = document.getElementById('recuperar-email').value.trim();
-  if (!email) return mostrarErro('Digite seu e-mail.');
-
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + window.location.pathname.replace('login.html', 'index.html')
+  const { error } = await supabaseClient.auth.signUp({
+    email,
+    password: senha,
+    options: {
+      data: {
+        username: nome
+      }
+    }
   });
 
-  if (error) return mostrarErro('Erro ao enviar. Tente novamente.');
-  mostrarErro('Link enviado! Confira seu e-mail (e o spam).', true);
+  if (error) return mostrarErro('Erro ao criar conta: ' + error.message);
+
+  sessionStorage.setItem('acabouDeLogar','1');
+  window.location.href = 'index.html';
 });
 
-// Se já tem sessão ativa, pula direto pro jogo
-(async function () {
-  const { data } = await supabaseClient.auth.getSession();
-  if (data.session) { sessionStorage.setItem('acabouDeLogar','1'); window.location.href = 'index.html'; }
-})();
 </script>
 </body>
 </html>

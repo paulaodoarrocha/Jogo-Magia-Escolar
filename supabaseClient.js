@@ -2,6 +2,7 @@
 const SUPABASE_URL = 'https://nwithfitohtygvxrysgv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_-JX98qu3_yPXqGp--R-aMw_nSHDBCOR';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+window.supabaseClient = supabaseClient;
 
 // ===== FUNÇÕES DE ERRO NA TELA DE LOGIN =====
 function mostrarErroLogin(msg) {
@@ -74,15 +75,19 @@ async function fazerCadastro() {
   if (!email) return mostrarErroLogin('Digite um e-mail.');
   if (!senha || senha.length < 8) return mostrarErroLogin('Senha precisa ter no mínimo 8 caracteres.');
 
-  const { data, error } = await supabaseClient.auth.signUp({ email, password: senha });
-  if (error) return mostrarErroLogin('Erro ao criar conta: ' + error.message);
-
-  const userId = data.user?.id;
-  if (userId) {
-    await supabaseClient.from('Player').insert({ user_id: userId, username: nome });
+  const { data, error } = await supabaseClient.auth.signUp({
+  email,
+  password: senha,
+  options: {
+    data: {
+      username: nome
+    }
   }
+});
 
-  irParaMenu();
+if (error) return mostrarErroLogin('Erro ao criar conta: ' + error.message);
+
+irParaMenu();
 }
 
 // ===== RECUPERAÇÃO DE SENHA (POR E-MAIL) =====
@@ -116,6 +121,16 @@ async function irParaMenu() {
   document.getElementById('tela-login').classList.remove('active');
   document.getElementById('tela-loading').classList.remove('active');
   document.getElementById('tela-menu').classList.add('active');
+
+  const { data } = await supabaseClient.auth.getUser();
+
+  if (data?.user?.id) {
+    window.currentUserId = data.user.id;
+
+    if (typeof window.sincronizarSaldoDoServidor === 'function') {
+      await window.sincronizarSaldoDoServidor();
+    }
+  }
 }
 
 // ===== PONTO DE ENTRADA DO JOGO (chamado pelo botão "ENTRAR NA ARENA") =====

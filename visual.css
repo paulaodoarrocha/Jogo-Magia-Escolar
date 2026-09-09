@@ -1,5 +1,3 @@
-
-
 :root {
   --ui-blue: #18c9ff;
   --ui-cyan: #54f0ff;
@@ -2709,3 +2707,360 @@ body.ultimate-playing #tela-jogo .pause-btn {
 .perfil-nome-grande{font-size:22px;font-weight:900;margin:6px 0 2px}
 .perfil-id-grande{opacity:.5;font-size:12px;margin-bottom:16px}
 .perfil-fechar{position:absolute;top:12px;right:14px;background:none;border:none;color:#fff;font-size:22px;cursor:pointer}
+
+/* ===== PERFIL GRANDE — refinamento visual =====
+   Somente aparência; não altera a lógica do jogo. */
+#tela-perfil-grande{
+  background:
+    radial-gradient(circle at 50% 35%, rgba(123,92,255,.18), transparent 34%),
+    radial-gradient(circle at 15% 85%, rgba(66,239,255,.10), transparent 30%),
+    rgba(3,5,16,.90);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  padding:18px;
+}
+
+#tela-perfil-grande .perfil-card{
+  width:min(100%,450px);
+  max-width:450px;
+  overflow:hidden;
+  isolation:isolate;
+  padding:32px 26px 24px;
+  max-height:calc(100vh - 24px);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(123,92,255,.25), transparent 42%),
+    linear-gradient(145deg, rgba(20,24,48,.98), rgba(9,12,27,.98));
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:26px;
+  box-shadow:
+    0 24px 80px rgba(0,0,0,.72),
+    0 0 55px rgba(123,92,255,.12);
+}
+
+#tela-perfil-grande .perfil-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(66,239,255,.09) 0 1px, transparent 2px),
+    radial-gradient(circle at 82% 28%, rgba(123,92,255,.13) 0 1px, transparent 2px),
+    radial-gradient(circle at 72% 78%, rgba(255,255,255,.07) 0 1px, transparent 2px);
+  background-size:72px 72px, 91px 91px, 63px 63px;
+  opacity:.75;
+}
+
+#tela-perfil-grande .perfil-card-brilho{
+  position:absolute;
+  width:180px;height:180px;
+  left:50%;top:-110px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:rgba(123,92,255,.20);
+  filter:blur(35px);
+  z-index:-1;
+  pointer-events:none;
+}
+
+#tela-perfil-grande .perfil-fechar{
+  top:13px;right:14px;
+  width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.10);
+  font-size:24px;
+  line-height:1;
+  transition:transform .18s ease, background .18s ease;
+}
+
+#tela-perfil-grande .perfil-fechar:hover{
+  transform:scale(1.06);
+  background:rgba(255,255,255,.13);
+}
+
+#tela-perfil-grande .perfil-cabecalho{
+  position:relative;
+  text-align:center;
+  margin-bottom:20px;
+}
+
+#tela-perfil-grande .perfil-avatar-wrap{
+  width:clamp(116px, 28vw, 158px);
+  height:clamp(116px, 28vw, 158px);
+  margin:0 auto 13px;
+  padding:5px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#7b5cff,#42efff,#7b5cff);
+  box-shadow:0 0 34px rgba(123,92,255,.35);
+}
+
+#tela-perfil-grande .perfil-avatar-grande{
+  width:100%;height:100%;
+  margin:0;
+  background:rgba(10,13,29,.96);
+  border:2px solid rgba(255,255,255,.13);
+  font-size:clamp(53px, 12vw, 72px);
+  box-shadow:inset 0 0 25px rgba(123,92,255,.12);
+}
+
+#tela-perfil-grande .perfil-nome-grande{
+  font-size:26px;
+  letter-spacing:.2px;
+  text-shadow:0 2px 18px rgba(123,92,255,.22);
+}
+
+#tela-perfil-grande .perfil-id-grande{
+  margin-top:5px;
+  margin-bottom:0;
+  font-family:monospace;
+  letter-spacing:.5px;
+}
+
+#tela-perfil-grande .perfil-secao{
+  position:relative;
+  margin:12px 0;
+  padding:14px;
+  border-radius:17px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.075);
+}
+
+#tela-perfil-grande .perfil-secao-titulo{
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+  opacity:.72;
+  margin-bottom:10px;
+}
+
+#tela-perfil-grande .perfil-avatar-escolhas{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:7px;
+}
+
+#tela-perfil-grande .perfil-avatar-btn{
+  width:100%;
+  min-width:0;
+  height:43px;
+  padding:0;
+  margin:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:12px;
+  font-size:21px;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+#tela-perfil-grande .perfil-avatar-btn:hover{
+  transform:translateY(-2px);
+  background:rgba(123,92,255,.16);
+}
+
+#tela-perfil-grande .perfil-cor{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+#tela-perfil-grande .perfil-cor .perfil-secao-titulo{
+  margin:0;
+}
+
+#tela-perfil-grande #pg-cor-input{
+  width:52px;height:34px;
+  padding:2px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(0,0,0,.2);
+  cursor:pointer;
+}
+
+#tela-perfil-grande .perfil-tempo{
+  margin:14px 0;
+  padding:12px;
+  text-align:center;
+  border-radius:14px;
+  background:linear-gradient(90deg,rgba(66,239,255,.06),rgba(123,92,255,.10));
+  border:1px solid rgba(255,255,255,.07);
+  font-size:13px;
+  opacity:.82;
+}
+
+#tela-perfil-grande .perfil-acoes{
+  display:grid;
+  gap:8px;
+}
+
+#tela-perfil-grande .perfil-acoes .setting-option{
+  width:100%;
+  margin:0;
+}
+
+#tela-perfil-grande .perfil-excluir{
+  color:#ff7777 !important;
+  border-color:rgba(255,90,110,.18);
+}
+
+@media (max-width:420px){
+  #tela-perfil-grande{padding:8px}
+  #tela-perfil-grande .perfil-card{
+    width:100%;
+    max-width:none;
+    padding:24px 14px 16px;
+    border-radius:22px;
+    max-height:calc(100vh - 16px);
+  }
+  #tela-perfil-grande .perfil-avatar-wrap{
+    width:clamp(112px, 34vw, 132px);
+    height:clamp(112px, 34vw, 132px);
+  }
+  #tela-perfil-grande .perfil-nome-grande{font-size:23px}
+  #tela-perfil-grande .perfil-secao{padding:12px}
+}
+
+@media (max-width:340px){
+  #tela-perfil-grande .perfil-avatar-wrap{
+    width:108px;height:108px;
+  }
+  #tela-perfil-grande .perfil-card{padding-left:10px;padding-right:10px}
+  #tela-perfil-grande .perfil-avatar-escolhas{grid-template-columns:repeat(5,1fr)}
+}
+
+
+/* ===== AVATAR DE IMAGEM DO JOGADOR ===== */
+#pg-avatar img,
+.profile-avatar img{
+  width:100%;height:100%;display:block;
+  border-radius:50%;object-fit:cover;
+}
+#pg-avatar{overflow:hidden;border-radius:50%;}
+.perfil-imagem-area{
+  display:flex;justify-content:center;
+  margin:-2px 0 14px;
+}
+.perfil-imagem-btn{
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  padding:9px 13px;
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-weight:800;
+  font-size:12px;
+  cursor:pointer;
+}
+.perfil-imagem-btn:hover{background:rgba(123,92,255,.18);}
+.perfil-imagem-btn:disabled{opacity:.65;cursor:wait;}
+
+
+.daily-login-x{
+  margin-left:auto;
+  width:34px;
+  height:34px;
+  border:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.12);
+  color:#fff;
+  font-size:26px;
+  font-weight:800;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.daily-login-x:hover{
+  background:rgba(255,255,255,.22);
+}
+/* ===== PERFIL NO HERO (chip clicável) ===== */
+.hero-profile-chip{
+  position:absolute;
+  top:14px;
+  left:14px;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 14px 8px 8px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.18);
+  background:linear-gradient(135deg,rgba(123,92,255,.28),rgba(66,239,255,.18));
+  backdrop-filter:blur(8px);
+  box-shadow:0 6px 20px rgba(0,0,0,.35),0 0 18px rgba(123,92,255,.25);
+  cursor:pointer;
+  color:#fff;
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.hero-profile-chip:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 24px rgba(123,92,255,.4);
+}
+.hero-profile-avatar{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  background:linear-gradient(135deg,#7b5cff,#42efff);
+  overflow:hidden;
+  flex-shrink:0;
+}
+.hero-profile-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.hero-profile-text{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.hero-profile-text b{font-size:13px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero-profile-text small{font-size:9px;letter-spacing:.14em;color:#9fe8ff;opacity:.85}
+
+/* ===== SELO VIP NO PERFIL GRANDE ===== */
+#tela-perfil-grande.perfil-vip .perfil-card,#tela-perfil-grande.perfil-vip .profile-avatar{
+  box-shadow:0 0 30px rgba(255,211,78,.55),0 0 60px rgba(255,180,50,.25)!important;
+  border-color:#ffd34e!important;
+}
+
+/* ===== GAME PASSES ESTILO VITRINE (grid colorido) ===== */
+.store-product-list{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:12px;
+}
+.store-pass-card{
+  --pass-color:#53eaff;
+  border:1px solid color-mix(in srgb,var(--pass-color) 55%,var(--line));
+  background:linear-gradient(155deg,color-mix(in srgb,var(--pass-color) 22%,rgba(12,16,30,.92)),rgba(8,10,20,.94))!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.3),0 0 20px color-mix(in srgb,var(--pass-color) 30%,transparent)!important;
+  border-radius:14px;
+}
+.store-pass-card .store-product-icon{
+  filter:drop-shadow(0 0 10px color-mix(in srgb,var(--pass-color) 60%,transparent));
+}
+.store-pass-card h3{
+  color:color-mix(in srgb,var(--pass-color) 75%,white 25%);
+  text-shadow:0 0 10px color-mix(in srgb,var(--pass-color) 40%,transparent);
+}
+
+/* ===== CARDS DE PERSONAGEM MAIS BONITOS ===== */
+.character-card, .boss-card{
+  border-radius:18px!important;
+  overflow:hidden;
+  transition:transform .18s ease;
+}
+.character-card:hover, .boss-card:hover{
+  transform:translateY(-3px);
+}
+.character-card .asset-frame, .boss-card .asset-frame{
+  border-radius:14px;
+  overflow:hidden;
+  background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.08),transparent 70%);
+}
+.character-card img, .boss-card img{
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.5));
+}

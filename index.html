@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&amp;family=Rajdhani:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
   <link href="style.css" rel="stylesheet"/>
   <link href="visual.css" rel="stylesheet"/>
+  <link href="melhorias-visuais.css?v=4" rel="stylesheet"/>
   <style>
     html,body{margin:0;width:100%;min-height:100%;overflow:hidden}
     .screen{position:fixed;inset:0;display:none}
@@ -176,6 +177,13 @@
     <section class="home-center">
      <div class="hero-glow">
      </div>
+     <button class="hero-profile-chip" id="btn-perfil-hero" type="button">
+      <span class="hero-profile-avatar" id="avatar-hero-mini">🧙</span>
+      <span class="hero-profile-text">
+       <b id="hero-profile-nome">Jogador</b>
+       <small>PERFIL</small>
+      </span>
+     </button>
      <div class="hero-copy">
       <div class="eyebrow">
        A BATALHA COMEÇA AGORA
@@ -264,7 +272,7 @@
         JOGADOR
        </small>
        <b id="nome-menu">
-        PauloLordy
+        Jogador
        </b>
       </div>
      </div>
@@ -531,8 +539,8 @@
      <button class="setting-option" data-config="feedback">
       💬 Feedback
      </button>
-     <button class="setting-option" data-config="player">
-      👤 Informações
+     <button class="setting-option" type="button" onclick="renderPerfilGrande()">
+      👤 Perfil
      </button>
      <button class="setting-option" id="btn-silenciar-lobby">
       🔊 Música: ligada
@@ -558,7 +566,7 @@
     <div class="fighter-hud player">
      <div class="health-head">
       <span id="nome-player-hud">
-       PauloLordy
+       Jogador
       </span>
       <b id="vida-player-text">
        0/0
@@ -717,29 +725,40 @@
 
 <div id="tela-perfil-grande">
   <div class="perfil-card">
-    <button class="perfil-fechar" onclick="fecharPerfilGrande()">×</button>
-    <div class="perfil-avatar-grande" id="pg-avatar">🧙</div>
-    <div class="perfil-nome-grande" id="pg-nome">Jogador</div>
-    <div class="perfil-id-grande" id="pg-id">ID: ...</div>
+    <div class="perfil-card-brilho" aria-hidden="true"></div>
+    <button class="perfil-fechar" onclick="fecharPerfilGrande()" aria-label="Fechar perfil">×</button>
 
-    <div style="display:flex;gap:6px;justify-content:center;margin:12px 0;flex-wrap:wrap">
-      <button class="setting-option" onclick="mudarAvatarGrande('🧙')">🧙</button>
-      <button class="setting-option" onclick="mudarAvatarGrande('🔥')">🔥</button>
-      <button class="setting-option" onclick="mudarAvatarGrande('❄️')">❄️</button>
-      <button class="setting-option" onclick="mudarAvatarGrande('⚡')">⚡</button>
-      <button class="setting-option" onclick="mudarAvatarGrande('🌑')">🌑</button>
-      <button class="setting-option" onclick="mudarAvatarGrande('🌟')">🌟</button>
+    <div class="perfil-cabecalho">
+      <div class="perfil-avatar-wrap">
+        <div class="perfil-avatar-grande" id="pg-avatar">🧙</div>
+      </div>
+      <div class="perfil-nome-grande" id="pg-nome">Jogador</div>
+      <div class="perfil-id-grande" id="pg-id">ID: ...</div>
     </div>
 
-    <div style="margin-bottom:14px">
-      <label style="font-size:13px;opacity:.7">Cor do nome: </label>
-      <input type="color" id="pg-cor-input" onchange="mudarCorNomeGrande(this.value)">
+    <div class="perfil-secao">
+      <div class="perfil-secao-titulo">✨ Escolha seu avatar</div>
+      <div class="perfil-avatar-escolhas">
+        <button class="setting-option perfil-avatar-btn" onclick="mudarAvatarGrande('🧙')">🧙</button>
+        <button class="setting-option perfil-avatar-btn" onclick="mudarAvatarGrande('🔥')">🔥</button>
+        <button class="setting-option perfil-avatar-btn" onclick="mudarAvatarGrande('❄️')">❄️</button>
+        <button class="setting-option perfil-avatar-btn" onclick="mudarAvatarGrande('⚡')">⚡</button>
+        <button class="setting-option perfil-avatar-btn" onclick="mudarAvatarGrande('🌑')">🌑</button>
+        <button class="setting-option perfil-avatar-btn" onclick="mudarAvatarGrande('🌟')">🌟</button>
+      </div>
     </div>
 
-    <p id="pg-tempo" style="opacity:.6;font-size:12px;margin-bottom:16px">⏱️ Tempo jogado: 0h 0min</p>
+    <div class="perfil-secao perfil-cor">
+      <div class="perfil-secao-titulo">🎨 Cor do nome</div>
+      <input type="color" id="pg-cor-input" onchange="mudarCorNomeGrande(this.value)" aria-label="Escolher cor do nome">
+    </div>
 
-    <button class="setting-option" onclick="mudarConta()">🔁 Mudar de conta</button>
-    <button class="setting-option" style="color:#ff6b6b" onclick="deletarConta()">🗑️ Deletar conta</button>
+    <div class="perfil-tempo" id="pg-tempo">⏱️ Tempo jogado: 0h 0min</div>
+
+    <div class="perfil-acoes">
+      <button class="setting-option" onclick="mudarConta()">🔁 Mudar de conta</button>
+      <button class="setting-option perfil-excluir" onclick="deletarConta()">🗑️ Deletar conta</button>
+    </div>
   </div>
 </div>
    
