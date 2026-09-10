@@ -227,26 +227,64 @@ function fmt(valor) {
   return String(Math.floor(valor));
 }
 function rarityColor(raridade) {
-
+  // Cada raridade do jogo (Personagens, Skill1, Skill2, Ultimate) precisa de UMA cor
+  // própria aqui. --rarity é aplicado via inline style em cada card (style="--rarity:...")
+  // e inline style sempre vence qualquer regra do CSS, não importa o que a gente mude
+  // lá — por isso "nenhuma cor mudava": faltavam TODAS as raridades de Skill1/Skill2/
+  // Ultimate aqui (caíam no fallback branco #ffffff, por isso pareciam sem cor nenhuma),
+  // e várias raridades de Personagem tinham cores quase pretas (celestial, ilimitado,
+  // divino, exclusivo, indefinido) que na prática também pareciam "sem cor".
   const cores = {
-    comum: '#68686a',
+    // Personagens (fraca → forte)
+    comum: '#e7edf7',
     incomum: '#39ff7a',
     raro: '#2ec2ff',
     epico: '#b83bff',
     lendario: '#ffbe0b',
-    mitico: '#8b0720',
-    secreto: '#1a171a',
-    secret: '#0c0c0c',
-    Arcanjo: '#ff2b6b',
+    mitico: '#ff2d55',
+    secreto: '#c9c9d9',
+    secret: '#c9c9d9',
+    divino: '#17e9ff',
+    celestial: '#5a7bff',
+    supremo: '#ff17d4',
+    ilimitado: '#ffffff',
+    exclusivo: '#ffd200',
+    indefinido: '#c23dff',
+    transcendente: '#17ffd0',
     especial: '#ff5cf0',
-    divino: '#09646d',
-    celestial: '#260438',
-    supremo: '#dd0ab6',
-    ilimitado: '#403702',
-    exclusivo: '#86700d',
-    indefinido: '#510574',
-    transcendente: '#06604e',
-    hunge: '#ffee00'
+    Arcanjo: '#ff2b6b',
+    hunge: '#ffee00',
+    // Skill 1 (fraca → forte)
+    iniciante: '#cfd8e3',
+    aprendiz: '#7ee787',
+    adepto: '#38bdf8',
+    especialista: '#a78bfa',
+    mestre: '#fbbf24',
+    graomestre: '#fb7185',
+    arcano: '#22d3ee',
+    primordial: '#f0abfc',
+    // Skill 2 (fraca → forte)
+    bruto: '#9ca3af',
+    carregado: '#34d399',
+    explosivo: '#fb923c',
+    devastador: '#ef4444',
+    cataclismico: '#a855f7',
+    apocaliptico: '#f43f5e',
+    dimensional: '#6366f1',
+    estelar: '#facc15',
+    cosmico: '#06b6d4',
+    singularidade: '#e879f9',
+    // Ultimate (fraca → forte)
+    faisca: '#fde68a',
+    impulso: '#93c5fd',
+    explosao: '#fca5a5',
+    tempestade: '#60a5fa',
+    ruptura: '#c084fc',
+    calamidade: '#f87171',
+    juizo: '#fbbf24',
+    ascensao: '#34d399',
+    eternidade: '#f472b6',
+    onipotencia: '#fef08a'
   };
 
   return cores[raridade] || '#ffffff';

@@ -119,6 +119,44 @@ html { font-size: clamp(13px, 1.1vw + 8px, 18px); }
 
 .rarity-label{ text-shadow:0 0 8px var(--rarity,#fff)!important; letter-spacing:.03em; }
 
+/* =====================================================================
+   CONTROLES DE BATALHA — regra final e responsiva (clamp), carregada por
+   ÚLTIMO de propósito pra vencer os ~10 blocos de @media conflitantes que
+   ficaram espalhados pelo style.css/visual.css com valores fixos em px
+   diferentes (31px/36px/38px/40px/42px/43px/44px/48px pro d-pad — cada
+   tela "sorteava" um). O .skill-button já tinha um arremate assim no fim
+   do style.css, só que o .dpad (mover) nunca recebeu — por isso só ele
+   ficava pequeno/inconsistente. Agora os dois usam clamp() (mínimo,
+   preferido em vw, máximo) em vez de px fixo, então escalam sozinhos do
+   celular mais simples até TV/notebook, sem depender de nenhum @media. */
+.dpad>button,.dpad>div button{
+  width:clamp(46px,10vw,62px) !important;
+  height:clamp(46px,10vw,62px) !important;
+  min-width:44px !important;
+  min-height:44px !important;
+  font-size:clamp(1rem,3.5vw,1.3rem) !important;
+}
+.skill-bar .skill-button{
+  width:clamp(64px,15vw,100px) !important;
+  height:clamp(64px,15vw,100px) !important;
+  min-width:56px !important;
+  min-height:56px !important;
+}
+.skill-bar .ult-charge{
+  width:clamp(64px,15vw,100px) !important;
+}
+
+/* Trava o menu nativo de "Copiar/Colar/Traduzir/Compartilhar" que aparece
+   no toque longo (segurar o botão) em celulares Android/Samsung. O
+   user-select por si só não segura isso em todo navegador — precisa do
+   -webkit-touch-callout junto, e também tirar o "highlight" azul de toque. */
+.battle-controls,.dpad,.dpad button,.skill-bar,.skill-button,.dpad>div,.dpad>div button{
+  -webkit-touch-callout:none !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+
 /* ---------- 3b) BOSSES (por rank) e TEMAS — mesma ideia, várias cores no halo ---------- */
 .boss-card.rank-f h3,.boss-card.rank-e h3,.boss-card.rank-c h3,.boss-card.rank-b h3{
   color:var(--rank,#fff)!important;
