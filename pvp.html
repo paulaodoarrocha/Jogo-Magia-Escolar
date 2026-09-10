@@ -247,12 +247,14 @@
     <button class="tab-btn" data-tab="loja" onclick="trocarAba('loja')">Loja</button>
     <button class="tab-btn" data-tab="inv" onclick="trocarAba('inv')">Inventário</button>
     <button class="tab-btn" data-tab="rank" onclick="trocarAba('rank')">Ranking</button>
+    <button class="tab-btn" data-tab="amigos" onclick="trocarAba('amigos')">Amigos</button>
   </div>
 
   <div class="panel" id="painel-equip"></div>
   <div class="panel hidden" id="painel-loja"></div>
   <div class="panel hidden" id="painel-inv"></div>
   <div class="panel hidden" id="painel-rank"></div>
+  <div class="panel hidden" id="painel-amigos"></div>
 </div>
 
 <!-- OVERLAYS -->
@@ -395,6 +397,8 @@ async function refreshPerfil() {
   const { data } = await sb.from('pvp_profile').select('*').eq('user_id', userId).maybeSingle();
   if (!data) return;
   perfilAtual = data;
+  const { data: pl } = await sb.from('Player').select('bio').eq('user_id', userId).maybeSingle();
+  minhaBio = pl?.bio || '';
   document.getElementById('profile-card').style.setProperty('--rank-color', RANK_COLORS[data.rank]);
   document.getElementById('pvp-rank-pill').textContent = RANK_LABEL[data.rank];
   document.getElementById('pvp-trofeus').textContent = data.trofeus_atuais;
@@ -405,13 +409,14 @@ async function refreshPerfil() {
 }
 
 function trocarAba(nome) {
-  ['equip','loja','inv','rank'].forEach(t => {
+  ['equip','loja','inv','rank','amigos'].forEach(t => {
     document.getElementById('painel-'+t).classList.toggle('hidden', t !== nome);
     document.querySelector(`.tab-btn[data-tab="${t}"]`).classList.toggle('active', t === nome);
   });
   if (nome === 'loja') renderLoja();
   if (nome === 'inv') renderInventarioPvp();
   if (nome === 'rank') carregarRanking();
+  if (nome === 'amigos') carregarAmigos();
 }
 
 const SKILL1_LISTA = ['RelampagoSkill1','SomSkill1','CirculoSkill1','VentoSkill1','AguaSkill1','VenenoSkill1','SolSkill1','MeteoroSkill1'];
@@ -423,11 +428,29 @@ function renderEquip() {
   const el = document.getElementById('painel-equip');
   el.innerHTML = `
     <div class="item-card"><div><div class="item-name">❤️ HP</div><div class="item-sub">Base PvP</div></div><b>1000</b></div>
+    <div class="item-card" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div class="item-name">📝 Descrição do perfil</div>
+      <input id="input-bio" maxlength="60" placeholder="Ex: Pode juntar todo mundo, não dá um de mim" value="${(minhaBio||'').replace(/"/g,'&quot;')}" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff">
+      <button class="small-btn primary" onclick="salvarBio()">SALVAR (<span id="bio-count">${(minhaBio||'').length}</span>/60)</button>
+    </div>
     ${linhaEvolucao('skill1', 'SKILL 1', perfilAtual.skill1_pvp, SKILL1_LISTA)}
     ${linhaEvolucao('skill2', 'SKILL 2', perfilAtual.skill2_pvp, SKILL2_LISTA)}
     ${linhaEvolucao('ultimate', 'ULTIMATE', perfilAtual.ultimate_pvp, ULT_LISTA)}
   `;
+  document.getElementById('input-bio')?.addEventListener('input', (e) => {
+    document.getElementById('bio-count').textContent = e.target.value.length;
+  });
 }
+
+let minhaBio = '';
+async function salvarBio() {
+  const valor = document.getElementById('input-bio').value;
+  const { data, error } = await sb.rpc('atualizar_bio', { p_bio: valor });
+  if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  minhaBio = data.bio;
+  alert('Descrição salva!');
+}
+window.salvarBio = salvarBio;
 
 function linhaEvolucao(tipo, label, atual, lista) {
   const idx = lista.indexOf(atual);
@@ -601,13 +624,144 @@ function premioPorPosicao(pos) {
 
 async function carregarRanking() {
   const el = document.getElementById('painel-rank');
-  const { data: porVitorias } = await sb.from('pvp_profile').select('user_id, vitorias, rank').order('vitorias', {ascending:false}).limit(10);
-  const { data: porTrofeus } = await sb.from('pvp_profile').select('user_id, trofeus_totais_historico, rank').order('trofeus_totais_historico', {ascending:false}).limit(10);
+  const { data, error } = await sb.rpc('pvp_ranking');
+  if (error || !data) { el.innerHTML = '<div class="item-sub">Não foi possível carregar o ranking.</div>'; return; }
+
+  const linha = (r) => `<div class="ranking-row" style="cursor:pointer" onclick="abrirPerfilPublico('${r.user_id}')">
+    <span class="ranking-pos"></span>
+    <span style="flex:1">${r.avatar_emoji||'🧙'} <b style="color:${r.vip?'#ffd700':'inherit'}">${r.username}</b>${r.vip?' 👑':''}%TOP5%</span>
+    <b>%VALOR%</b>
+  </div>`;
+
   el.innerHTML = `<div style="font-weight:800;margin-bottom:6px">🏅 TOP 10 VITÓRIAS</div>` +
-    (porVitorias||[]).map((r,i)=>`<div class="ranking-row"><span class="ranking-pos">#${i+1}</span><span style="flex:1">${r.user_id.slice(0,8)}…</span><b>${r.vitorias}V</b></div>`).join('') +
+    (data.por_vitorias||[]).map((r,i)=>linha(r).replace('ranking-pos"></span>',`ranking-pos">#${i+1}</span>`).replace('%TOP5%',i<5?' <small style="color:#3dffa0">TOP 5</small>':'').replace('%VALOR%',`${r.vitorias}V`)).join('') +
     `<div style="font-weight:800;margin:14px 0 6px">🏆 TOP 10 TROFÉUS TOTAIS (temporada)</div>` +
-    (porTrofeus||[]).map((r,i)=>`<div class="ranking-row"><span class="ranking-pos">#${i+1}</span><span style="flex:1">${r.user_id.slice(0,8)}…</span><b>${r.trofeus_totais_historico}🏆</b></div><div class="item-sub" style="padding-left:36px;margin-top:-4px">${premioPorPosicao(i+1)}</div>`).join('');
+    (data.por_trofeus||[]).map((r,i)=>linha(r).replace('ranking-pos"></span>',`ranking-pos">#${i+1}</span>`).replace('%TOP5%',i<5?' <small style="color:#3dffa0">TOP 5</small>':'').replace('%VALOR%',`${r.trofeus_totais_historico}🏆`)+`<div class="item-sub" style="padding-left:36px;margin-top:-4px">${premioPorPosicao(i+1)}</div>`).join('');
 }
+
+const RANK_COR_PERFIL = {bronze:'var(--bronze)',prata:'var(--prata)',ouro:'var(--ouro)',diamante:'var(--diamante)',desafiante:'var(--desafiante)'};
+
+function fecharModalPerfilPublico() {
+  const el = document.getElementById('modal-perfil-publico');
+  if (el) el.remove();
+}
+window.fecharModalPerfilPublico = fecharModalPerfilPublico;
+
+async function enviarPedidoAmizadeModal(userId, btn) {
+  const { error } = await sb.rpc('pvp_enviar_pedido_amizade', { p_destino: userId });
+  if (error) { alert('Não foi possível enviar: ' + error.message); return; }
+  if (btn) { btn.disabled = true; btn.textContent = '✔ Pedido enviado'; }
+}
+window.enviarPedidoAmizadeModal = enviarPedidoAmizadeModal;
+
+async function abrirPerfilPublico(userId) {
+  const { data, error } = await sb.rpc('perfil_publico', { p_user_id: userId });
+  if (error || !data) { alert('Não foi possível carregar o perfil.'); return; }
+
+  fecharModalPerfilPublico();
+  const rankCor = RANK_COR_PERFIL[data.rank_pvp] || 'var(--grad1)';
+  const rankLabel = RANK_LABEL[data.rank_pvp] || data.rank_pvp || 'BRONZE';
+  const horas = Math.floor((data.playtime_seconds||0) / 3600);
+  const cor = data.name_color || '#ffffff';
+  const bio = (data.bio||'').trim();
+
+  const div = document.createElement('div');
+  div.className = 'overlay';
+  div.id = 'modal-perfil-publico';
+  div.style.cssText = 'position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(2,4,10,.8);backdrop-filter:blur(10px)';
+  div.onclick = (e) => { if (e.target === div) fecharModalPerfilPublico(); };
+
+  div.innerHTML = `
+    <div class="panel" style="max-width:340px;width:100%;text-align:center;position:relative;${data.vip?'box-shadow:0 0 30px rgba(255,209,102,.35);border-color:var(--gold)':''}">
+      <button class="btn-voltar" style="position:absolute;right:10px;top:10px;padding:6px 10px" onclick="fecharModalPerfilPublico()">✕</button>
+
+      <div class="avatar-ring" style="width:84px;height:84px;font-size:40px;margin:8px auto 10px;border-color:${data.vip?'var(--gold)':rankCor};box-shadow:0 0 22px ${data.vip?'rgba(255,209,102,.5)':'transparent'}">
+        ${data.avatar_image_url ? `<img src="${data.avatar_image_url}" alt="">` : (data.avatar_emoji||'🧙')}
+      </div>
+
+      <div style="font-weight:800;font-size:17px;color:${cor}">${data.username||'Jogador'}${data.vip?' 👑':''}</div>
+      ${bio ? `<div style="margin-top:6px;font-size:12px;color:#9aa3c7;font-style:italic">"${bio.replace(/</g,'&lt;')}"</div>` : ''}
+
+      <div class="rank-pill" style="--rank-color:${rankCor};margin-top:12px">🏅 ${rankLabel} • Nv. ${data.nivel_pvp ?? 1}</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+        <div class="item-card" style="margin:0;flex-direction:column;align-items:flex-start;gap:2px">
+          <span class="item-sub">Vitórias</span><b style="color:var(--ok)">${data.vitorias ?? 0}</b>
+        </div>
+        <div class="item-card" style="margin:0;flex-direction:column;align-items:flex-start;gap:2px">
+          <span class="item-sub">Derrotas</span><b style="color:var(--danger)">${data.derrotas ?? 0}</b>
+        </div>
+        <div class="item-card" style="margin:0;flex-direction:column;align-items:flex-start;gap:2px">
+          <span class="item-sub">🏆 Atuais</span><b>${data.trofeus_atuais ?? 0}</b>
+        </div>
+        <div class="item-card" style="margin:0;flex-direction:column;align-items:flex-start;gap:2px">
+          <span class="item-sub">🏆 Histórico</span><b>${data.trofeus_totais_historico ?? 0}</b>
+        </div>
+      </div>
+
+      <div class="item-sub" style="margin-top:10px">⏱ Tempo jogado: ${horas}h</div>
+
+      <button class="small-btn primary" style="width:100%;margin-top:14px;padding:10px" onclick="enviarPedidoAmizadeModal('${userId}', this)">➕ Adicionar amizade</button>
+    </div>`;
+
+  document.body.appendChild(div);
+}
+window.abrirPerfilPublico = abrirPerfilPublico;
+
+async function carregarAmigos() {
+  const el = document.getElementById('painel-amigos');
+  const { data, error } = await sb.rpc('pvp_listar_amigos');
+  const { data: historico } = await sb.rpc('pvp_historico_partidas');
+  if (error || !data) { el.innerHTML = '<div class="item-sub">Não foi possível carregar.</div>'; return; }
+
+  const pedidos = (data.pedidos||[]).map(p => `
+    <div class="ranking-row"><span style="flex:1">${p.avatar_emoji} ${p.username}</span>
+      <button class="small-btn primary" onclick="responderPedido('${p.user_id}',true)">Aceitar</button>
+      <button class="small-btn" onclick="responderPedido('${p.user_id}',false)">Recusar</button>
+    </div>`).join('') || '<div class="item-sub">Nenhum pedido pendente.</div>';
+
+  const amigos = (data.amigos||[]).map(a => `
+    <div class="ranking-row" style="cursor:pointer" onclick="abrirPerfilPublico('${a.user_id}')">
+      <span style="flex:1">${a.avatar_emoji} ${a.username} • Nv.${a.nivel_pvp}</span>
+      <button class="small-btn primary" onclick="event.stopPropagation();desafiarAmigo('${a.user_id}')">Desafiar</button>
+      <button class="small-btn" onclick="event.stopPropagation();removerAmizade('${a.user_id}')">Remover</button>
+    </div>`).join('') || '<div class="item-sub">Você ainda não tem amigos.</div>';
+
+  const hist = (historico||[]).map(h => `
+    <div class="ranking-row">
+      <span style="flex:1;cursor:pointer" onclick="abrirPerfilPublico('${h.oponente_id}')">${h.venceu?'✅':'❌'} vs ${h.oponente_avatar} ${h.oponente_nome}</span>
+    </div>`).join('') || '<div class="item-sub">Nenhuma partida ainda.</div>';
+
+  el.innerHTML = `
+    <div style="font-weight:800;margin-bottom:6px">📩 PEDIDOS DE AMIZADE</div>${pedidos}
+    <div style="font-weight:800;margin:14px 0 6px">👥 AMIGOS</div>${amigos}
+    <div style="font-weight:800;margin:14px 0 6px">📜 HISTÓRICO DE PARTIDAS</div>${hist}
+  `;
+}
+window.carregarAmigos = carregarAmigos;
+
+async function responderPedido(solicitante, aceitar) {
+  const { error } = await sb.rpc('pvp_responder_pedido_amizade', { p_solicitante: solicitante, p_aceitar: aceitar });
+  if (error) alert('Erro: ' + error.message);
+  carregarAmigos();
+}
+window.responderPedido = responderPedido;
+
+async function removerAmizade(amigoId) {
+  if (!confirm('Remover esse amigo?')) return;
+  const { error } = await sb.rpc('pvp_remover_amizade', { p_amigo: amigoId });
+  if (error) alert('Erro: ' + error.message);
+  carregarAmigos();
+}
+window.removerAmizade = removerAmizade;
+
+async function desafiarAmigo(amigoId) {
+  const { data, error } = await sb.rpc('pvp_desafiar_amigo', { p_amigo: amigoId });
+  if (error) { alert('Erro: ' + error.message); return; }
+  if (data && data.ok === false) { alert(data.motivo); return; }
+  alert('Desafio criado!');
+}
+window.desafiarAmigo = desafiarAmigo;
 
 /* ================= MATCHMAKING ================= */
 let filaChannel = null;

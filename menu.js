@@ -80,41 +80,38 @@ const ultimates = bosses.map((boss, index) => ({
   audio: ultimateAudio[index]
 }));
 const gamepasses=[['2x Money','4,99','Dobra as moedas das vitórias.'],['2x Diamantes','3,99','Dobra os diamantes das vitórias.'],['2x Chance Diamantes','3,49','Dobra a chance de encontrar diamantes.'],['Multi Open','5,99','Girar (4) abre +3 extras: 7 no total.'],['Lucky Raro','1,99','Aumenta em 30% a sorte de todos os personagens Raros (não afeta só o melhor equipado).'],['Extrem Lucky','8,99','PERMANENTE • Dobra a sorte dos personagens Épico ou melhores (combina com a Poção Lucky).'],['VIP','5,99','PERMANENTE • Pequeno bônus de moedas e diamantes + selo especial no perfil.']];
-const gamepassFlags = {
-  'Extrem Lucky': () => extremLuckyOwned,
-  'VIP': () => vipOwned
+const gamepassNameToKey = {
+  '2x Money': '2x_moedas',
+  '2x Diamantes': '2x_diamantes',
+  '2x Chance Diamantes': '2x_chance_diamante',
+  'Multi Open': 'multi_open',
+  'Lucky Raro': 'lucky_raro',
+  'Extrem Lucky': 'extreme_lucky',
+  'VIP': 'vip'
 };
-function ownsGamepass(nome){ return typeof gamepassFlags[nome] === 'function' ? gamepassFlags[nome]() : false; }
+function ownsGamepass(nome){
+  const chave = gamepassNameToKey[nome];
+  return chave ? gamepassesOwned[chave] === true : false;
+}
 function comprarGamepassPermanente(nome){
   if (ownsGamepass(nome)) { alert('Você já possui esta Game Pass.'); return; }
-  if (nome === 'Extrem Lucky') extremLuckyOwned = true;
-  if (nome === 'VIP') vipOwned = true;
-  save();
   alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋');
   renderGamepasses();
-  if (typeof aplicarPerfilNoJogo === 'function') aplicarPerfilNoJogo();
 }
 window.comprarGamepassPermanente = comprarGamepassPermanente;
 function podeComprarPocaoLoja(chave){
-  const ultima = Number(potionPurchaseTimestamps[chave] || 0);
+  const ultima = Number(pocoes[chave + '_ultima_compra'] || 0);
   return (Date.now() - ultima) >= 24 * 60 * 60 * 1000;
 }
 function comprarPocaoLoja(chave, tipos){
   if (!podeComprarPocaoLoja(chave)) { alert('Você já comprou isso hoje. A oferta volta a ficar disponível em 24 horas.'); return; }
-  tipos.forEach((t) => { pocoes[t] = (pocoes[t] || 0) + 1; });
-  potionPurchaseTimestamps[chave] = Date.now();
-  save();
   alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋');
   renderGamepasses();
-  if (document.getElementById('tela-inventario')?.classList.contains('active')) renderInventory('potions');
 }
 window.comprarPocaoLoja = comprarPocaoLoja;
 function comprarExpansaoInventario(qtd){
-  inventoryBonusCap += qtd;
-  save();
   alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋');
   renderGamepasses();
-  updateResources();
 }
 window.comprarExpansaoInventario = comprarExpansaoInventario;
 const SAVE = 'arcaneClashSaveV6';
@@ -147,6 +144,13 @@ const pocoes = { lucky: 0, damage: 0, coins: 0, diamond: 0 };
 const pocoesAtivas = { lucky: 0, damage: 0, coins: 0, diamond: 0 };
 let extremLuckyOwned = false;
 let vipOwned = false;
+let luckyRaroOwned = false;
+let moneyX2Owned = false;
+let diamondX2Owned = false;
+let diamondChanceX2Owned = false;
+let multiOpenOwned = false;
+const gamepassesOwned = {};
+let sincronizacaoInicialFeita = false;
 let inventoryBonusCap = 0;
 const potionPurchaseTimestamps = {};
 function getInventoryMax(){ return 50 + Number(inventoryBonusCap || 0); }
@@ -462,14 +466,17 @@ async function renderTopGlobal() {
   const corPos = (i) => i === 0 ? '#ffd166' : i === 1 ? '#c7d0da' : i === 2 ? '#c07a3e' : '#7b5cff';
   const nomeSeguro = (n) => (!n || n.includes('@')) ? (n ? n.split('@')[0] : 'Jogador') : n;
 
-  const linha = (nome, avatar, valor, unidade, i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:8px;border-radius:14px;
+  const linha = (nome, avatar, avatarUrl, cor, valor, unidade, i, userId) => `
+    <div onclick="abrirPerfilPublicoLobby('${userId}')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:8px;border-radius:14px;
       background:linear-gradient(135deg, rgba(123,92,255,.10), rgba(66,239,255,.06));
       border:1px solid ${corPos(i)};box-shadow:0 0 12px ${corPos(i)}33">
       <div style="width:30px;text-align:center;font-weight:900;font-size:15px;color:${corPos(i)};text-shadow:0 0 8px ${corPos(i)}">${medalha(i)}</div>
-      <div style="width:36px;height:36px;border-radius:50%;background:#12142a;border:2px solid ${corPos(i)};
-        display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${avatar || '🧙'}</div>
-      <div style="flex:1;font-weight:700;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nome || 'Jogador'}</div>
+      <div style="width:46px;height:46px;border-radius:50%;background:#12142a;border:2px solid ${corPos(i)};
+        display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden">${avatarUrl ? `<img src="${avatarUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : (avatar || '🧙')}</div>
+      <div style="flex:1;overflow:hidden">
+        <div style="font-weight:700;font-size:13px;color:${cor || '#fff'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nome || 'Jogador'}</div>
+        ${i < 5 ? `<div style="font-size:9px;font-weight:800;color:#3dffa0">TOP 5</div>` : ''}
+      </div>
       <div style="font-weight:900;font-size:13px;color:${corPos(i)};white-space:nowrap">${Number(valor||0).toLocaleString('pt-BR')} ${unidade}</div>
     </div>`;
 
@@ -478,11 +485,88 @@ async function renderTopGlobal() {
 
   el.innerHTML =
     `<div style="font-weight:900;letter-spacing:1px;margin:6px 0 10px;color:#ffd166;text-shadow:0 0 10px #ffd16688">💰 TOP 10 MOEDAS</div>` +
-    moedas.map((p,i) => linha(nomeSeguro(p.username), p.avatar_emoji, p.coins, '🪙', i)).join('') +
+    moedas.map((p,i) => linha(nomeSeguro(p.username), p.avatar_emoji, p.avatar_image_url, p.name_color, p.coins, '🪙', i, p.user_id)).join('') +
     `<div style="font-weight:900;letter-spacing:1px;margin:18px 0 10px;color:#7ee8ff;text-shadow:0 0 10px #7ee8ff88">💎 TOP 10 DIAMANTES</div>` +
-    diamantes.map((p,i) => linha(nomeSeguro(p.username), p.avatar_emoji, p.diamante, '💎', i)).join('');
+    diamantes.map((p,i) => linha(nomeSeguro(p.username), p.avatar_emoji, p.avatar_image_url, p.name_color, p.diamante, '💎', i, p.user_id)).join('');
 }
 window.renderTopGlobal = renderTopGlobal;
+
+const RANK_LABEL_PUBLICO = { bronze:'Bronze', prata:'Prata', ouro:'Ouro', diamante:'Diamante', desafiante:'Desafiante' };
+const RANK_COR_PUBLICO = { bronze:'#c07a3e', prata:'#c7d0da', ouro:'#ffd166', diamante:'#7ee8ff', desafiante:'#ff5cf0' };
+
+function fecharModalPerfilPublico() {
+  const el = document.getElementById('modal-perfil-publico');
+  if (el) el.remove();
+}
+window.fecharModalPerfilPublico = fecharModalPerfilPublico;
+
+function renderModalPerfilPublico(data) {
+  fecharModalPerfilPublico();
+
+  const rankCor = RANK_COR_PUBLICO[data.rank_pvp] || '#7b5cff';
+  const rankLabel = RANK_LABEL_PUBLICO[data.rank_pvp] || data.rank_pvp || 'Bronze';
+  const horas = Math.floor((data.playtime_seconds || 0) / 3600);
+  const nome = (data.username || 'Jogador');
+  const cor = data.name_color || '#ffffff';
+  const bio = (data.bio || '').trim();
+
+  const div = document.createElement('div');
+  div.className = 'overlay';
+  div.id = 'modal-perfil-publico';
+  div.onclick = (e) => { if (e.target === div) fecharModalPerfilPublico(); };
+
+  div.innerHTML = `
+    <div class="modal-box" style="max-width:340px;text-align:center;${data.vip ? 'box-shadow:0 0 30px rgba(255,209,102,.35),var(--shadow);border-color:#ffd166' : ''}">
+      <button class="modal-close" onclick="fecharModalPerfilPublico()">✕</button>
+
+      <div style="width:88px;height:88px;border-radius:50%;margin:6px auto 10px;background:#12142a;
+        border:3px solid ${data.vip ? '#ffd166' : rankCor};box-shadow:0 0 22px ${data.vip ? '#ffd16688' : rankCor + '55'};
+        display:flex;align-items:center;justify-content:center;font-size:42px;overflow:hidden">
+        ${data.avatar_image_url ? `<img src="${data.avatar_image_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : (data.avatar_emoji || '🧙')}
+      </div>
+
+      <div style="font-weight:900;font-size:18px;color:${cor};text-shadow:0 0 10px ${cor}55">
+        ${nome}${data.vip ? ' <span style="color:#ffd166">👑</span>' : ''}
+      </div>
+
+      ${bio ? `<div style="margin-top:6px;font-size:12px;color:#9aa3c7;font-style:italic">"${bio.replace(/</g,'&lt;')}"</div>` : ''}
+
+      <div style="margin-top:14px;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;
+        background:${rankCor}22;border:1px solid ${rankCor};color:${rankCor};font-weight:800;font-size:13px">
+        🏅 ${rankLabel} • Nv. ${data.nivel_pvp ?? 1}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px">
+          <div style="font-size:11px;color:#9aa3c7">Vitórias PvP</div>
+          <div style="font-weight:900;font-size:15px;color:#3dffa0">${data.vitorias ?? 0}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px">
+          <div style="font-size:11px;color:#9aa3c7">Derrotas PvP</div>
+          <div style="font-weight:900;font-size:15px;color:#ff6b6b">${data.derrotas ?? 0}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px">
+          <div style="font-size:11px;color:#9aa3c7">Troféus atuais</div>
+          <div style="font-weight:900;font-size:15px;color:#ffd166">🏆 ${data.trofeus_atuais ?? 0}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px">
+          <div style="font-size:11px;color:#9aa3c7">Troféus histórico</div>
+          <div style="font-weight:900;font-size:15px;color:#ffd166">🏆 ${data.trofeus_totais_historico ?? 0}</div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;font-size:12px;color:#9aa3c7">⏱ Tempo jogado: ${horas}h</div>
+    </div>`;
+
+  document.body.appendChild(div);
+}
+
+async function abrirPerfilPublicoLobby(userId) {
+  const { data, error } = await window.supabaseClient.rpc('perfil_publico', { p_user_id: userId });
+  if (error || !data) { alert('Não foi possível carregar o perfil.'); return; }
+  renderModalPerfilPublico(data);
+}
+window.abrirPerfilPublicoLobby = abrirPerfilPublicoLobby;
 
 async function entrarNoJogo() {
   const loadingScreen = document.getElementById('tela-loading');
@@ -586,6 +670,7 @@ function weightedPick() {
     if (rareLuckyRarities.has(p.raridade)) {
       if (lucky) mult *= 1.5;
       if (extremLuckyOwned) mult *= 2;
+      if (luckyRaroOwned && p.raridade === 'raro') mult *= 1.3;
     }
     return {p, peso: p.peso * mult};
   });
@@ -788,10 +873,10 @@ async function pull(count){
     bannerAnimating = false;
     setBannerButtons(false);
 
-    alert(
-      erro.message ||
-      'Não foi possível realizar o giro.'
-    );
+    const mensagemErro = String(erro?.message || '');
+    if (!avisarSaldoInsuficiente(mensagemErro)) {
+      alert(mensagemErro || 'Não foi possível realizar o giro.');
+    }
 
     renderBanner();
   }
@@ -896,10 +981,19 @@ function renderBannerInfo(){
     return;
   }
 
-  const totalPeso = personagens.reduce(
-    (total, p) => total + Number(p.peso || 0),
-    0
-  );
+  const luckyPocaoAtiva = potionAtiva('lucky');
+
+  const pesoEfetivo = (p) => {
+    let mult = 1;
+    if (rareLuckyRarities.has(p.raridade)) {
+      if (luckyPocaoAtiva) mult *= 1.5;
+      if (extremLuckyOwned) mult *= 2;
+    }
+    if (p.raridade === 'raro' && luckyRaroOwned) mult *= 1.3;
+    return Number(p.peso || 0) * mult;
+  };
+
+  const totalPeso = personagens.reduce((total, p) => total + pesoEfetivo(p), 0);
 
   s.innerHTML = `
     <button class="back-btn" data-voltar="tela-banner">←</button>
@@ -913,15 +1007,17 @@ function renderBannerInfo(){
 
     <div class="characters-grid banner-info-grid">
       ${personagens.map(p => {
-        const chance = totalPeso > 0
-          ? (Number(p.peso || 0) / totalPeso) * 100
-          : 0;
+        const peso = pesoEfetivo(p);
+        const chance = totalPeso > 0 ? (peso / totalPeso) * 100 : 0;
+        const temSorteAumentada = peso > Number(p.peso || 0);
 
         return `
           <article
-            class="character-card ${rarityInfo[p.raridade]?.cls || ''}"
+            class="character-card ${rarityInfo[p.raridade]?.cls || ''} ${temSorteAumentada ? 'lucky-boosted' : ''}"
             style="--rarity:${rarityColor(p.raridade)}"
           >
+            ${temSorteAumentada ? `<div class="lucky-boost-badge">🍀 Sorte aumentada</div>` : ''}
+
             <img
               src="${bannerStaticSrc(p)}"
               alt="${p.nome}"
@@ -1623,8 +1719,8 @@ function potionAtiva(tipo) { return Number(pocoesAtivas[tipo] || 0) > Date.now()
 function tempoPocao(tipo) { return Math.max(0, Number(pocoesAtivas[tipo] || 0) - Date.now()); }
 function potionMultiplier(tipo) { return potionAtiva(tipo) ? 1.5 : 1; }
 function getEquippedHungeBuff() { const id=inventario.equipados?.imagem; return id ? (hungeBuffs[id] || null) : null; }
-function getPlayerCoinRewardMultiplier(){ const b=getEquippedHungeBuff(); return (1+(b?.coins||0))*potionMultiplier('coins')*(vipOwned?1.05:1); }
-function getPlayerDiamondRewardMultiplier(){ const b=getEquippedHungeBuff(); return (1+(b?.diamonds||0))*potionMultiplier('diamond')*(vipOwned?1.05:1); }
+function getPlayerCoinRewardMultiplier(){ const b=getEquippedHungeBuff(); return (1+(b?.coins||0))*potionMultiplier('coins')*(vipOwned?1.05:1)*(moneyX2Owned?2:1); }
+function getPlayerDiamondRewardMultiplier(){ const b=getEquippedHungeBuff(); return (1+(b?.diamonds||0))*potionMultiplier('diamond')*(vipOwned?1.05:1)*(diamondX2Owned?2:1); }
 
 async function consumirPocao(tipo) {
   const nomes = {
@@ -2022,11 +2118,12 @@ function renderShop(cat = 'skill1') {
   if (!c) return;
 
   const cards = all.map((item) => {
-    const owned = inventario.possuidos.includes(item.id);
+    const owned = item.id === 'RelampagoSkill1' || inventario.possuidos.includes(item.id);
     const key = cat === 'skill1' ? 'skill1' : cat === 'skill2' ? 'skill2' : 'ultimate';
-    const eq = inventario.equipados[key] === item.id;
+    const eq = inventario.equipados[key] === item.id || (item.id === 'RelampagoSkill1' && !inventario.equipados[key]);
     const info = rarityInfo[item.raridade] || { label: item.raridade, cls: 'rarity-divino' };
     const media = item.gif || item.video;
+    const diamondCost = item.preco ? Math.max(5, Math.ceil(item.preco / 5000)) : 0;
     return `
       <article class="shop-card ${info.cls}" style="--rarity:${rarityColor(item.raridade)}">
         <div class="asset-frame shop-asset">
@@ -2036,7 +2133,7 @@ function renderShop(cat = 'skill1') {
         <h3>${item.nome}</h3>
         <div class="rarity-label">${info.label}</div>
         <div class="stat-line">Dano <b>${item.dano}</b></div>
-        <div class="stat-line">Preço <b>${item.preco ? fmt(item.preco) + ' 🪙' : 'DROP BOSS 9 • 5%'}</b></div>
+        <div class="stat-line">Preço <b>${owned ? 'GRÁTIS' : item.preco ? `${fmt(item.preco)} 🪙 + ${diamondCost} 💎` : 'DROP BOSS 9 • 5%'}</b></div>
         <button class="small-btn ${eq ? 'primary' : ''}" onclick="buyEquip('${cat}','${item.id}')">${eq ? 'EQUIPADO' : owned ? 'EQUIPAR' : item.preco ? 'COMPRAR' : 'DROP EXCLUSIVO'}</button>
       </article>`;
   }).join('');
@@ -2063,7 +2160,7 @@ async function buyEquip(cat,id){
   const item=list.find(x=>x.id===id);
   if(!item)return;
 
-  if(inventario.possuidos.includes(id)){
+  if(id==='RelampagoSkill1' || inventario.possuidos.includes(id)){
     inventario.equipados[key]=id;
     save();
     renderShop(cat);
@@ -2114,13 +2211,9 @@ async function buyEquip(cat,id){
 
     const mensagem=String(erro?.message||erro||'');
 
-    if(mensagem.includes('Moedas insuficientes')){
-      alert('Moedas insuficientes.');
-    }else if(mensagem.includes('Diamantes insuficientes')){
-      alert('Diamantes insuficientes.');
-    }else if(mensagem.includes('Item já possuído')){
+    if(mensagem.includes('Item já possuído')){
       alert('Você já possui este item.');
-    }else{
+    }else if(!avisarSaldoInsuficiente(mensagem)){
       alert('Não foi possível realizar a compra.');
     }
   }
@@ -2161,11 +2254,7 @@ async function buyLifeUpgrade(){
 
 console.error('Detalhes completos do erro do code:', erro);
 
-    if(mensagem.includes('Moedas insuficientes')){
-      alert('Moedas insuficientes.');
-    }else if(mensagem.includes('Diamantes insuficientes')){
-      alert('Diamantes insuficientes.');
-    }else{
+    if(!avisarSaldoInsuficiente(mensagem)){
       alert('Não foi possível comprar a melhoria de vida.');
     }
   }
@@ -2387,7 +2476,7 @@ function renderGamepasses(){
   const moneyCard=x=>`<article class="store-product-card"><div class="store-product-icon">${x[2]}</div><div class="store-product-info"><small>PACOTE</small><h3>${x[0]}</h3><p>Recurso para sua progressão.</p><div class="store-price-line"><s>R$ ${x[3]}</s><strong>R$ ${x[1]}</strong></div></div><button class="small-btn primary store-buy-btn" onclick="(${buy.toString()})()">COMPRAR</button></article>`;
   const passes=gamepasses.map(g=>{
     const possui = ownsGamepass(g[0]);
-    const onclick = gamepassFlags[g[0]] ? `comprarGamepassPermanente('${g[0]}')` : `(${buy.toString()})()`;
+    const onclick = `comprarGamepassPermanente('${g[0]}')`;
     return `<article class="store-product-card store-pass-card" style="--pass-color:${passColors[g[0]]||'#53eaff'}"><div class="store-product-icon">${passIcons[g[0]]||'⭐'}</div><div class="store-product-info"><small>GAME PASS</small><h3>${g[0]}</h3><p>${g[2]}</p><div class="store-price-line"><strong>R$ ${g[1]}</strong></div></div><button class="small-btn primary store-buy-btn" ${possui?'disabled':''} onclick="${onclick}">${possui?'ADQUIRIDO':'COMPRAR'}</button></article>`;
   }).join('');
   const pocaoUnidades=[
@@ -2398,10 +2487,10 @@ function renderGamepasses(){
   ];
   const pocaoCard=(p)=>{
     const disponivel = podeComprarPocaoLoja(p.chave);
-    return `<article class="store-product-card"><div class="store-product-icon">${p.icone}</div><div class="store-product-info"><small>POÇÃO • 5 MIN</small><h3>${p.nome}</h3><p>${disponivel?'Disponível hoje.':'Já comprada hoje. Volta em 24h.'}</p><div class="store-price-line"><strong>R$ ${p.preco}</strong></div></div><button class="small-btn primary store-buy-btn" ${disponivel?'':'disabled'} onclick="comprarPocaoLoja('${p.chave}', ${JSON.stringify(p.tipos)})">${disponivel?'COMPRAR':'INDISPONÍVEL'}</button></article>`;
+    return `<article class="store-product-card"><div class="store-product-icon">${p.icone}</div><div class="store-product-info"><small>POÇÃO • 5 MIN</small><h3>${p.nome}</h3><p>${disponivel?'Disponível hoje.':'Já comprada hoje. Volta em 24h.'}</p><div class="store-price-line"><strong>R$ ${p.preco}</strong></div></div><button class="small-btn primary store-buy-btn" ${disponivel?'':'disabled'} onclick="comprarPocaoLoja('${p.chave}', ${JSON.stringify(p.tipos).replace(/"/g,'&quot;')})">${disponivel?'COMPRAR':'INDISPONÍVEL'}</button></article>`;
   };
   const bundleDisponivel = podeComprarPocaoLoja('bundle');
-  const bundleCard = `<article class="store-product-card"><div class="store-product-icon">🎁</div><div class="store-product-info"><small>PACOTE • 5 MIN CADA</small><h3>Pacote com as 4 Poções</h3><p>${bundleDisponivel?'Disponível hoje.':'Já comprado hoje. Volta em 24h.'}</p><div class="store-price-line"><strong>R$ 7,99</strong></div></div><button class="small-btn primary store-buy-btn" ${bundleDisponivel?'':'disabled'} onclick="comprarPocaoLoja('bundle', ${JSON.stringify(['lucky','damage','diamond','coins'])})">${bundleDisponivel?'COMPRAR':'INDISPONÍVEL'}</button></article>`;
+  const bundleCard = `<article class="store-product-card"><div class="store-product-icon">🎁</div><div class="store-product-info"><small>PACOTE • 5 MIN CADA</small><h3>Pacote com as 4 Poções</h3><p>${bundleDisponivel?'Disponível hoje.':'Já comprado hoje. Volta em 24h.'}</p><div class="store-price-line"><strong>R$ 7,99</strong></div></div><button class="small-btn primary store-buy-btn" ${bundleDisponivel?'':'disabled'} onclick="comprarPocaoLoja('bundle', ${JSON.stringify(['lucky','damage','diamond','coins']).replace(/"/g,'&quot;')})">${bundleDisponivel?'COMPRAR':'INDISPONÍVEL'}</button></article>`;
   const inventarioPacks=[
     {qtd:50,preco:'1,99'},
     {qtd:100,preco:'3,99'}
@@ -2538,6 +2627,15 @@ function sendFeedback(){
   mostrarToast('📨 Abrindo seu app de e-mail...', 'reward');
 }
 document.getElementById('btn-silenciar-lobby').onclick=()=>{musicaLigada=!musicaLigada;document.getElementById('btn-silenciar-lobby').textContent=musicaLigada?'🔊 Música: ligada':'🔇 Música: desligada';aplicarMusicaLobby(musicaLigada);save()};
+function avisarSaldoInsuficiente(mensagem) {
+  const semMoedas = mensagem.includes('Moedas insuficientes');
+  const semDiamantes = mensagem.includes('Diamantes insuficientes');
+  if (!semMoedas && !semDiamantes) return false;
+  alert(semMoedas ? 'Moedas insuficientes! Vamos te levar pra loja para comprar mais.' : 'Diamantes insuficientes! Vamos te levar pra loja para comprar mais.');
+  setTimeout(() => { show('tela-gamepass'); if (typeof renderGamepasses === 'function') renderGamepasses(); }, 200);
+  return true;
+}
+
 function ativarCompraSkill2SePronto() {
   if (missionProgress.boss1 >= 3 && !inventario.equipados.skill2 && moedasGlobais >= 1500) {
     if (!compraSkill2Obrigatoria) mostrarToast('⚡ Você alcançou 1500 moedas! A compra da Skill 2 é obrigatória agora.', 'mission');
@@ -2573,7 +2671,9 @@ async function sincronizarEstadoDoServidor() {
         daily_login_last_at,
         daily_login_day,
         musica_ligada,
-        batalha_musica_ligada
+        batalha_musica_ligada,
+        gamepasses,
+        inventory_extra_slots
       `)
       .eq('user_id', window.currentUserId)
       .single();
@@ -2629,6 +2729,40 @@ async function sincronizarEstadoDoServidor() {
     musicaLigada = data.musica_ligada !== false;
     batalhaMusicaLigada = data.batalha_musica_ligada !== false;
 
+    inventoryBonusCap = Number(data.inventory_extra_slots || 0);
+
+    const gamepassesAnteriores = Object.assign({}, gamepassesOwned);
+    Object.assign(gamepassesOwned, data.gamepasses || {});
+
+    extremLuckyOwned = gamepassesOwned.extreme_lucky === true;
+    vipOwned = gamepassesOwned.vip === true;
+    luckyRaroOwned = gamepassesOwned.lucky_raro === true;
+    moneyX2Owned = gamepassesOwned['2x_moedas'] === true;
+    diamondX2Owned = gamepassesOwned['2x_diamantes'] === true;
+    diamondChanceX2Owned = gamepassesOwned['2x_chance_diamante'] === true;
+    multiOpenOwned = gamepassesOwned.multi_open === true;
+
+    if (!sincronizacaoInicialFeita) {
+      const passesAtivos = Object.keys(gamepassesOwned)
+        .filter((chave) => gamepassesOwned[chave] === true)
+        .map((chave) => Object.keys(gamepassNameToKey).find((n) => gamepassNameToKey[n] === chave) || chave);
+      if (passesAtivos.length) {
+        mostrarToast(`🎟️ Bônus ativado: ${passesAtivos.join(', ')}`, 'reward');
+      }
+      sincronizacaoInicialFeita = true;
+    } else {
+      Object.keys(gamepassesOwned).forEach((chave) => {
+        if (gamepassesOwned[chave] === true && gamepassesAnteriores[chave] !== true) {
+          const nomePass = Object.keys(gamepassNameToKey).find((n) => gamepassNameToKey[n] === chave) || chave;
+          mostrarToast(`🎉 Você recebeu ${nomePass}! Obrigado pela compra.`, 'reward');
+        }
+      });
+    }
+
+    if (document.getElementById('tela-gamepass')?.classList.contains('active') && typeof renderGamepasses === 'function') {
+      renderGamepasses();
+    }
+
     updateResources();
     renderMissions();
     renderBosses();
@@ -2642,6 +2776,10 @@ async function sincronizarEstadoDoServidor() {
 }
 
 window.sincronizarEstadoDoServidor = sincronizarEstadoDoServidor;
+// Alias: o login.html/supabaseClient.js chama por esse outro nome.
+window.sincronizarSaldoDoServidor = sincronizarEstadoDoServidor;
+// Verifica a cada 20s se o admin liberou alguma compra (game pass, poção, moedas, diamantes) via Supabase.
+setInterval(() => { sincronizarEstadoDoServidor(); }, 20000);
 
 async function aoVencerBatalha(bossId, moedas, diamantes) {
   if (window.arcaneVictoryInProgress) return;
@@ -2684,7 +2822,7 @@ async function aoVencerBatalha(bossId, moedas, diamantes) {
     if (Number(bossId) === 1 && typeof avancarTutorialVisual === 'function') avancarTutorialVisual(3);
 
     mostrarToast(
-      `🏆 Vitória! +${fmt(Number(data?.reward_coins ?? moedas ?? 0))} moedas${Number(data?.reward_diamonds ?? diamantes ?? 0) ? ' e +' + Number(data?.reward_diamonds ?? diamantes ?? 0) + ' diamantes' : ''}`,
+      `🏆 Vitória! +${fmt(Number(data?.reward ?? moedas ?? 0))} moedas${Number(data?.diamantes_ganhos ?? diamantes ?? 0) ? ' e +' + Number(data?.diamantes_ganhos ?? diamantes ?? 0) + ' diamantes' : ''}`,
       'victory'
     );
 
