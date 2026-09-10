@@ -10,18 +10,27 @@ const bosses = [
   {id:9,tier:9,nome:'GuilermeChucro',rank:'SSS+',imagem:'GuilermeChucro.png',skill1:'SolSkill1.gif',skill2:'AbismoSkill2.gif'},
   {id:10,tier:10,nome:'PaulaoDoPneu',rank:'Z+',imagem:'PaulaoDoPneu.png',skill1:'VenenoSkill1.gif',skill2:'EstrelaSkill2.gif'}
 ];
+// Mantido em sincronia com statsPorTier em batalha.js (mesma revisão de balanceamento).
 const bossStats={
-  1:{vida:1900,moedas:200,diamantes:2},2:{vida:4700,moedas:330,diamantes:4},3:{vida:9800,moedas:760,diamantes:8},
-  4:{vida:19000,moedas:1750,diamantes:14},5:{vida:35000,moedas:3500,diamantes:24},6:{vida:62000,moedas:7600,diamantes:40},
-  7:{vida:110000,moedas:16500,diamantes:65},8:{vida:195000,moedas:36000,diamantes:100},9:{vida:345000,moedas:82000,diamantes:180},10:{vida:650000,moedas:195000,diamantes:350}
+  1:{vida:1900,moedas:350,diamantes:2},2:{vida:4700,moedas:490,diamantes:4},3:{vida:9800,moedas:890,diamantes:8},
+  4:{vida:19000,moedas:2050,diamantes:14},5:{vida:35000,moedas:4500,diamantes:24},6:{vida:57750,moedas:9600,diamantes:40},
+  7:{vida:93500,moedas:19500,diamantes:65},8:{vida:147500,moedas:39000,diamantes:100},9:{vida:220000,moedas:89000,diamantes:180},10:{vida:312000,moedas:255000,diamantes:350}
 };
+// Rótulos com identidade de "inimigo perigoso" (boss não é item). cls/color mantidos
+// intocados — são o que o CSS usa pra colorir os cards de boss, então nada visual quebra.
 const bossRankInfo={
-  F:{label:'RANK F',cls:'rank-f',color:'#dfe6f2'},E:{label:'RANK E',cls:'rank-e',color:'#72f5a0'},C:{label:'RANK C',cls:'rank-c',color:'#5eb5ff'},B:{label:'RANK B',cls:'rank-b',color:'#b178ff'},A:{label:'RANK A',cls:'rank-a',color:'#ffd34e'},'AA+':{label:'RANK AA+',cls:'rank-aa',color:'#ff8a4c'},S:{label:'RANK S',cls:'rank-s',color:'#ff4f77'},SS:{label:'RANK SS',cls:'rank-ss',color:'#42efff'},'SSS+':{label:'RANK SSS+',cls:'rank-sss',color:'#ff4fd8'},'Z+':{label:'RANK Z+',cls:'rank-z',color:'#ff1f3d'}
+  F:{label:'RANK F • NORMAL',cls:'rank-f',color:'#2471f4'},E:{label:'RANK E • HOSTIL',cls:'rank-e',color:'#0a692b'},C:{label:'RANK C • PERIGOSO',cls:'rank-c',color:'#063b69'},B:{label:'RANK B • VIOLENTO',cls:'rank-b',color:'#b178ff'},A:{label:'RANK A • BRUTAL',cls:'rank-a',color:'#503d04'},'AA+':{label:'RANK AA+ • IMPLACÁVEL',cls:'rank-aa',color:'#9c3905'},S:{label:'RANK S • SANGUINÁRIO',cls:'rank-s',color:'#66041a'},SS:{label:'RANK SS • DEMONÍACO',cls:'rank-ss',color:'#02565e'},'SSS+':{label:'RANK SSS+ • LENDÁRIO',cls:'rank-sss',color:'#5b0548'},'Z+':{label:'RANK Z+ • APOCALÍPTICO',cls:'rank-z',color:'#51010c'}
 };
 const rarityInfo={
   comum:{label:'Comum',cls:'rarity-comum tier-baixa'},incomum:{label:'Incomum',cls:'rarity-incomum tier-baixa'},raro:{label:'Raro',cls:'rarity-raro tier-baixa'},epico:{label:'Épico',cls:'rarity-epico tier-media'},
   lendario:{label:'Legendary',cls:'rarity-lendario tier-media'},mitico:{label:'Mytchial',cls:'rarity-mitico tier-media'},secreto:{label:'Secret',cls:'rarity-secreto tier-media'},divino:{label:'Divino',cls:'rarity-divino tier-alta'},
-  celestial:{label:'Celestial',cls:'rarity-celestial tier-alta'},supremo:{label:'Supremo',cls:'rarity-supremo tier-alta'},ilimitado:{label:'Ilimitado',cls:'rarity-ilimitado tier-alta'},exclusivo:{label:'Exclusivo',cls:'rarity-exclusivo tier-alta'},indefinido:{label:'Transcendente',cls:'rarity-indefinido tier-alta'},transcendente:{label:'???',cls:'rarity-transcendente tier-alta'},especial:{label:'Especial',cls:'rarity-especial tier-alta'},hunge:{label:'Hunge',cls:'rarity-hunge tier-alta'},secret:{label:'Secret',cls:'rarity-secreto tier-alta'},Arcanjo:{label:'Arcanjo',cls:'rarity-celestial tier-alta'}
+  celestial:{label:'Celestial',cls:'rarity-celestial tier-alta'},supremo:{label:'Supremo',cls:'rarity-supremo tier-alta'},ilimitado:{label:'Ilimitado',cls:'rarity-ilimitado tier-alta'},exclusivo:{label:'Exclusivo',cls:'rarity-exclusivo tier-alta'},indefinido:{label:'Transcendente',cls:'rarity-indefinido tier-alta'},transcendente:{label:'???',cls:'rarity-transcendente tier-alta'},especial:{label:'Especial',cls:'rarity-especial tier-alta'},hunge:{label:'Hunge',cls:'rarity-hunge tier-alta'},secret:{label:'Secret',cls:'rarity-secreto tier-alta'},Arcanjo:{label:'Arcanjo',cls:'rarity-celestial tier-alta'},
+  // Raridade própria da SKILL 1 (tema: evolução de técnica) — nomes diferentes dos de Personagens.
+  iniciante:{label:'Iniciante',cls:'rarity-iniciante tier-baixa'},aprendiz:{label:'Aprendiz',cls:'rarity-aprendiz tier-baixa'},adepto:{label:'Adepto',cls:'rarity-adepto tier-baixa'},especialista:{label:'Especialista',cls:'rarity-especialista tier-media'},mestre:{label:'Mestre',cls:'rarity-mestre tier-media'},graomestre:{label:'Grão-Mestre',cls:'rarity-graomestre tier-media'},arcano:{label:'Arcano',cls:'rarity-arcano tier-alta'},primordial:{label:'Primordial',cls:'rarity-primordial tier-alta'},
+  // Raridade própria da SKILL 2 (tema: poder destrutivo/cataclismo).
+  bruto:{label:'Bruto',cls:'rarity-bruto tier-baixa'},carregado:{label:'Carregado',cls:'rarity-carregado tier-baixa'},explosivo:{label:'Explosivo',cls:'rarity-explosivo tier-media'},devastador:{label:'Devastador',cls:'rarity-devastador tier-media'},cataclismico:{label:'Cataclísmico',cls:'rarity-cataclismico tier-media'},apocaliptico:{label:'Apocalíptico',cls:'rarity-apocaliptico tier-alta'},dimensional:{label:'Dimensional',cls:'rarity-dimensional tier-alta'},estelar:{label:'Estelar',cls:'rarity-estelar tier-alta'},cosmico:{label:'Cósmico',cls:'rarity-cosmico tier-alta'},singularidade:{label:'Singularidade',cls:'rarity-singularidade tier-alta'},
+  // Raridade própria da ULTIMATE (tema: ascensão mítica).
+  faisca:{label:'Faísca',cls:'rarity-faisca tier-baixa'},impulso:{label:'Impulso',cls:'rarity-impulso tier-baixa'},explosao:{label:'Explosão',cls:'rarity-explosao tier-media'},tempestade:{label:'Tempestade',cls:'rarity-tempestade tier-media'},ruptura:{label:'Ruptura',cls:'rarity-ruptura tier-media'},calamidade:{label:'Calamidade',cls:'rarity-calamidade tier-alta'},juizo:{label:'Juízo',cls:'rarity-juizo tier-alta'},ascensao:{label:'Ascensão',cls:'rarity-ascensao tier-alta'},eternidade:{label:'Eternidade',cls:'rarity-eternidade tier-alta'},onipotencia:{label:'Onipotência',cls:'rarity-onipotencia tier-alta'}
 };
 const personagens = [
 {id:'ArthurBanner',nome:'Arthur',tier:'Comum',raridade:'comum',arquivo:'ArthurBanner.webp',peso:50,buff:'+6% dano • +4% resistência'},
@@ -44,13 +53,13 @@ const pesoTotalBanner = personagens.reduce((total, p) => total + p.peso, 0);
 personagens.forEach((p) => { p.chance = p.peso / pesoTotalBanner; });
 const skills={
   skill1:[
-    ['RelampagoSkill1','Relâmpago','comum',900,42],['SomSkill1','Som','incomum',2200,75],['CirculoSkill1','Círculo','raro',6500,125],['VentoSkill1','Vento','epico',17000,210],
-    ['AguaSkill1','Água','lendario',45000,340],['VenenoSkill1','Veneno','mitico',115000,520],['SolSkill1','Sol','secret',320000,820],['MeteoroSkill1','Meteoro','especial',800000,1250]
+    ['RelampagoSkill1','Relâmpago','iniciante',900,42],['SomSkill1','Som','aprendiz',2200,75],['CirculoSkill1','Círculo','adepto',6500,125],['VentoSkill1','Vento','especialista',17000,210],
+    ['AguaSkill1','Água','mestre',45000,340],['VenenoSkill1','Veneno','graomestre',115000,520],['SolSkill1','Sol','arcano',320000,820],['MeteoroSkill1','Meteoro','primordial',800000,1250]
   ].map(x=>({id:x[0],nome:x[1],raridade:x[2],preco:x[3],dano:x[4],gif:x[0]+'.gif'})),
   skill2:[
-    ['RaioSkill2','Raio','comum',1500,145],['GeloSkill2','Gelo','raro',7000,290],['FuracaoSkill2','Furacão','epico',20000,480],['MetalSkill2','Metal','lendario',55000,760],
-    ['MagmaSkill2','Magma','mitico',135000,1100],['AbismoSkill2','Abismo','Arcanjo',360000,1650],['MeteoroSkill2','Meteoro','especial',780000,2250],['SolSkill2','Sol','indefinido',1400000,3000],
-    ['EstrelaSkill2','Estrela Astral','transcendente',2800000,4000],['BlackholeSkill2','Blackhole','secreto',0,5200]
+    ['RaioSkill2','Raio','bruto',1500,145],['GeloSkill2','Gelo','carregado',7000,290],['FuracaoSkill2','Furacão','explosivo',20000,480],['MetalSkill2','Metal','devastador',55000,760],
+    ['MagmaSkill2','Magma','cataclismico',135000,1100],['AbismoSkill2','Abismo','apocaliptico',360000,1650],['MeteoroSkill2','Meteoro','dimensional',780000,2250],['SolSkill2','Sol','estelar',1400000,3000],
+    ['EstrelaSkill2','Estrela Astral','cosmico',2800000,4000],['BlackholeSkill2','Blackhole','singularidade',0,5200]
   ].map(x=>({id:x[0],nome:x[1],raridade:x[2],preco:x[3],dano:x[4],gif:x[0]+'.gif'}))
 };
 const ultimateAudio = [
@@ -62,9 +71,11 @@ const ultimateAudio = [
 const ultimates = bosses.map((boss, index) => ({
   id: 'Ultimate' + boss.id,
   nome: 'Ultimate ' + boss.nome,
-  raridade: ['comum', 'incomum', 'raro', 'epico', 'lendario', 'mitico', 'Arcanjo', 'secreto', 'divino', 'celestial', 'supremo'][index],
+  raridade: ['faisca', 'impulso', 'explosao', 'tempestade', 'ruptura', 'calamidade', 'juizo', 'ascensao', 'eternidade', 'onipotencia'][index],
   preco: [2500, 5000, 9000, 16000, 28000, 48000, 85000, 150000, 260000, 450000][index],
-  dano: [320, 560, 900, 1400, 2100, 3100, 4400, 6200, 8500, 11500][index],
+  // Pedido: dano base da Ultimate do jogador = 13% da vida do boss correspondente
+  // (statsPorTier em batalha.js: 1900,4700,9800,19000,35000,57750,93500,147500,228000,346000).
+  dano: [250, 610, 1275, 2470, 4550, 7500, 12150, 19175, 29640, 44980][index],
   video: 'Boss' + boss.id + '.mp4',
   audio: ultimateAudio[index]
 }));
@@ -79,7 +90,7 @@ function comprarGamepassPermanente(nome){
   if (nome === 'Extrem Lucky') extremLuckyOwned = true;
   if (nome === 'VIP') vipOwned = true;
   save();
-  alert('Compra visual por enquanto. O pagamento real será conectado depois.');
+  alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋');
   renderGamepasses();
   if (typeof aplicarPerfilNoJogo === 'function') aplicarPerfilNoJogo();
 }
@@ -93,7 +104,7 @@ function comprarPocaoLoja(chave, tipos){
   tipos.forEach((t) => { pocoes[t] = (pocoes[t] || 0) + 1; });
   potionPurchaseTimestamps[chave] = Date.now();
   save();
-  alert('Compra visual por enquanto. O pagamento real será conectado depois.');
+  alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋');
   renderGamepasses();
   if (document.getElementById('tela-inventario')?.classList.contains('active')) renderInventory('potions');
 }
@@ -101,7 +112,7 @@ window.comprarPocaoLoja = comprarPocaoLoja;
 function comprarExpansaoInventario(qtd){
   inventoryBonusCap += qtd;
   save();
-  alert('Compra visual por enquanto. O pagamento real será conectado depois.');
+  alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋');
   renderGamepasses();
   updateResources();
 }
@@ -218,23 +229,23 @@ function fmt(valor) {
 function rarityColor(raridade) {
 
   const cores = {
-    comum: '#f0f5ff',
+    comum: '#68686a',
     incomum: '#39ff7a',
     raro: '#2ec2ff',
     epico: '#b83bff',
     lendario: '#ffbe0b',
-    mitico: '#ff2d55',
-    secreto: '#ff2ecf',
-    secret: '#ff2ecf',
+    mitico: '#8b0720',
+    secreto: '#1a171a',
+    secret: '#0c0c0c',
     Arcanjo: '#ff2b6b',
     especial: '#ff5cf0',
-    divino: '#17e9ff',
-    celestial: '#5a7bff',
-    supremo: '#ff17d4',
-    ilimitado: '#ffea70',
-    exclusivo: '#ffd200',
-    indefinido: '#c23dff',
-    transcendente: '#17ffd0',
+    divino: '#09646d',
+    celestial: '#260438',
+    supremo: '#dd0ab6',
+    ilimitado: '#403702',
+    exclusivo: '#86700d',
+    indefinido: '#510574',
+    transcendente: '#06604e',
     hunge: '#ffee00'
   };
 
@@ -394,11 +405,46 @@ function show(id) {
   if (id === 'tela-melhorias') renderUpgrades();
   if (id === 'tela-temas') renderThemes();
   if (id === 'tela-boss-info') renderBossInfo();
+  if (id === 'tela-top-global') renderTopGlobal();
 
   if (typeof renderTutorialVisual === 'function') renderTutorialVisual();
 }
 
 window.show = show;
+
+async function renderTopGlobal() {
+  const el = document.getElementById('top-global-conteudo');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;color:#9aa3c7;padding:30px 0">Carregando...</div>';
+
+  const { data, error } = await window.supabaseClient.rpc('top_global_moedas_diamantes');
+  if (error || !data) { el.innerHTML = '<div style="text-align:center;color:#ff6b6b;padding:30px 0">Não foi possível carregar o ranking.</div>'; return; }
+
+  const medalha = (i) => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
+  const corPos = (i) => i === 0 ? '#ffd166' : i === 1 ? '#c7d0da' : i === 2 ? '#c07a3e' : '#7b5cff';
+  const nomeSeguro = (n) => (!n || n.includes('@')) ? (n ? n.split('@')[0] : 'Jogador') : n;
+
+  const linha = (nome, avatar, valor, unidade, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:8px;border-radius:14px;
+      background:linear-gradient(135deg, rgba(123,92,255,.10), rgba(66,239,255,.06));
+      border:1px solid ${corPos(i)};box-shadow:0 0 12px ${corPos(i)}33">
+      <div style="width:30px;text-align:center;font-weight:900;font-size:15px;color:${corPos(i)};text-shadow:0 0 8px ${corPos(i)}">${medalha(i)}</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:#12142a;border:2px solid ${corPos(i)};
+        display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${avatar || '🧙'}</div>
+      <div style="flex:1;font-weight:700;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nome || 'Jogador'}</div>
+      <div style="font-weight:900;font-size:13px;color:${corPos(i)};white-space:nowrap">${Number(valor||0).toLocaleString('pt-BR')} ${unidade}</div>
+    </div>`;
+
+  const moedas = data.moedas || [];
+  const diamantes = data.diamantes || [];
+
+  el.innerHTML =
+    `<div style="font-weight:900;letter-spacing:1px;margin:6px 0 10px;color:#ffd166;text-shadow:0 0 10px #ffd16688">💰 TOP 10 MOEDAS</div>` +
+    moedas.map((p,i) => linha(nomeSeguro(p.username), p.avatar_emoji, p.coins, '🪙', i)).join('') +
+    `<div style="font-weight:900;letter-spacing:1px;margin:18px 0 10px;color:#7ee8ff;text-shadow:0 0 10px #7ee8ff88">💎 TOP 10 DIAMANTES</div>` +
+    diamantes.map((p,i) => linha(nomeSeguro(p.username), p.avatar_emoji, p.diamante, '💎', i)).join('');
+}
+window.renderTopGlobal = renderTopGlobal;
 
 async function entrarNoJogo() {
   const loadingScreen = document.getElementById('tela-loading');
@@ -871,9 +917,9 @@ function renderBannerInfo(){
 const dailyWheelRewards=[
 {id:'lucky',label:'🧪 Poção Lucky x1',chance:10,type:'potion',rarity:'raro',give:1},
 {id:'damage',label:'⚔️ Poção Damage x1',chance:5,type:'potion',rarity:'epico',give:1},
-{id:'coins100',label:'🪙 100 Moedas',chance:50,type:'coins',rarity:'comum',give:100},
-{id:'coins500',label:'🪙 500 Moedas',chance:20,type:'coins',rarity:'incomum',give:500},
-{id:'coins1k',label:'🪙 1K Moedas',chance:10,type:'coins',rarity:'raro',give:1000},
+{id:'coins500',label:'🪙 500 Moedas',chance:50,type:'coins',rarity:'comum',give:500},
+{id:'coins1000',label:'🪙 1000 Moedas',chance:20,type:'coins',rarity:'incomum',give:1000},
+{id:'coins2000',label:'🪙 2K Moedas',chance:10,type:'coins',rarity:'raro',give:2000},
 {id:'pet',label:'🐾 BEIJO',chance:1,type:'pet',rarity:'secreto',give:1},
 {id:'doubleCoins',label:'🪙 2x Moedas',chance:2,type:'coinsMultiplier',rarity:'epico',give:1},
 {id:'bonusSpin',label:'🎁 +1 Giro',chance:2,type:'bonusSpin',rarity:'raro',give:1}
@@ -906,9 +952,9 @@ function renderDailyWheel(){
         <div class="daily-wheel-actions">${freeButton}${bonusButton}</div>
         <div class="daily-buy-hint">Sem giro bônus? <b>Compre giros</b> nos pacotes abaixo. Ao ganhar um giro por code/recompensa, ele aparece automaticamente em <b>🎰 ${bonus}</b>.</div>
         <div class="daily-wheel-packs">
-          <button class="paid-spin-btn" type="button" onclick="alert('Compra visual por enquanto. O pagamento real será conectado depois.')"><b>+1 GIRO</b><small>R$ 1,99</small></button>
-          <button class="paid-spin-btn" type="button" onclick="alert('Compra visual por enquanto. O pagamento real será conectado depois.')"><b>+5 GIROS</b><small>R$ 8,99</small></button>
-          <button class="paid-spin-btn" type="button" onclick="alert('Compra visual por enquanto. O pagamento real será conectado depois.')"><b>+10 GIROS</b><small>R$ 16,99</small></button>
+          <button class="paid-spin-btn" type="button" onclick="alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋')"><b>+1 GIRO</b><small>R$ 1,99</small></button>
+          <button class="paid-spin-btn" type="button" onclick="alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋')"><b>+5 GIROS</b><small>R$ 8,99</small></button>
+          <button class="paid-spin-btn" type="button" onclick="alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋')"><b>+10 GIROS</b><small>R$ 16,99</small></button>
         </div>
       </main>
       <aside class="daily-wheel-feature"><div class="feature-title">PRÊMIO ESPECIAL</div><img src="Beijo.png" alt="Hunge Beijo"><strong>🐾 BEIJO</strong><span>1% • Hunge</span><small>Melhor que seu personagem mas forte +10% Dano • +5% defesa • +20% moedas • +5% diamantes • Ultimate 5% mais rápida</small></aside>
@@ -1146,6 +1192,7 @@ function showDailyLogin(){
 function closeDailyLogin(){
   dailyLoginShown=false;
   document.getElementById('daily-login-overlay')?.remove();
+  if (typeof renderTutorialVisual === 'function') renderTutorialVisual();
 }
 window.closeDailyLogin=closeDailyLogin;
 async function claimDailyLogin(){
@@ -1178,6 +1225,7 @@ async function claimDailyLogin(){
 
     dailyLoginShown=false;
     document.getElementById('daily-login-overlay')?.remove();
+    if (typeof renderTutorialVisual === 'function') renderTutorialVisual();
 
     mostrarToast(
       '🎁 '+data.reward+' coletado!',
@@ -1261,9 +1309,9 @@ function renderCharacters() {
     <div class="collection-head">
       <div><b>PERSONAGENS OBTIDOS</b><span>${total}/${getInventoryMax()} cópias • ${ownedIds.length}/${personagens.length} tipos</span></div>
       <div class="collection-toolbar-actions"><button class="small-btn best-equip-btn" onclick="equiparMelhores()">⭐ EQUIPAR MELHORES</button><button class="small-btn primary" onclick="show('tela-banner')">🎴 IR PARA O BANNER</button></div>
+      <div class="fusion-toolbar">${fusionControls}</div>
     </div>
-    <div class="characters-grid owned-characters-grid">${cards}</div>
-    <div class="fusion-toolbar">${fusionControls}</div>`;
+    <div class="characters-grid owned-characters-grid">${cards}</div>`;
 }
 
 function melhorPersonagemPossuido(){
@@ -1674,7 +1722,10 @@ function getPlayerCooldownMultiplier() {
   const cd = personagem && personagem.raridade !== 'hunge'
     ? getCharacterStats(personagem).cd
     : 0;
-  return Math.max(0.45, 1 - cd);
+  // Nerf pequeno adicional (pedido): piso de 0.85 → 0.90. Os personagens muito raros
+  // (24-30% de recarga) já batiam no piso antigo; agora o corte máximo cai de 15% pra
+  // 10% de redução no cooldown do ataque automático. Lógica/timer intocados — só este número.
+  return Math.max(0.90, 1 - cd);
 }
 
 function getPlayerUltimateChargeMultiplier(){
@@ -2294,7 +2345,7 @@ function renderGamepasses(){
   const passColors={'2x Money':'#ffd34e','2x Diamantes':'#5ecbff','2x Chance Diamantes':'#7ee7ff','Multi Open':'#ff9d4d','Lucky Raro':'#39ff7a','Extrem Lucky':'#a63bff','VIP':'#ffd700'};
   const coinPacks=[['1.000 Moedas','3,99','🪙','5,99'],['5.000 Moedas','14,00','🪙','19,90'],['15.000 Moedas','34,90','🪙','49,90'],['35.000 Moedas','69,90','🪙','89,90'],['100.000 Moedas','149,90','🪙','199,90']];
   const diamondPacks=[['100 Diamantes','4,99','💎','6,99'],['500 Diamantes','19,90','💎','27,90'],['1.200 Diamantes','39,90','💎','54,90'],['2.800 Diamantes','79,90','💎','99,90'],['7.000 Diamantes','159,90','💎','199,90']];
-  const buy=()=>alert('Compra visual por enquanto. O pagamento real será conectado depois.');
+  const buy=()=>alert('Mande Pix para esse numero: 61981946045\n\nDepois mande comprovante para esse numero de ZapZap: 6198220-6185\n\nFale a game pass que você queria e ela cairá na sua conta em alguns momentos 💋');
   const moneyCard=x=>`<article class="store-product-card"><div class="store-product-icon">${x[2]}</div><div class="store-product-info"><small>PACOTE</small><h3>${x[0]}</h3><p>Recurso para sua progressão.</p><div class="store-price-line"><s>R$ ${x[3]}</s><strong>R$ ${x[1]}</strong></div></div><button class="small-btn primary store-buy-btn" onclick="(${buy.toString()})()">COMPRAR</button></article>`;
   const passes=gamepasses.map(g=>{
     const possui = ownsGamepass(g[0]);
@@ -2398,7 +2449,7 @@ const config=document.getElementById('modal-config');document.getElementById('bt
 
 function showConfig(type){
   const c=document.getElementById('config-detalhe');if(!c)return;
-  if(type==='updates')c.innerHTML='<div class="config-detail"><h3>📜 Registro de Atualizações</h3><p class="muted"><b>Update 2 — Giro Diário & Hunge</b><br>🎡 Giro Diário • 🐾 Pet Hunge • 🐾 ChucroHunge • 🧪 Poções • 🎁 Login Diário • 🎵 áudio separado • 🛠️ correções de Banner e coleção.</p><p class="muted"><b>Codes:</b><br>🔑 UPDATE1 → 500 🪙<br>🔑 RELEASE → 500 🪙 + 10 💎 + 1 🎁 giro<br>Cada code pode ser usado uma vez.</p></div>';
+  if(type==='updates')c.innerHTML='<div class="config-detail"><h3>📜 Registro de Atualizações</h3><p class="muted"><b>Update1</b><br>🎡 Giro Diário • 🐾 Pet Hunge • 🐾 ChucroHunge • 🧪 Poções • 🎁 Login Diário • 🎵 áudio separado • 🛠️ correções de Banner e coleção • 🐞 correção das imagens de batalha de GuilermeChucro e PaulaoDoPneu • 🔊 áudios de Ultimate de PaulaoDoPneu, Lucas e GuilermeChucro conectados • ⚖️ nerf no bônus de recarga (velocidade de Skill) dos personagens • 👹 boss em FÚRIA abaixo de 50% de vida • 📏 ajuste de tamanho de bosses e Skills • 🎨 cores nas frases de Ultimate.</p><p class="muted"><b>Codes:</b><br>🔑 UPDATE1 → 500 🪙<br>🔑 RELEASE → 500 🪙 + 10 💎 + 1 🎁 giro<br>Cada code pode ser usado uma vez.</p></div>';
   if(type==='codes')c.innerHTML='<div class="config-detail"><h3>🔑 CODES</h3><input id="code-input" class="code-input" placeholder="Digite seu code"><button class="modal-action" onclick="redeemCode()">RESGATAR</button></div>';
   if(type==='feedback')c.innerHTML='<div class="config-detail"><textarea id="feedback-input" class="feedback-input" placeholder="Sugestões, melhorias ou bugs..."></textarea><button class="modal-action" onclick="sendFeedback()">ENVIAR FEEDBACK</button></div>';
   // O perfil agora usa a tela própria (#tela-perfil-grande).
@@ -2613,29 +2664,7 @@ async function aoVencerBatalha(bossId, moedas, diamantes) {
   }
 }
 
-async function aoPerderBatalha(){
-  if(window.stopBossMusic)stopBossMusic();
-  if(window.playDefeatSound)playDefeatSound();
-
-  const battleId=window.arcaneBattleId;
-
-  if(battleId&&window.supabaseClient){
-    try{
-      const{error}=await window.supabaseClient.rpc('encerrar_batalha',{
-        p_battle_id:battleId
-      });
-      if(error)throw error;
-    }catch(e){
-      console.error('Erro ao encerrar batalha após derrota:',e);
-    }
-  }
-
-  window.arcaneBattleId=null;
-  window.arcaneBattleStartedAt=0;
-
-  mostrarToast('☠ Derrota! Tente novamente.','defeat');
-  show('tela-menu');
-}
+function aoPerderBatalha(){if(window.stopBossMusic)stopBossMusic();if(window.playDefeatSound)playDefeatSound();mostrarToast('☠ Derrota! Tente novamente.', 'defeat');show('tela-menu')}
 function iniciarIntroDeLuta(boss){const overlay=document.getElementById('tela-fight-intro'),el=document.getElementById('fight-intro-numero');if(!overlay||!el){iniciarBatalha(boss,jogador,inventario,rarityColor(boss.rank));return}overlay.classList.remove('hidden');let seq=['3','2','1','FIGHT!'],i=0;const next=()=>{if(i>=seq.length){overlay.classList.add('hidden');iniciarBatalha(boss,jogador,inventario,rarityColor(boss.rank));return}el.textContent=seq[i++];setTimeout(next,500)};next()}
 // Pause
  document.getElementById('btn-pause').onclick=()=>{document.getElementById('modal-pause').classList.remove('hidden');if(typeof pausarBatalha==='function')pausarBatalha()};document.getElementById('btn-continuar').onclick=()=>{document.getElementById('modal-pause').classList.add('hidden');if(typeof continuarBatalha==='function')continuarBatalha()};document.getElementById('btn-musica').onclick=e=>{
@@ -2872,6 +2901,11 @@ async function renderPerfilGrande() {
   document.getElementById('pg-id').textContent = 'ID: ' + window.currentUserId.slice(0, 8);
   document.getElementById('pg-cor-input').value = cor;
   document.getElementById('pg-tempo').textContent = `⏱️ Tempo jogado: ${horas}h ${minutos}min`;
+  try {
+    const { data: pvp } = await window.supabaseClient.from('pvp_profile').select('rank').eq('user_id', window.currentUserId).maybeSingle();
+    const nomes = {bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante',desafiante:'Desafiante'};
+    document.getElementById('pg-patente').textContent = '⚔️ Patente PvP: ' + (nomes[pvp?.rank] || 'Bronze (não iniciado)');
+  } catch (e) {}
   garantirControleImagemPerfil();
   document.getElementById('tela-perfil-grande').classList.add('active');
 }

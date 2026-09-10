@@ -1742,22 +1742,31 @@ body:before {
   object-fit:contain
 }
 
-.rarity-comum,.rarity-incomum,.rarity-raro,.rarity-epico,.rarity-lendario,.rarity-mitico,.rarity-secreto,.rarity-divino,.rarity-celestial,.rarity-supremo,.rarity-ilimitado,.rarity-exclusivo,.rarity-indefinido,.rarity-transcendente {
+.rarity-comum,.rarity-incomum,.rarity-raro,.rarity-epico,.rarity-lendario,.rarity-mitico,.rarity-secreto,.rarity-divino,.rarity-celestial,.rarity-supremo,.rarity-ilimitado,.rarity-exclusivo,.rarity-indefinido,.rarity-transcendente,
+.rarity-iniciante,.rarity-aprendiz,.rarity-adepto,.rarity-especialista,.rarity-mestre,.rarity-graomestre,.rarity-arcano,.rarity-primordial,
+.rarity-bruto,.rarity-carregado,.rarity-explosivo,.rarity-devastador,.rarity-cataclismico,.rarity-apocaliptico,.rarity-dimensional,.rarity-estelar,.rarity-cosmico,.rarity-singularidade,
+.rarity-faisca,.rarity-impulso,.rarity-explosao,.rarity-tempestade,.rarity-ruptura,.rarity-calamidade,.rarity-juizo,.rarity-ascensao,.rarity-eternidade,.rarity-onipotencia {
   border-color:color-mix(in srgb,var(--rarity) 72%,white 0%);
   box-shadow:0 0 20px color-mix(in srgb,var(--rarity) 18%,transparent)
 }
 
-.rarity-comum .rarity-label,.rarity-comum h3,.rarity-incomum .rarity-label,.rarity-incomum h3,.rarity-raro .rarity-label,.rarity-raro h3,.rarity-epico .rarity-label,.rarity-epico h3,.rarity-lendario .rarity-label,.rarity-lendario h3,.rarity-mitico .rarity-label,.rarity-mitico h3,.rarity-secreto .rarity-label,.rarity-secreto h3,.rarity-divino .rarity-label,.rarity-divino h3,.rarity-celestial .rarity-label,.rarity-celestial h3,.rarity-supremo .rarity-label,.rarity-supremo h3,.rarity-ilimitado .rarity-label,.rarity-ilimitado h3,.rarity-exclusivo .rarity-label,.rarity-exclusivo h3,.rarity-indefinido .rarity-label,.rarity-indefinido h3,.rarity-transcendente .rarity-label,.rarity-transcendente h3 {
+.rarity-comum .rarity-label,.rarity-comum h3,.rarity-incomum .rarity-label,.rarity-incomum h3,.rarity-raro .rarity-label,.rarity-raro h3,.rarity-epico .rarity-label,.rarity-epico h3,.rarity-lendario .rarity-label,.rarity-lendario h3,.rarity-mitico .rarity-label,.rarity-mitico h3,.rarity-secreto .rarity-label,.rarity-secreto h3,.rarity-divino .rarity-label,.rarity-divino h3,.rarity-celestial .rarity-label,.rarity-celestial h3,.rarity-supremo .rarity-label,.rarity-supremo h3,.rarity-ilimitado .rarity-label,.rarity-ilimitado h3,.rarity-exclusivo .rarity-label,.rarity-exclusivo h3,.rarity-indefinido .rarity-label,.rarity-indefinido h3,.rarity-transcendente .rarity-label,.rarity-transcendente h3,
+.rarity-iniciante .rarity-label,.rarity-iniciante h3,.rarity-aprendiz .rarity-label,.rarity-aprendiz h3,.rarity-adepto .rarity-label,.rarity-adepto h3,.rarity-especialista .rarity-label,.rarity-especialista h3,.rarity-mestre .rarity-label,.rarity-mestre h3,.rarity-graomestre .rarity-label,.rarity-graomestre h3,.rarity-arcano .rarity-label,.rarity-arcano h3,.rarity-primordial .rarity-label,.rarity-primordial h3,
+.rarity-bruto .rarity-label,.rarity-bruto h3,.rarity-carregado .rarity-label,.rarity-carregado h3,.rarity-explosivo .rarity-label,.rarity-explosivo h3,.rarity-devastador .rarity-label,.rarity-devastador h3,.rarity-cataclismico .rarity-label,.rarity-cataclismico h3,.rarity-apocaliptico .rarity-label,.rarity-apocaliptico h3,.rarity-dimensional .rarity-label,.rarity-dimensional h3,.rarity-estelar .rarity-label,.rarity-estelar h3,.rarity-cosmico .rarity-label,.rarity-cosmico h3,.rarity-singularidade .rarity-label,.rarity-singularidade h3,
+.rarity-faisca .rarity-label,.rarity-faisca h3,.rarity-impulso .rarity-label,.rarity-impulso h3,.rarity-explosao .rarity-label,.rarity-explosao h3,.rarity-tempestade .rarity-label,.rarity-tempestade h3,.rarity-ruptura .rarity-label,.rarity-ruptura h3,.rarity-calamidade .rarity-label,.rarity-calamidade h3,.rarity-juizo .rarity-label,.rarity-juizo h3,.rarity-ascensao .rarity-label,.rarity-ascensao h3,.rarity-eternidade .rarity-label,.rarity-eternidade h3,.rarity-onipotencia .rarity-label,.rarity-onipotencia h3 {
   color:var(--rarity);
   text-shadow:0 0 12px color-mix(in srgb,var(--rarity) 55%,transparent)
 }
 
-.rarity-divino,.rarity-celestial,.rarity-supremo,.rarity-ilimitado,.rarity-exclusivo,.rarity-indefinido,.rarity-transcendente {
+/* Efeito "foda" (giro + brilho passante) reservado só pro topo de cada categoria:
+   Primordial (skill1), Singularidade (skill2), Onipotência (ultimate) — junto com
+   os topos que já tinham (divino/celestial/supremo/etc de Personagens). */
+.rarity-divino,.rarity-celestial,.rarity-supremo,.rarity-ilimitado,.rarity-exclusivo,.rarity-indefinido,.rarity-transcendente,.rarity-primordial,.rarity-singularidade,.rarity-onipotencia {
   position:relative;
   overflow:hidden
 }
 
-.rarity-divino:before,.rarity-celestial:before,.rarity-supremo:before,.rarity-ilimitado:before,.rarity-exclusivo:before,.rarity-indefinido:before,.rarity-transcendente:before {
+.rarity-divino:before,.rarity-celestial:before,.rarity-supremo:before,.rarity-ilimitado:before,.rarity-exclusivo:before,.rarity-indefinido:before,.rarity-transcendente:before,.rarity-primordial:before,.rarity-singularidade:before,.rarity-onipotencia:before {
   content:"";
   position:absolute;
   inset:-60%;
@@ -1767,7 +1776,7 @@ body:before {
   pointer-events:none
 }
 
-.rarity-supremo:after,.rarity-ilimitado:after,.rarity-exclusivo:after,.rarity-indefinido:after,.rarity-transcendente:after {
+.rarity-supremo:after,.rarity-ilimitado:after,.rarity-exclusivo:after,.rarity-indefinido:after,.rarity-transcendente:after,.rarity-primordial:after,.rarity-singularidade:after,.rarity-onipotencia:after {
   content:"";
   position:absolute;
   inset:0;
@@ -1975,8 +1984,15 @@ body:before {
 
 .sprite-jogo,.sprite-personagem,.sprite-boss,.sprite-poder {
   mix-blend-mode:screen;
-  background:transparent;
-  filter:drop-shadow(0 0 9px rgba(255,255,255,.18))
+  background:transparent
+  /* filter:drop-shadow removido daqui de propósito — era aplicado em TODO sprite
+     da batalha (personagem, boss e cada skill/projétil GIF), o tempo inteiro,
+     recalculando a sombra por transparência a cada frame que o GIF/vídeo troca.
+     Esse era o principal motivo do travamento na batalha (piorava ainda mais
+     quando mais projéteis apareciam na tela). O brilho que dava era quase
+     invisível (9px, 18% opacidade) — custo alto por quase nada visual.
+     mix-blend-mode:screen continua igual (é o que remove o fundo do GIF/vídeo,
+     não mexi nisso). */
 }
 .sprite-personagem,.sprite-boss {
   z-index:5
@@ -1999,8 +2015,14 @@ body:before {
   }
 }
 @keyframes hitFlash {
+  /* Antes usava filter:brightness()+drop-shadow() em cima do sprite do boss/personagem,
+     que é um GIF trocando de frame sozinho o tempo todo — drop-shadow recalcula a sombra
+     por transparência a CADA troca de frame (igual ao bug já corrigido na fúria do boss
+     logo abaixo). Como esse flash dispara em TODO golpe, quando player e boss atiram
+     skill junto isso empilhava vários recálculos pesados por segundo = trava. Trocado
+     por brightness puro (barato, sem blur) — mesmo efeito de "flash branco", sem custo. */
   50% {
-    filter:brightness(2.2) drop-shadow(0 0 18px #fff)
+    filter:brightness(2.4)
   }
 }
 
@@ -2542,17 +2564,52 @@ body:before {
 .character-card.rarity-ilimitado,.boss-card.rarity-ilimitado,
 .character-card.rarity-exclusivo,.boss-card.rarity-exclusivo,
 .character-card.rarity-indefinido,.boss-card.rarity-indefinido{
-  background-size:250% 250%!important;
-  animation:rainbow 3s ease infinite
+  /* Pedido antigo: tirar o brilho excessivo do banner (Vinicius/Julia/PeidaLeite/Kauan
+     ficavam com arco-íris animado + giro + brilho passante ao mesmo tempo — 3
+     efeitos empilhados). Fundo estático (sem animation), giro/sweep genéricos
+     de .rarity-* (:before/:after) desligados só pra card de personagem. */
+  background-size:100% 100%!important;
+  animation:none;
+  /* NOVO: o fundo de cada raridade abaixo NÃO é mais a cor pura/clara — é a cor
+     misturada com uma base bem escura (color-mix). Motivo: a imagem do
+     personagem usa mix-blend-mode:screen, que CLAREIA a imagem com o que está
+     atrás dela. Um fundo claro/neon por trás estourava o personagem inteiro
+     pra quase-branco e escondia o rosto (era esse o "brilho escondendo o
+     rosto" que persistia). Com base escura o personagem continua nítido e a
+     cor de cada raridade aparece pela borda/moldura/glow, que ficaram mais
+     fortes e progressivos abaixo pra cada raridade ser bem diferente da outra. */
+  border-width:3px!important;
 }
-.character-card.rarity-especial,.boss-card.rarity-especial{background:linear-gradient(135deg,#ff6bc7,#6be7ff,#a96cff)!important}
-.character-card.rarity-secreto,.boss-card.rarity-secreto{background:linear-gradient(145deg,#050505,#171717)!important}
-.character-card.rarity-divino,.boss-card.rarity-divino{background:linear-gradient(135deg,#64e7ff,#9871ff,#ff66c7,#fff06a)!important}
-.character-card.rarity-celestial,.boss-card.rarity-celestial{background:linear-gradient(135deg,#00eaff,#735dff,#ff54d4)!important}
-.character-card.rarity-supremo,.boss-card.rarity-supremo{background:linear-gradient(135deg,#ff5fc8,#ffd45e,#6ff5ff,#9d6cff)!important;background-size:300%!important}
-.character-card.rarity-ilimitado,.boss-card.rarity-ilimitado{background:linear-gradient(120deg,#ff4b4b,#ffd64f,#55f38f,#57cfff,#8f63ff,#ff57c8)!important;background-size:400%!important}
-.character-card.rarity-exclusivo,.boss-card.rarity-exclusivo{background:linear-gradient(135deg,#fff,#ffd34f,#ff5fc7,#73eaff,#fff)!important;background-size:300%!important}
-.character-card.rarity-indefinido,.boss-card.rarity-indefinido{background:conic-gradient(from 45deg,#7cf7ff,#aa6dff,#ff5fc8,#ffe26c,#7cf7ff)!important;background-size:220%!important}
+.character-card.rarity-especial:before,.boss-card.rarity-especial:before,
+.character-card.rarity-secreto:before,.boss-card.rarity-secreto:before,
+.character-card.rarity-divino:before,.boss-card.rarity-divino:before,
+.character-card.rarity-celestial:before,.boss-card.rarity-celestial:before,
+.character-card.rarity-supremo:before,.boss-card.rarity-supremo:before,
+.character-card.rarity-ilimitado:before,.boss-card.rarity-ilimitado:before,
+.character-card.rarity-exclusivo:before,.boss-card.rarity-exclusivo:before,
+.character-card.rarity-indefinido:before,.boss-card.rarity-indefinido:before,
+.character-card.rarity-especial:after,.boss-card.rarity-especial:after,
+.character-card.rarity-secreto:after,.boss-card.rarity-secreto:after,
+.character-card.rarity-divino:after,.boss-card.rarity-divino:after,
+.character-card.rarity-celestial:after,.boss-card.rarity-celestial:after,
+.character-card.rarity-supremo:after,.boss-card.rarity-supremo:after,
+.character-card.rarity-ilimitado:after,.boss-card.rarity-ilimitado:after,
+.character-card.rarity-exclusivo:after,.boss-card.rarity-exclusivo:after,
+.character-card.rarity-indefinido:after,.boss-card.rarity-indefinido:after{
+  display:none
+}
+/* Ordem de raridade (fraca → forte): especial → secreto → divino → celestial →
+   supremo → ilimitado → exclusivo → indefinido. Cada uma tem sua cor própria
+   (mantidas as cores originais como base) E o glow/borda cresce junto, então
+   dá pra "sentir" o degrau de raridade sem precisar estourar a imagem. */
+.character-card.rarity-especial,.boss-card.rarity-especial{background:linear-gradient(135deg,color-mix(in srgb,#ff6bc7 45%,#0a0d1c),color-mix(in srgb,#6be7ff 45%,#0a0d1c))!important;border-color:#ff8ed6!important;box-shadow:0 0 22px rgba(255,110,205,.45),inset 0 0 30px rgba(255,110,205,.12)!important}
+.character-card.rarity-secreto,.boss-card.rarity-secreto{background:linear-gradient(145deg,#050505,#171717)!important;border-color:#9a9a9a!important;box-shadow:0 0 24px rgba(255,255,255,.28),inset 0 0 30px rgba(255,255,255,.08)!important}
+.character-card.rarity-divino,.boss-card.rarity-divino{background:linear-gradient(135deg,color-mix(in srgb,#64e7ff 48%,#0a0d1c),color-mix(in srgb,#9871ff 48%,#0a0d1c))!important;border-color:#8fd9ff!important;box-shadow:0 0 26px rgba(100,231,255,.5),inset 0 0 32px rgba(100,231,255,.14)!important}
+.character-card.rarity-celestial,.boss-card.rarity-celestial{background:linear-gradient(135deg,color-mix(in srgb,#00eaff 50%,#0a0d1c),color-mix(in srgb,#735dff 50%,#0a0d1c))!important;border-color:#5fe9ff!important;box-shadow:0 0 30px rgba(0,234,255,.55),inset 0 0 34px rgba(0,234,255,.16)!important}
+.character-card.rarity-supremo,.boss-card.rarity-supremo{background:linear-gradient(135deg,color-mix(in srgb,#ff5fc8 52%,#0a0d1c),color-mix(in srgb,#9d6cff 52%,#0a0d1c))!important;border-color:#ff8bdc!important;box-shadow:0 0 34px rgba(255,95,200,.6),inset 0 0 36px rgba(255,95,200,.18)!important}
+.character-card.rarity-ilimitado,.boss-card.rarity-ilimitado{background:linear-gradient(120deg,color-mix(in srgb,#ff4b4b 54%,#0a0d1c),color-mix(in srgb,#8f63ff 54%,#0a0d1c))!important;border-color:#ff7a7a!important;box-shadow:0 0 38px rgba(255,75,75,.65),inset 0 0 38px rgba(255,75,75,.2)!important}
+.character-card.rarity-exclusivo,.boss-card.rarity-exclusivo{background:linear-gradient(135deg,color-mix(in srgb,#ffd34f 56%,#0a0d1c),color-mix(in srgb,#ff5fc7 56%,#0a0d1c))!important;border-color:#ffe08a!important;box-shadow:0 0 42px rgba(255,211,79,.7),inset 0 0 40px rgba(255,211,79,.22)!important}
+.character-card.rarity-indefinido,.boss-card.rarity-indefinido{background:linear-gradient(120deg,color-mix(in srgb,#7cf7ff 58%,#0a0d1c),color-mix(in srgb,#aa6dff 58%,#0a0d1c))!important;border-color:#b6f9ff!important;box-shadow:0 0 46px rgba(124,247,255,.75),0 0 90px rgba(170,109,255,.3),inset 0 0 42px rgba(124,247,255,.24)!important}
 
 .character-card h3,.boss-card h3{color:var(--rarity,#fff)!important;text-shadow:0 0 10px color-mix(in srgb,var(--rarity,#fff) 65%,transparent),0 0 22px color-mix(in srgb,var(--rarity,#fff) 35%,transparent)!important}
 .inventory-media{background:linear-gradient(135deg,rgba(18,194,255,.2),rgba(164,66,255,.2))!important;border:1px solid color-mix(in srgb,var(--rarity,#56e9ff) 65%,rgba(255,255,255,.22))!important}

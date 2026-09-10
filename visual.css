@@ -442,6 +442,40 @@ body::after {
 .rarity-transcendente { --rarity: #17ffd0; }
 .rarity-hunge { --rarity: #ffee00; }
 
+/* ===== Raridades exclusivas de SKILL 1 (tema: treinamento/técnica) ===== */
+.rarity-iniciante { --rarity: #cfd8e3; }
+.rarity-aprendiz { --rarity: #7ee787; }
+.rarity-adepto { --rarity: #38bdf8; }
+.rarity-especialista { --rarity: #a78bfa; }
+.rarity-mestre { --rarity: #fbbf24; }
+.rarity-graomestre { --rarity: #fb7185; }
+.rarity-arcano { --rarity: #22d3ee; }
+.rarity-primordial { --rarity: #f0abfc; }
+
+/* ===== Raridades exclusivas de SKILL 2 (tema: poder destrutivo/cataclismo) ===== */
+.rarity-bruto { --rarity: #9ca3af; }
+.rarity-carregado { --rarity: #34d399; }
+.rarity-explosivo { --rarity: #fb923c; }
+.rarity-devastador { --rarity: #ef4444; }
+.rarity-cataclismico { --rarity: #a855f7; }
+.rarity-apocaliptico { --rarity: #f43f5e; }
+.rarity-dimensional { --rarity: #6366f1; }
+.rarity-estelar { --rarity: #facc15; }
+.rarity-cosmico { --rarity: #06b6d4; }
+.rarity-singularidade { --rarity: #e879f9; }
+
+/* ===== Raridades exclusivas de ULTIMATE (tema: ascensão mítica) ===== */
+.rarity-faisca { --rarity: #fde68a; }
+.rarity-impulso { --rarity: #93c5fd; }
+.rarity-explosao { --rarity: #fca5a5; }
+.rarity-tempestade { --rarity: #60a5fa; }
+.rarity-ruptura { --rarity: #c084fc; }
+.rarity-calamidade { --rarity: #f87171; }
+.rarity-juizo { --rarity: #fbbf24; }
+.rarity-ascensao { --rarity: #34d399; }
+.rarity-eternidade { --rarity: #f472b6; }
+.rarity-onipotencia { --rarity: #fef08a; }
+
 .rarity-label,
 .character-card h3,
 .shop-card h3 {
@@ -707,7 +741,12 @@ body::after {
 .sprite-jogo {
   background: transparent !important;
   mix-blend-mode: screen;
-  filter: drop-shadow(0 0 11px rgba(255, 255, 255, 0.18));
+  /* filter:drop-shadow removido — essa regra tinha a MESMA especificidade da
+     correção feita no style.css (linha ~1985) e, como o visual.css carrega
+     DEPOIS do style.css no index.html, ela vencia a cascata e devolvia o
+     drop-shadow pesado em cima do GIF do sprite (recalculando a sombra por
+     transparência a cada frame que o GIF troca, em TODO golpe). Era esse
+     duplicado esquecido que fazia o conserto anterior nunca surtir efeito. */
 }
 
 .sprite-personagem,
@@ -727,7 +766,10 @@ body::after {
 .ultimate-modal video {
   background: transparent !important;
   mix-blend-mode: screen;
-  filter: drop-shadow(0 0 35px rgba(90, 218, 255, 0.18));
+  /* filter:drop-shadow removido — mesmo motivo do .sprite-jogo acima: recalcula
+     a sombra por transparência a cada frame do vídeo, e esse vídeo fica em loop
+     o tempo inteiro da Ultimate. Brilho quase invisível (35px, 18% opacidade)
+     por um custo alto. */
 }
 
 /* ==================== RESPONSIVO ==================== */
@@ -1885,12 +1927,13 @@ body:has(#modal-ultimate:not(.hidden)) #tela-jogo .battle-message {
   box-sizing:border-box !important;
   text-align:center !important;
   white-space:normal !important;
-  color:#fff !important;
   font-weight:900 !important;
   font-size:clamp(16px,3.6vw,34px) !important;
   line-height:1.2 !important;
-  text-shadow:0 3px 12px #000,0 0 18px rgba(255,255,255,.65) !important;
-  background:linear-gradient(180deg,rgba(0,0,0,.78),rgba(0,0,0,.18),transparent) !important;
+  /* color/text-shadow/background retirados daqui de propósito: com !important eles
+     venciam o style.color/textShadow/background que o batalha.js seta por Ultimate
+     (a cor certa de cada personagem). Sem eles, quem define a cor é o JS +
+     .legenda-ultimate-colorida (melhorias-visuais.css). Layout/posição intactos. */
 }
 .ultimate-modal:not(.hidden) #btn-skip-ultimate {
   position:absolute !important;
@@ -2508,7 +2551,7 @@ body.ultimate-playing #tela-jogo .pause-btn {
 
 .rarity-hunge,.pet-rarity{color:#65f6ff !important}
 
-.daily-login-overlay{position:fixed;inset:0;z-index:2147482500;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,5,12,.82);backdrop-filter:blur(12px)}
+.daily-login-overlay{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,5,12,.82);backdrop-filter:blur(12px)}
 .daily-login-modal{width:min(900px,100%);max-height:92dvh;overflow:auto;padding:20px;border:1px solid rgba(101,232,255,.2);border-radius:22px;background:linear-gradient(145deg,#101c31,#090e1b);box-shadow:0 25px 90px rgba(0,0,0,.55)}
 .daily-login-modal .login-top{display:flex;justify-content:space-between;gap:12px;align-items:center;color:#8c9bb2;font-size:.72rem;letter-spacing:.12em}
 .daily-login-modal h2{margin:12px 0 5px;font-family:'Cinzel Decorative',serif}

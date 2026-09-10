@@ -10,9 +10,9 @@
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&amp;family=Rajdhani:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
-  <link href="style.css" rel="stylesheet"/>
-  <link href="visual.css" rel="stylesheet"/>
-  <link href="melhorias-visuais.css?v=4" rel="stylesheet"/>
+  <link href="style.css?v=3" rel="stylesheet"/>
+  <link href="visual.css?v=3" rel="stylesheet"/>
+  <link href="melhorias-visuais.css?v=7" rel="stylesheet"/>
   <style>
     html,body{margin:0;width:100%;min-height:100%;overflow:hidden}
     .screen{position:fixed;inset:0;display:none}
@@ -249,7 +249,41 @@
         Ganhe recompensas
        </small>
       </button>
+      <button class="feature-card" id="btn-pvp" type="button" onclick="abrirPvpDoLobby()">
+       <span class="feature-icon">
+        ⚔
+       </span>
+       <b>
+        PvP
+       </b>
+       <small id="pvp-card-sub">
+        Arena competitiva
+       </small>
+      </button>
+      <button class="feature-card" data-tela="tela-top-global">
+       <span class="feature-icon">
+        🌐
+       </span>
+       <b>
+        Top Global
+       </b>
+       <small>
+        Moedas e diamantes
+       </small>
+      </button>
      </div>
+     <script>
+       async function abrirPvpDoLobby() {
+         try {
+           const { data: player } = await window.supabaseClient.from('Player')
+             .select('bosses_derrotados').eq('user_id', window.currentUserId).single();
+           const bosses = player?.bosses_derrotados || [];
+           const ok = Array.isArray(bosses) ? bosses.includes(5) : !!(bosses && bosses['5']);
+           if (!ok) { alert('🔒 Derrote o Boss 5 para desbloquear o PvP!'); return; }
+         } catch (e) {}
+         window.location.href = 'pvp.html';
+       }
+     </script>
      <button class="battle-cta" id="btn-play" type="button">
       <span>
        ⚔
@@ -408,6 +442,24 @@
    <button class="btn-primary" id="btn-fundir">
     ✦ FUNDIR 5 IGUAIS
    </button>
+  </section>
+  <section class="screen panel-screen" id="tela-top-global">
+   <button class="back-btn" data-voltar="tela-menu">
+    ←
+   </button>
+   <div class="panel-head">
+    <div>
+     <small>
+      RANKING
+     </small>
+     <h2>
+      TOP GLOBAL
+     </h2>
+    </div>
+   </div>
+   <div id="top-global-conteudo" style="padding:4px 2px 90px">
+    <div style="text-align:center;color:#9aa3c7;padding:30px 0">Carregando...</div>
+   </div>
   </section>
   <section class="screen panel-screen" id="tela-missoes">
    <button class="back-btn" data-voltar="tela-menu">
@@ -696,11 +748,11 @@
   <script>
    function ajustarAlturaReal(){document.documentElement.style.setProperty('--altura-real',window.innerHeight+'px')}window.addEventListener('resize',ajustarAlturaReal);window.addEventListener('orientationchange',ajustarAlturaReal);ajustarAlturaReal();
   </script>
-  <script src="features.js">
+  <script src="features.js?v=2">
   </script>
-  <script src="menu.js">
+  <script src="menu.js?v=2">
   </script>
-  <script src="batalha.js">
+  <script src="batalha.js?v=2">
   </script>
   <script>
     (function(){
@@ -754,6 +806,7 @@
     </div>
 
     <div class="perfil-tempo" id="pg-tempo">⏱️ Tempo jogado: 0h 0min</div>
+    <div class="perfil-tempo" id="pg-patente">⚔️ Patente PvP: —</div>
 
     <div class="perfil-acoes">
       <button class="setting-option" onclick="mudarConta()">🔁 Mudar de conta</button>

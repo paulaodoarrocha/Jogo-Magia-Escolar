@@ -88,23 +88,24 @@ html { font-size: clamp(13px, 1.1vw + 8px, 18px); }
   -webkit-text-fill-color:var(--rarity,#fff)!important;
   text-shadow:0 0 8px var(--rarity,#fff)!important;
 }
-/* épico/lendário/mítico: texto branco + 2 cores no halo (rarity + dourado) */
+/* épico/lendário/mítico: cor sólida da raridade + halo dourado por cima (antes
+   forçava color:#fff — a cor da raridade só aparecia no brilho, nunca no
+   próprio texto, por isso parecia "só brilho, sem cor real") */
 .tier-media h3{
-  color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
+  color:var(--rarity,#fff)!important;
+  -webkit-text-fill-color:var(--rarity,#fff)!important;
   background:none!important;
   text-shadow:
-    -1px 0 6px var(--rarity,#fff),
      1px 0 6px #ffd35a,
      0 0 14px var(--rarity,#fff)!important;
 }
-/* secreto pra cima: texto branco + 3 cores no halo (rarity + dourado + rosa/ciano), com leve pulso */
+/* secreto pra cima: cor sólida da raridade + halo dourado/rosa por cima, com leve pulso
+   (mesmo motivo da correção acima: era color:#fff — agora o texto é a cor da raridade) */
 .tier-alta h3{
-  color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
+  color:var(--rarity,#fff)!important;
+  -webkit-text-fill-color:var(--rarity,#fff)!important;
   background:none!important;
   text-shadow:
-    -2px 0 7px var(--rarity,#fff),
      2px 0 7px #ff4fba,
      0 -2px 7px #ffd35a,
      0 0 18px var(--rarity,#fff)!important;
@@ -283,3 +284,287 @@ html { font-size: clamp(13px, 1.1vw + 8px, 18px); }
   box-shadow:0 0 10px rgba(255,150,120,.6)!important;
 }
 .cooldown-skill{ background:rgba(4,6,14,.65)!important; font-weight:800!important; }
+/* ---------- 6) IMPACTO DE BATALHA — tremor leve de tela ----------
+   Aplicado no #viewport-jogo (janela visível), NÃO na #area-jogo (que é a câmera/arena) —
+   assim não briga com a transform da câmera. Curto (110ms), 2 passos só, deslocamento
+   pequeno (max 3px). O toggle de classe (remove+reflow+add) já evita tremores acumulados:
+   um novo tremor sempre reinicia o mesmo, nunca soma em cima do anterior. */
+#viewport-jogo.tremendo{
+  animation:acTremorTela .11s linear both!important;
+}
+@keyframes acTremorTela{
+  30%{ transform:translate(-3px,1px); }
+  60%{ transform:translate(2px,-2px); }
+  100%{ transform:translate(0,0); }
+}
+@media (prefers-reduced-motion: reduce){ #viewport-jogo.tremendo{ animation:none!important; } }
+
+/* ---------- 7) BOSS EM FÚRIA (<50% vida) — classes novas (.boss-furia/.barra-furia/.sprite-furia
+   não existiam em nenhum outro CSS do projeto, então não há conflito/sobrescrita aqui) ----------
+   O sprite do boss é um GIF/vídeo (troca de frame sozinho o tempo todo). QUALQUER filter no
+   sprite — animado ou fixo — obriga o navegador a recalcular a sombra por transparência a cada
+   frame que o GIF/vídeo troca, e isso NUNCA para enquanto durar a fúria. Esse era o motivo real
+   de "piorar tudo" quando o boss passa de 50% de vida. Removido o filter do sprite por completo;
+   o efeito de fúria continua bem visível pela barra de vida (item abaixo) e pelo tremor de tela
+   na área de jogo — os dois são baratos (background/opacidade, sem filtro). */
+.sprite-boss.sprite-furia{ /* sem filter/animation aqui de propósito — ver nota acima */ }
+
+#barraEnemy.barra-furia{
+  /* Antes o gradiente da fúria (vermelho/laranja) ficava bem parecido com o
+     gradiente normal do boss (laranja/rosa/vermelho) — dava pra confundir e
+     parecer que "não tinha nada". Agora o efeito usa um vermelho bem mais
+     escuro/saturado nas pontas com um núcleo BRANCO-QUENTE que varre a barra
+     (parece brasa/fogo de verdade) — fica visualmente óbvio que mudou. */
+  background:linear-gradient(90deg,#7a0000,#ff2200 35%,#fff2b0 50%,#ff2200 65%,#7a0000)!important;
+  background-size:220% 100%!important;
+  animation:acFuriaBarraAura 1.1s ease-in-out infinite, acFuriaBarraVarre 1.8s linear infinite!important;
+}
+@keyframes acFuriaBarraAura{
+  0%,100%{ box-shadow:0 0 10px rgba(255,60,20,.8), inset 0 0 8px rgba(255,255,255,.25); }
+  50%{ box-shadow:0 0 24px rgba(255,120,40,1), inset 0 0 14px rgba(255,255,255,.4); }
+}
+@keyframes acFuriaBarraVarre{
+  0%{ background-position:0% 0; }
+  100%{ background-position:-220% 0; }
+}
+@media (prefers-reduced-motion: reduce){ #barraEnemy.barra-furia{ animation:none!important; background-position:0 0!important; box-shadow:0 0 12px rgba(255,80,40,.8)!important; } }
+
+#area-jogo.boss-furia::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:5;
+  background:radial-gradient(120% 60% at 50% 0%, rgba(255,60,20,.22), transparent 62%);
+  animation:acFuriaTela 1.6s ease-in-out infinite;
+}
+@keyframes acFuriaTela{
+  0%,100%{ opacity:.6; }
+  50%{ opacity:1; }
+}
+@media (prefers-reduced-motion: reduce){ #area-jogo.boss-furia::after{ animation:none!important; opacity:.7; } }
+
+/* ---------- 8) TEXTO DA ULTIMATE — identidade de cor forte por personagem ----------
+   Usa as CSS vars --ult-cor/--ult-cor2 setadas via JS (batalha.js). Halo de 2 cores
+   (mesma técnica já usada nos nomes de personagem tier-alta neste arquivo) + entrada
+   curta. Um elemento só, uma troca de classe — sem custo de performance. */
+.legenda-ultimate-colorida{
+  text-shadow:
+    0 3px 10px #000,
+    -2px 0 10px var(--ult-cor,#fff),
+     2px 0 10px var(--ult-cor2,#fff),
+     0 0 22px var(--ult-cor,#fff),
+     0 0 38px var(--ult-cor2,#fff)!important;
+  animation:acUltimateTextoEntrada .35s ease-out both;
+}
+@keyframes acUltimateTextoEntrada{
+  0%{ opacity:0; transform:translateY(-8px) scale(.96); }
+  100%{ opacity:1; transform:translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce){ .legenda-ultimate-colorida{ animation:none!important; } }
+
+/* ---------- 9) VIDA DO PLAYER CRÍTICA (<50%) — barra "pegando fogo" ----------
+   Classe nova (.barra-perigo não existia em nenhum CSS do projeto — sem conflito). */
+#barraPlay.barra-perigo{
+  background:linear-gradient(90deg,#ff2d2d,#ff9a3d,#ffd23d)!important;
+  animation:acVidaPerigoAura .9s ease-in-out infinite!important;
+}
+@keyframes acVidaPerigoAura{
+  0%,100%{ box-shadow:0 0 8px rgba(255,60,20,.7); filter:brightness(1); }
+  50%{ box-shadow:0 0 18px rgba(255,140,40,.95); filter:brightness(1.15); }
+}
+@media (prefers-reduced-motion: reduce){ #barraPlay.barra-perigo{ animation:none!important; box-shadow:0 0 10px rgba(255,60,20,.8)!important; } }
+
+/* =====================================================================
+   MELHORIAS VISUAIS — v3 (layout tipo Roblox + rebalanceamento de efeitos)
+   Só CSS. Nenhuma lógica/JS tocada.
+   1) Coleção de personagens (tela-personagens): 3 colunas fixas no celular
+      (estilo vitrine Roblox), com fallback pra 2/1 em telas bem estreitas.
+   2) Info do Banner: 2 colunas (pedido separado da coleção normal).
+   3) Efeitos "tier-alta" suavizados (menos exagero: pulso mais sutil, halo
+      um pouco menor) — continuam visíveis e "raros", só não brigam mais
+      com a leitura do card.
+   4) Comuns/incomuns/raros (tier-baixa) ganham um brilho sutil de borda
+      pra não ficarem "sem graça" do lado das raridades altas.
+   ===================================================================== */
+
+/* ---- 1) Coleção — vitrine tipo Roblox, sem virar "pílula" ----
+   O card ficava fino/comprido porque .asset-frame/.character-asset tinham
+   min-height:170/120px FIXO (de visual.css) mesmo com a coluna estreita —
+   3 colunas + altura de imagem travada em 170px = card magro e esticado.
+   Corrigido usando aspect-ratio quadrado na imagem (acompanha a largura real
+   da coluna) em vez de altura fixa, e reduzindo pra 2 colunas no celular
+   comum (a 3ª só entra em telas mais largas, onde o texto do buff ainda cabe). */
+.owned-characters-grid{
+  grid-template-columns:repeat(2, 1fr)!important;
+  gap: clamp(8px, 2.4vw, 14px)!important;
+}
+@media (min-width:480px){
+  .owned-characters-grid{grid-template-columns:repeat(3, 1fr)!important;}
+}
+@media (min-width:720px){
+  .owned-characters-grid{grid-template-columns:repeat(4, 1fr)!important;}
+}
+@media (min-width:1100px){
+  .owned-characters-grid{grid-template-columns:repeat(5, 1fr)!important;}
+}
+.owned-characters-grid .asset-frame,
+.owned-characters-grid .character-asset{
+  min-height:0!important;
+  aspect-ratio:1/1!important;
+  width:100%!important;
+}
+.owned-characters-grid .character-asset video,
+.owned-characters-grid .character-asset img{
+  min-height:0!important;
+  height:100%!important;
+}
+.owned-characters-grid .character-card{ padding:8px 6px 10px!important; }
+.owned-characters-grid .character-card h3{ font-size:.86rem!important; margin:4px 0 2px!important; white-space:normal!important; }
+/* Texto do buff cortado em 2 linhas (com "..."): é o que mais empurrava o card
+   pra cima virando comprido — o texto completo continua no personagem, só
+   não estica mais o card aqui na vitrine. */
+.owned-characters-grid .character-card .muted{
+  font-size:.62rem!important;
+  line-height:1.25!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+  overflow:hidden!important;
+}
+.owned-characters-grid .character-card .current-damage{ font-size:.66rem!important; }
+.owned-characters-grid .character-card .small-btn{ font-size:.68rem!important; padding:8px 4px!important; white-space:normal!important; }
+.owned-characters-grid .character-card .copy-number{ font-size:.62rem!important; }
+.owned-characters-grid .character-card .rarity-label{ font-size:.6rem!important; }
+
+/* Barra de ações (equipar melhores / ir pro banner / fusão) fixa em cima, bem visível */
+.collection-head{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  position:sticky!important;
+  top:0!important;
+  z-index:5!important;
+  padding-bottom:10px!important;
+  background:linear-gradient(180deg, rgba(6,8,18,.96) 78%, rgba(6,8,18,0))!important;
+}
+.collection-toolbar-actions{ order:1!important; }
+.fusion-toolbar{ order:2!important; margin-top:0!important; }
+
+/* ---- 2) Info do Banner — 2 por linha, sem estourar o min-height fixo ---- */
+.banner-info-grid{
+  grid-template-columns:repeat(2, 1fr)!important;
+  gap: clamp(10px, 3vw, 16px)!important;
+}
+@media (min-width:720px){
+  .banner-info-grid{grid-template-columns:repeat(3, 1fr)!important;}
+}
+.banner-info-grid .asset-frame,
+.banner-info-grid .character-asset{
+  min-height:0!important;
+  aspect-ratio:1/1!important;
+}
+.banner-info-grid .character-asset img{ min-height:0!important; height:100%!important; }
+
+/* ---- 3) Suavizar exagero das raridades altas (tier-alta) ---- */
+.tier-alta{
+  animation-duration:3.4s!important; /* era 2.6s: pulso mais lento/sutil */
+}
+.tier-alta h3{
+  animation-duration:3.2s!important; /* era 2.4s */
+  text-shadow:
+    -1.5px 0 5px var(--rarity,#fff),
+     1.5px 0 5px #ffd35a,
+     0 -1.5px 5px #ff4fba,
+     0 0 12px var(--rarity,#fff)!important; /* halo um pouco menor, ainda com 3 cores */
+}
+@keyframes acNomeShine{
+  0%,100%{ filter:brightness(1) saturate(1); }
+  50%{ filter:brightness(1.14) saturate(1.15); } /* era 1.25/1.3 — menos "piscante" */
+}
+/* Dentro do Info do Banner especificamente: é uma lista pra CONHECER o
+   personagem, não precisa do pulso de brilho piscando (isso que deixava
+   4-5 personagens "queimados"/sem dar pra ver o rosto). Halo continua, só
+   sem a animação de brilho crescente por cima da foto. */
+.banner-info-grid .tier-alta,
+.banner-info-grid .tier-alta h3{
+  animation:none!important;
+  filter:none!important;
+}
+.banner-info-grid .tier-media h3{
+  text-shadow:
+    -1px 0 5px var(--rarity,#fff),
+     1px 0 5px #ffd35a,
+     0 0 10px var(--rarity,#fff)!important;
+}
+
+/* ---- 4) Dar um pouco mais de vida às raridades baixas (comum/incomum/raro) ---- */
+.tier-baixa{
+  box-shadow:
+    0 10px 20px rgba(0,0,0,.35),
+    0 0 6px var(--rarity,#fff),
+    inset 0 0 0 1px rgba(255,255,255,.06)!important;
+}
+.tier-baixa:hover{
+  box-shadow:
+    0 12px 24px rgba(0,0,0,.4),
+    0 0 12px var(--rarity,#fff),
+    inset 0 0 0 1px rgba(255,255,255,.1)!important;
+}
+.rarity-comum, .rarity-incomum{
+  background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(6,8,18,.88))!important;
+}
+
+/* =====================================================================
+   TUTORIAL VISUAL — CSS que faltava (o JS já existia e já funcionava,
+   ele só criava a <div id="tutorial-hint-banner"> e a classe
+   .tutorial-target-glow sem NENHUM estilo em lugar nenhum do projeto —
+   por isso o aviso ficava invisível, escondido atrás das telas fixas,
+   e o botão-alvo não brilhava. Só CSS novo, não toquei no JS.
+   ===================================================================== */
+.tutorial-hint-banner{
+  position:fixed!important;
+  left:50%!important;
+  bottom:calc(18px + env(safe-area-inset-bottom,0px))!important;
+  transform:translateX(-50%)!important;
+  z-index:999990!important;
+  max-width:min(92vw,420px)!important;
+  padding:12px 18px!important;
+  border-radius:14px!important;
+  text-align:center!important;
+  font-weight:800!important;
+  font-size:.92rem!important;
+  line-height:1.35!important;
+  color:#fff!important;
+  background:linear-gradient(160deg, rgba(20,10,45,.96), rgba(6,8,18,.96))!important;
+  border:1.5px solid #7b5cff!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.5), 0 0 22px rgba(123,92,255,.55)!important;
+  animation:acTutorialBannerIn .35s ease-out both, acTutorialBannerFloat 2.4s ease-in-out .35s infinite!important;
+  pointer-events:none!important;
+}
+@keyframes acTutorialBannerIn{
+  0%{ opacity:0; transform:translateX(-50%) translateY(14px) scale(.96); }
+  100%{ opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+}
+@keyframes acTutorialBannerFloat{
+  0%,100%{ transform:translateX(-50%) translateY(0); }
+  50%{ transform:translateX(-50%) translateY(-5px); }
+}
+@media (prefers-reduced-motion: reduce){
+  .tutorial-hint-banner{ animation:none!important; }
+}
+
+.tutorial-target-glow{
+  position:relative!important;
+  z-index:60!important;
+  border-radius:14px!important;
+  box-shadow:0 0 0 3px #ffd35a, 0 0 26px 6px rgba(255,211,90,.75)!important;
+  animation:acTutorialGlow 1.1s ease-in-out infinite!important;
+}
+@keyframes acTutorialGlow{
+  0%,100%{ box-shadow:0 0 0 3px #ffd35a, 0 0 18px 4px rgba(255,211,90,.55); }
+  50%{ box-shadow:0 0 0 3px #fff2b0, 0 0 32px 10px rgba(255,211,90,.9); }
+}
+@media (prefers-reduced-motion: reduce){
+  .tutorial-target-glow{ animation:none!important; box-shadow:0 0 0 3px #ffd35a, 0 0 20px 5px rgba(255,211,90,.7)!important; }
+}

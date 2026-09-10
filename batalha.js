@@ -1,57 +1,89 @@
 const skill1Defs = {
-  RelampagoSkill1:{largura:208,altura:208,velocidade:6.66,dano:42,gif:"RelampagoSkill1.gif"},
-  SomSkill1:{largura:198,altura:198,velocidade:6.75,dano:75,gif:"SomSkill1.gif"},
-  CirculoSkill1:{largura:208,altura:208,velocidade:6.84,dano:125,gif:"CirculoSkill1.gif"},
-  VentoSkill1:{largura:220,altura:220,velocidade:6.93,dano:210,gif:"VentoSkill1.gif"},
-  AguaSkill1:{largura:232,altura:232,velocidade:7.02,dano:340,gif:"AguaSkill1.gif"},
-  VenenoSkill1:{largura:245,altura:245,velocidade:7.11,dano:520,gif:"VenenoSkill1.gif"},
-  SolSkill1:{largura:262,altura:262,velocidade:7.2,dano:820,gif:"SolSkill1.gif"},
-  MeteoroSkill1:{largura:281,altura:281,velocidade:7.38,dano:1250,gif:"MeteoroSkill1.gif"}
+  RelampagoSkill1:{largura:173,altura:173,velocidade:6.66,dano:42,gif:"RelampagoSkill1.gif"},
+  SomSkill1:{largura:167,altura:167,velocidade:6.75,dano:75,gif:"SomSkill1.gif"},
+  CirculoSkill1:{largura:173,altura:173,velocidade:6.84,dano:125,gif:"CirculoSkill1.gif"},
+  VentoSkill1:{largura:180,altura:180,velocidade:6.93,dano:210,gif:"VentoSkill1.gif"},
+  AguaSkill1:{largura:186,altura:186,velocidade:7.02,dano:340,gif:"AguaSkill1.gif"},
+  VenenoSkill1:{largura:193,altura:193,velocidade:7.11,dano:520,gif:"VenenoSkill1.gif"},
+  SolSkill1:{largura:203,altura:203,velocidade:7.2,dano:820,gif:"SolSkill1.gif"},
+  MeteoroSkill1:{largura:213,altura:213,velocidade:7.38,dano:1250,gif:"MeteoroSkill1.gif"}
 };
 const skill2Defs = {
-  RaioSkill2:{tipo:"esfera",largura:238,altura:238,velocidade:6.39,dano:145,gif:"RaioSkill2.gif"},
-  GeloSkill2:{tipo:"esfera",largura:250,altura:250,velocidade:6.48,dano:290,gif:"GeloSkill2.gif"},
-  FuracaoSkill2:{tipo:"esfera",largura:262,altura:262,velocidade:6.57,dano:480,gif:"FuracaoSkill2.gif"},
-  MetalSkill2:{tipo:"esfera",largura:275,altura:275,velocidade:6.66,dano:760,gif:"MetalSkill2.gif"},
-  MagmaSkill2:{tipo:"esfera",largura:294,altura:294,velocidade:6.75,dano:1100,gif:"MagmaSkill2.gif"},
-  AbismoSkill2:{tipo:"esfera",largura:282,altura:282,velocidade:6.84,dano:1650,gif:"AbismoSkill2.gif"},
-  MeteoroSkill2:{tipo:"esfera",largura:261,altura:261,velocidade:6.93,dano:2250,gif:"MeteoroSkill2.gif"},
-  SolSkill2:{tipo:"esfera",largura:350,altura:350,velocidade:7.02,dano:3000,gif:"SolSkill2.gif"},
-  EstrelaSkill2:{tipo:"esfera",largura:369,altura:369,velocidade:7.11,dano:4000,gif:"EstrelaSkill2.gif"},
-  BlackholeSkill2:{tipo:"feixe",comprimento:488,largura:188,dano:5200,gif:"BlackholeSkill2.gif"}
+  RaioSkill2:{tipo:"esfera",largura:189,altura:189,velocidade:6.39,dano:145,gif:"RaioSkill2.gif"},
+  GeloSkill2:{tipo:"esfera",largura:196,altura:196,velocidade:6.48,dano:290,gif:"GeloSkill2.gif"},
+  FuracaoSkill2:{tipo:"esfera",largura:203,altura:203,velocidade:6.57,dano:480,gif:"FuracaoSkill2.gif"},
+  MetalSkill2:{tipo:"esfera",largura:210,altura:210,velocidade:6.66,dano:790,gif:"MetalSkill2.gif"},
+  MagmaSkill2:{tipo:"esfera",largura:220,altura:220,velocidade:6.75,dano:1200,gif:"MagmaSkill2.gif"},
+  AbismoSkill2:{tipo:"esfera",largura:214,altura:214,velocidade:6.84,dano:1750,gif:"AbismoSkill2.gif"},
+  MeteoroSkill2:{tipo:"esfera",largura:202,altura:202,velocidade:6.93,dano:2350,gif:"MeteoroSkill2.gif"},
+  SolSkill2:{tipo:"esfera",largura:251,altura:251,velocidade:7.02,dano:3100,gif:"SolSkill2.gif"},
+  EstrelaSkill2:{tipo:"esfera",largura:261,altura:261,velocidade:7.11,dano:4100,gif:"EstrelaSkill2.gif"},
+  BlackholeSkill2:{tipo:"feixe",comprimento:327,largura:162,dano:5900,gif:"BlackholeSkill2.gif"}
 };
 const COOLDOWN_SKILL1_PLAYER=900;
+// Cooldown por skill1 do player: as 6 mais raras (maior dano) sobem pra 1s,
+// as 2 comuns (Relampago e Som) continuam com o valor padrão acima. Nada
+// mais muda (dano, velocidade, cooldown do inimigo/boss seguem iguais).
+const cooldownSkill1Player={
+  RelampagoSkill1:COOLDOWN_SKILL1_PLAYER,
+  SomSkill1:COOLDOWN_SKILL1_PLAYER,
+  CirculoSkill1:1000,
+  VentoSkill1:1000,
+  AguaSkill1:1000,
+  VenenoSkill1:1000,
+  SolSkill1:1000,
+  MeteoroSkill1:1000
+};
+function cooldownSkill1Atual(){
+  const eq=inventarioAtual&&inventarioAtual.equipados?inventarioAtual.equipados.skill1:null;
+  return (eq&&cooldownSkill1Player[eq])?cooldownSkill1Player[eq]:COOLDOWN_SKILL1_PLAYER;
+}
 const COOLDOWN_SKILL1_INIMIGO=1650;
-const cooldownSkill2Player={RaioSkill2:4200,GeloSkill2:4500,FuracaoSkill2:4800,MetalSkill2:5100,MagmaSkill2:5500,AbismoSkill2:6000,MeteoroSkill2:6500,SolSkill2:7000,EstrelaSkill2:7600,BlackholeSkill2:8200};
-const cooldownSkill2Inimigo={RaioSkill2:6000,GeloSkill2:6400,FuracaoSkill2:6800,MetalSkill2:7200,MagmaSkill2:7600,AbismoSkill2:8000,MeteoroSkill2:8400,SolSkill2:8800,EstrelaSkill2:9200,BlackholeSkill2:9800};
+const cooldownSkill2Player={RaioSkill2:4200,GeloSkill2:4600,FuracaoSkill2:4800,MetalSkill2:5200,MagmaSkill2:5600,AbismoSkill2:6000,MeteoroSkill2:6600,SolSkill2:7100,EstrelaSkill2:7700,BlackholeSkill2:8300};
+const cooldownSkill2Inimigo={RaioSkill2:6100,GeloSkill2:6500,FuracaoSkill2:6900,MetalSkill2:7300,MagmaSkill2:7800,AbismoSkill2:8000,MeteoroSkill2:8700,SolSkill2:8900,EstrelaSkill2:9300,BlackholeSkill2:10000};
+// ===== BALANCEAMENTO (revisão) =====
+// 1) VIDA dos bosses 6-10 crescia ~1,77-1,88x por tier, acumulando valores extremos
+//    (110k/195k/345k/650k). Reduzido o crescimento a partir do tier 6 pra ~1,52-1,65x
+//    (tier 1-5 mantidos — já tinham pace ok pra dificuldade progressiva no início).
+// 2) danoUltimateFixo crescia muito mais devagar que a vida do boss (tirava 5,5% da
+//    vida do boss1, mas só 0,15% da vida do boss10 — cada vez mais fraca no late game).
+//    Ajustado pra manter fatia proporcional (~5,5%→2,2%), sem virar botão de vitória.
+// 3) Vida do tier 8 estava sem sincronia com o menu.js (mesmo bug do item de baixo).
+//    Vida dos tiers 9-10 reduzida (228k→220k / 346k→312k) continuando a MESMA curva
+//    de desaceleração que já existia do tier 6 ao 8 — a Skill 1 para de evoluir no
+//    tier 8, então o tempo pra abater o boss estava dando um salto brusco nos 2
+//    últimos bosses em vez de crescer suave como no resto do jogo.
+// Dano base de Skill1/Skill2, cooldown, overridesDano, moedas e diamantes NÃO alterados.
 const statsPorTier={
   1:{vida:1900,recompensaMoedas:150,recompensaDiamantes:2,chanceDiamante:.70,danoUltimateFixo:105,overridesDano:{RelampagoSkill1:{dano:20,velocidade:5.22}}},
-  2:{vida:4700,recompensaMoedas:330,recompensaDiamantes:4,chanceDiamante:.67,danoUltimateFixo:135,overridesDano:{SomSkill1:{dano:30,velocidade:5.4}}},
-  3:{vida:9800,recompensaMoedas:760,recompensaDiamantes:8,chanceDiamante:.64,danoUltimateFixo:175,overridesDano:{CirculoSkill1:{dano:48,velocidade:5.49}}},
-  4:{vida:19000,recompensaMoedas:1750,recompensaDiamantes:14,chanceDiamante:.61,danoUltimateFixo:230,overridesDano:{VentoSkill1:{dano:70,velocidade:5.58},RaioSkill2:{dano:105,velocidade:5.58}}},
-  5:{vida:35000,recompensaMoedas:3500,recompensaDiamantes:24,chanceDiamante:.58,danoUltimateFixo:300,overridesDano:{AguaSkill1:{dano:95,velocidade:5.67},GeloSkill2:{dano:155,velocidade:5.67}}},
-  6:{vida:62000,recompensaMoedas:7600,recompensaDiamantes:40,chanceDiamante:.55,danoUltimateFixo:380,overridesDano:{VenenoSkill1:{dano:125,velocidade:5.76},FuracaoSkill2:{dano:210,velocidade:5.76}}},
-  7:{vida:110000,recompensaMoedas:16500,recompensaDiamantes:65,chanceDiamante:.52,danoUltimateFixo:480,overridesDano:{SolSkill1:{dano:165,velocidade:5.85},MetalSkill2:{dano:285,velocidade:5.85}}},
-  8:{vida:195000,recompensaMoedas:36000,recompensaDiamantes:100,chanceDiamante:.49,danoUltimateFixo:600,overridesDano:{MeteoroSkill1:{dano:220,velocidade:5.94},MagmaSkill2:{dano:380,velocidade:5.94}}},
-  9:{vida:345000,recompensaMoedas:82000,recompensaDiamantes:180,chanceDiamante:.46,danoUltimateFixo:760,overridesDano:{SolSkill1:{dano:285,velocidade:6.03},MeteoroSkill1:{dano:285,velocidade:6.03},AbismoSkill2:{dano:500,velocidade:6.03}}},
-  10:{vida:650000,recompensaMoedas:195000,recompensaDiamantes:350,chanceDiamante:.43,danoUltimateFixo:950,overridesDano:{VenenoSkill1:{dano:360,velocidade:6.12},EstrelaSkill2:{dano:620,velocidade:6.12},SolSkill2:{dano:580,velocidade:6.12}}}
+  2:{vida:4700,recompensaMoedas:330,recompensaDiamantes:4,chanceDiamante:.67,danoUltimateFixo:225,overridesDano:{SomSkill1:{dano:30,velocidade:5.4}}},
+  3:{vida:9800,recompensaMoedas:760,recompensaDiamantes:8,chanceDiamante:.64,danoUltimateFixo:410,overridesDano:{CirculoSkill1:{dano:48,velocidade:5.49}}},
+  4:{vida:19000,recompensaMoedas:1750,recompensaDiamantes:14,chanceDiamante:.61,danoUltimateFixo:720,overridesDano:{VentoSkill1:{dano:70,velocidade:5.58},RaioSkill2:{dano:105,velocidade:5.58}}},
+  5:{vida:35000,recompensaMoedas:3500,recompensaDiamantes:24,chanceDiamante:.58,danoUltimateFixo:1190,overridesDano:{AguaSkill1:{dano:95,velocidade:5.67},GeloSkill2:{dano:155,velocidade:5.67}}},
+  6:{vida:57750,recompensaMoedas:7600,recompensaDiamantes:40,chanceDiamante:.55,danoUltimateFixo:1790,overridesDano:{VenenoSkill1:{dano:125,velocidade:5.76},FuracaoSkill2:{dano:210,velocidade:5.76}}},
+  7:{vida:93500,recompensaMoedas:16500,recompensaDiamantes:65,chanceDiamante:.52,danoUltimateFixo:2600,overridesDano:{SolSkill1:{dano:165,velocidade:5.85},MetalSkill2:{dano:285,velocidade:5.85}}},
+  8:{vida:147500,recompensaMoedas:36000,recompensaDiamantes:100,chanceDiamante:.49,danoUltimateFixo:3800,overridesDano:{MeteoroSkill1:{dano:220,velocidade:5.94},MagmaSkill2:{dano:380,velocidade:5.94}}},
+  9:{vida:220000,recompensaMoedas:82000,recompensaDiamantes:180,chanceDiamante:.46,danoUltimateFixo:5450,overridesDano:{SolSkill1:{dano:285,velocidade:6.03},MeteoroSkill1:{dano:285,velocidade:6.03},AbismoSkill2:{dano:500,velocidade:6.03}}},
+  10:{vida:312000,recompensaMoedas:195000,recompensaDiamantes:350,chanceDiamante:.43,danoUltimateFixo:7600,overridesDano:{VenenoSkill1:{dano:360,velocidade:6.12},EstrelaSkill2:{dano:620,velocidade:6.12},SolSkill2:{dano:580,velocidade:6.12}}}
 };
 const bossKits={1:{skill1:["RelampagoSkill1"],skill2:[]},2:{skill1:["SomSkill1"],skill2:[]},3:{skill1:["CirculoSkill1"],skill2:[]},4:{skill1:["VentoSkill1"],skill2:["RaioSkill2"]},5:{skill1:["AguaSkill1"],skill2:["GeloSkill2"]},6:{skill1:["VenenoSkill1"],skill2:["FuracaoSkill2"]},7:{skill1:["SolSkill1"],skill2:["MetalSkill2"]},8:{skill1:["MeteoroSkill1"],skill2:["MagmaSkill2"]},9:{skill1:["SolSkill1","MeteoroSkill1"],skill2:["AbismoSkill2"]},10:{skill1:["VenenoSkill1"],skill2:["EstrelaSkill2","SolSkill2"]}};
 function escolherAleatorio(lista){return lista[Math.floor(Math.random()*lista.length)]}
 function clamp(valor,minimo,maximo){return Math.max(minimo,Math.min(maximo,valor))}
 
 
+// "cor"/"cor2" = identidade visual do texto (tema do personagem/elemento), aplicada como
+// gradiente real no texto (não só sombra) — combinação bem mais visível no celular.
 const ULTIMATE_CONFIG_BY_ID = {
-  Ultimate1: { nome: 'Arlan', frase: 'Vai leva uma Advertencia' },
-  Ultimate2: { nome: 'Marcos', frase: 'Eu dou a bunda' },
-  Ultimate3: { nome: 'Miguel', frase: 'A vanessa e Somente minha' },
-  Ultimate4: { nome: 'Carlos', frase: 'Estou indignado' },
-  Ultimate5: { nome: 'Lucas', frase: 'Hoje a noite vai pega fogo' },
-  Ultimate6: { nome: 'Davi', frase: 'Vai se lasca' },
-  Ultimate7: { nome: 'Arthur', frase: 'Isso tudo e Por voce Vanessa Receba todo meu Amor' },
-  Ultimate8: { nome: 'Vinicius', frase: 'Vou te Mata Arthur' },
-  Ultimate9: { nome: 'GuilermeChucro', frase: 'A vanessa nao e de Ninguem e Apenas minha' },
-  Ultimate10: { nome: 'PaulaoDoPneu', frase: 'Se ajoelha seu verme Insolente Insignificante' }
+  Ultimate1: { nome: 'Arlan', frase: 'Vai leva uma Advertencia', cor: '#fff35c', cor2: '#3ad4ff' },
+  Ultimate2: { nome: 'Marcos', frase: 'Eu dou a bunda', cor: '#ff4fd8', cor2: '#ff9ae6' },
+  Ultimate3: { nome: 'Miguel', frase: 'A vanessa e Somente minha', cor: '#3ad4ff', cor2: '#7b8cff' },
+  Ultimate4: { nome: 'Carlos', frase: 'Estou indignado', cor: '#39ff8a', cor2: '#1ad1c9' },
+  Ultimate5: { nome: 'Lucas', frase: 'Hoje a noite vai pega fogo', cor: '#2f9bff', cor2: '#00eaff' },
+  Ultimate6: { nome: 'Davi', frase: 'Vai se lasca', cor: '#39ff6a', cor2: '#a020ff' },
+  Ultimate7: { nome: 'Arthur', frase: 'Isso tudo e Por voce Vanessa Receba todo meu Amor', cor: '#ffd700', cor2: '#ff9d1a' },
+  Ultimate8: { nome: 'Vinicius', frase: 'Vou te Mata Arthur', cor: '#ff2d2d', cor2: '#ff8c1a' },
+  Ultimate9: { nome: 'GuilermeChucro', frase: 'A vanessa nao e de Ninguem e Apenas minha', cor: '#a020ff', cor2: '#3d0f5c' },
+  Ultimate10: { nome: 'PaulaoDoPneu', frase: 'Se ajoelha seu verme Insolente Insignificante', cor: '#1313d4', cor2: '#2c0104' }
 };
 
 let rafBatalhaId = null;
@@ -182,15 +214,20 @@ function piscarDano(idSprite) {
   const el = elementosSprites[idSprite];
   if (!el) return;
   el.classList.remove("piscar-dano");
-  void el.offsetWidth;
-  el.classList.add("piscar-dano");
+  requestAnimationFrame(function () {
+    el.classList.add("piscar-dano");
+  });
 }
 
 function tremerTela() {
-  const area = document.getElementById("area-jogo");
-  area.classList.remove("tremendo");
-  void area.offsetWidth;
-  area.classList.add("tremendo");
+  // Tremor aplicado no VIEWPORT (janela visível), não na arena/câmera — evita
+  // brigar com a transform da câmera (que agora é fixa) e deixa o efeito barato.
+  const viewport = elementosBatalha.viewport || document.getElementById("viewport-jogo");
+  if (!viewport) return;
+  viewport.classList.remove("tremendo");
+  requestAnimationFrame(function () {
+    viewport.classList.add("tremendo");
+  });
 }
 
 function criarNumeroDano(valor, xMundo, yMundo, cor) {
@@ -376,10 +413,23 @@ let battleSessionId = null;
 let finalizandoBatalha = false;
 window.arcaneDamagePromises = window.arcaneDamagePromises || new Set();
 
-function registrarDanoServidor(dano) {
+let danoPendenteAcumulado = 0;
+let flushDanoTimer = null;
+const INTERVALO_FLUSH_DANO_MS = 350;
+
+// Junta os golpes que acertaram num período curto e manda pro servidor de uma vez só
+// (em vez de 1 requisição de rede por golpe). O total registrado no servidor continua
+// exatamente igual — só muda a frequência de rede, não o dano/lógica do jogo.
+function flushDanoServidor() {
+  if (flushDanoTimer !== null) { clearTimeout(flushDanoTimer); flushDanoTimer = null; }
+
   const battleId = window.arcaneBattleId || battleSessionId;
-  const valor = Number(dano || 0);
-  if (!battleId || !Number.isFinite(valor) || valor <= 0 || !window.supabaseClient) return Promise.resolve();
+  const valor = danoPendenteAcumulado;
+  danoPendenteAcumulado = 0;
+
+  if (!battleId || !Number.isFinite(valor) || valor <= 0 || !window.supabaseClient) {
+    return Promise.resolve();
+  }
 
   const promessa = window.supabaseClient.rpc('registrar_dano_batalha', {
     p_battle_id: battleId,
@@ -393,6 +443,21 @@ function registrarDanoServidor(dano) {
   window.arcaneDamagePromises.add(promessa);
   promessa.finally(() => window.arcaneDamagePromises.delete(promessa));
   return promessa;
+}
+window.flushDanoServidorPendente = flushDanoServidor;
+
+function registrarDanoServidor(dano) {
+  const valor = Number(dano || 0);
+  if (!Number.isFinite(valor) || valor <= 0) return Promise.resolve();
+
+  danoPendenteAcumulado += valor;
+  if (flushDanoTimer === null) {
+    flushDanoTimer = setTimeout(function () {
+      flushDanoTimer = null;
+      flushDanoServidor();
+    }, INTERVALO_FLUSH_DANO_MS);
+  }
+  return Promise.resolve();
 }
 window.registrarDanoServidor = registrarDanoServidor;
 
@@ -481,6 +546,7 @@ function continuarBatalha() {
 function pararBatalha() {
   jogoAtivo = false;
   finalizandoBatalha = false;
+  if (typeof flushDanoServidor === 'function') flushDanoServidor();
   window.arcaneBattleId = null;
   window.arcaneBattleStartedAt = 0;
   pararTimerCooldownUi();
@@ -505,13 +571,21 @@ function atualizarBarrasBatalha() {
   if (elementosBatalha.barraUltimate) elementosBatalha.barraUltimate.style.width = Math.min(100, (cargaUltimatePlayer / cargaUltimateMax) * 100) + "%";
   const botaoUlt = elementosBatalha.botaoUltimate;
   if (botaoUlt) botaoUlt.classList.toggle("ultimate-esgotada", usosUltimatePlayerRestantes <= 0);
+
+  // Boss em FÚRIA abaixo de 50% de vida — só toggle de classes visuais, sem alterar dano/stats.
+  const emFuria = vidaEnemyMax > 0 && vidaEnemy > 0 && (vidaEnemy / vidaEnemyMax) <= 0.5;
+  if (elementosBatalha.area) elementosBatalha.area.classList.toggle("boss-furia", emFuria);
+  if (elementosBatalha.barraEnemy) elementosBatalha.barraEnemy.classList.toggle("barra-furia", emFuria);
+  const spriteBossAtual = elementosSprites["inimigo"];
+  if (spriteBossAtual) spriteBossAtual.classList.toggle("sprite-furia", emFuria);
+
+  // Vida do PLAYER abaixo de 50% — só toggle visual (barra "pegando fogo"), sem tocar em dano/HP.
+  const vidaPlayerCritica = vidaMax > 0 && vidaPlay > 0 && (vidaPlay / vidaMax) <= 0.5;
+  if (elementosBatalha.barraPlay) elementosBatalha.barraPlay.classList.toggle("barra-perigo", vidaPlayerCritica);
 }
 
 function desenharBatalha() {
   ctxBatalha.clearRect(0, 0, canvasBatalha.width, canvasBatalha.height);
-  
-  const camada = elementosBatalha.camadaSprites;
-  if (camada && camada.style.transform) camada.style.transform = "none";
 
   if (fundoImg && fundoImg.complete && fundoImg.naturalWidth > 0) {
     if (fundoCanvasChroma) {
@@ -540,7 +614,7 @@ function desenharBatalha() {
   const idsUsados = new Set(["personagem", "inimigo"]);
   const personagemEquipado = inventarioAtual.equipados && inventarioAtual.equipados.imagem;
   const spritePersonagem = personagemEquipado
-    ? (personagemEquipado === "PaulaoDoPneuBanner" ? "PaulaoDoPneuBanner.jpg" : personagemEquipado === "CarlosBanner" ? "CarlosBatalha.webp" : personagemEquipado + ".webp")
+    ? (personagemEquipado === "PaulaoDoPneuBanner" ? "PaulaoDoPneuBanner.jpg" : personagemEquipado === "CarlosBanner" ? "CarlosBanner.webp" : personagemEquipado + ".webp")
     : "ArlanBanner.webp";
 
   const spritePlayer = posicionarSprite(
@@ -572,11 +646,15 @@ function desenharBatalha() {
     6: 'Davi.jpg',
     7: 'Arthur.jpg',
     8: 'Vinicius.jpg',
-    9: 'Guilerme.jpg',
-    10: 'Paulo.jpg'
+    9: 'GuilermeChucro.jpg',
+    10: 'PaulaoDoPneu.jpg'
   };
   const imagemBoss = imagensBoss[Number(bossAtual?.id)] || (bossAtual?.nome ? bossAtual.nome + '.jpg' : 'Arlan.jpg');
-  const bossSprite = posicionarSprite("inimigo", imagemBoss, inimigoX, inimigoY, TAMANHO_BOSS, TAMANHO_BOSS, "sprite-boss", x < inimigoX);
+  // Tamanho individual por boss (presença maior nos avançados). Não altera posição/lógica,
+  // só o width/height passado pro posicionarSprite — fallback pro tamanho padrão se faltar.
+  const bossTamanhos = { 1:150, 2:158, 3:165, 4:172, 5:180, 6:190, 7:200, 8:215, 9:235, 10:260 };
+  const tamanhoBossAtual = bossTamanhos[Number(bossAtual?.id)] || TAMANHO_BOSS;
+  const bossSprite = posicionarSprite("inimigo", imagemBoss, inimigoX, inimigoY, tamanhoBossAtual, tamanhoBossAtual, "sprite-boss", x < inimigoX);
   if (bossSprite && bossSprite.tagName === "IMG") {
     bossSprite.onerror = function () {
       this.onerror = null;
@@ -641,44 +719,13 @@ function atualizarCameraBatalha() {
   const mundoW = canvasBatalha.width;
   const mundoH = canvasBatalha.height;
 
-  
-  const escalaConfortavel = Math.min(viewportW / 900, viewportH / 595);
-  
-  const escala = clamp(escalaConfortavel * 1.06, 0.5, 1);
-
-  
-  const janelaMundoW = viewportW / escala;
-  const janelaMundoH = viewportH / escala;
-  const maxCamX = Math.max(0, mundoW - janelaMundoW);
-  const maxCamY = Math.max(0, mundoH - janelaMundoH);
-
-  
-  let alvoX = (x + inimigoX) * 0.5;
-  let alvoY = (y + inimigoY) * 0.5;
-  const margem = 24;
-
-  const menorX = Math.min(x, inimigoX);
-  const maiorX = Math.max(x, inimigoX);
-  const menorY = Math.min(y, inimigoY);
-  const maiorY = Math.max(y, inimigoY);
-
-  if (maiorX - menorX <= janelaMundoW - margem * 2) {
-    if (menorX < alvoX - janelaMundoW / 2 + margem) alvoX = menorX + janelaMundoW / 2 - margem;
-    if (maiorX > alvoX + janelaMundoW / 2 - margem) alvoX = maiorX - janelaMundoW / 2 + margem;
-  }
-  if (maiorY - menorY <= janelaMundoH - margem * 2) {
-    if (menorY < alvoY - janelaMundoH / 2 + margem) alvoY = menorY + janelaMundoH / 2 - margem;
-    if (maiorY > alvoY + janelaMundoH / 2 - margem) alvoY = maiorY - janelaMundoH / 2 + margem;
-  }
-
-  camX = clamp(alvoX - janelaMundoW / 2, 0, maxCamX);
-  camY = clamp(alvoY - janelaMundoH / 2, 0, maxCamY);
-
-  
-  const escalaY = escala * (viewportW <= 900 ? 1.12 : 1.06);
+  // Câmera FIXA: mostra a arena inteira sempre (sem seguir player/boss, sem zoom
+  // ao atacar/receber dano). camX/camY permanecem 0 (setados em iniciarBatalha),
+  // então o fundo do canvas também é desenhado sem pan — arena inteira visível.
+  const escala = Math.min(viewportW / mundoW, viewportH / mundoH);
   const offsetX = (viewportW - mundoW * escala) / 2;
-  const offsetY = (viewportH - mundoH * escalaY) / 2;
-  const transform = `translate(${offsetX - camX * escala}px,${offsetY - camY * escalaY}px) scale(${escala},${escalaY})`;
+  const offsetY = (viewportH - mundoH * escala) / 2;
+  const transform = `translate(${offsetX}px,${offsetY}px) scale(${escala})`;
   if (area.dataset.cameraTransform !== transform) {
     area.style.transformOrigin = "0 0";
     area.style.transform = transform;
@@ -812,7 +859,7 @@ function atualizarCooldownsBotoes() {
 
   const elSkill1 = elementosBatalha.cooldownSkill1;
   if (elSkill1) {
-    const cd1 = COOLDOWN_SKILL1_PLAYER * (typeof getPlayerCooldownMultiplier==='function' ? getPlayerCooldownMultiplier() : 1);
+    const cd1 = cooldownSkill1Atual() * (typeof getPlayerCooldownMultiplier==='function' ? getPlayerCooldownMultiplier() : 1);
     const restante = cd1 - (agora - ultimoSkill1Player);
     elSkill1.textContent = restante > 50 ? (restante / 1000).toFixed(1) + "s" : "";
   }
@@ -872,7 +919,7 @@ function atualizarBatalha(timestamp) {
   atualizarMovimentoInimigo(deltaSegundos);
   atualizarCameraBatalha();
 
-  if (agora - ultimoSkill1Player >= COOLDOWN_SKILL1_PLAYER * (typeof getPlayerCooldownMultiplier==='function' ? getPlayerCooldownMultiplier() : 1)) {
+  if (agora - ultimoSkill1Player >= cooldownSkill1Atual() * (typeof getPlayerCooldownMultiplier==='function' ? getPlayerCooldownMultiplier() : 1)) {
     atirarSkill1(x, y, "player");
     ultimoSkill1Player = agora;
   }
@@ -972,6 +1019,7 @@ async function checarFimDaBatalha() {
     const diamantesGanhos = Math.random() < statsBoss.chanceDiamante ? diamantesBase : 0;
 
     const pendentes = Array.from(window.arcaneDamagePromises || []);
+    if (typeof flushDanoServidor === 'function') pendentes.push(flushDanoServidor());
     if (pendentes.length) await Promise.allSettled(pendentes);
 
     if (typeof aoVencerBatalha === 'function') {
@@ -992,7 +1040,7 @@ async function checarFimDaBatalha() {
 const ataqueButton = document.getElementById("ataque");
 if (ataqueButton) ataqueButton.addEventListener("click", function () {
   const agora = Date.now();
-  if (agora - ultimoSkill1Player >= COOLDOWN_SKILL1_PLAYER * (typeof getPlayerCooldownMultiplier==='function' ? getPlayerCooldownMultiplier() : 1)) {
+  if (agora - ultimoSkill1Player >= cooldownSkill1Atual() * (typeof getPlayerCooldownMultiplier==='function' ? getPlayerCooldownMultiplier() : 1)) {
     atirarSkill1(x, y, "player");
     ultimoSkill1Player = agora;
   }
@@ -1181,6 +1229,8 @@ function dispararCutsceneUltimate(dono) {
   legenda.textContent = nomeUltimate.toUpperCase() + ' — ' + frase;
   legenda.dataset.character = nomeUltimate;
   legenda.dataset.ultimateId = ultimateId;
+  const corUlt = ultimateConfig?.cor || '#fff';
+  const corUlt2 = ultimateConfig?.cor2 || corUlt;
   legenda.style.display = 'block';
   legenda.style.position = 'absolute';
   legenda.style.top = 'clamp(72px, 14vh, 150px)';
@@ -1188,14 +1238,23 @@ function dispararCutsceneUltimate(dono) {
   legenda.style.width = '100%';
   legenda.style.padding = '14px 18px';
   legenda.style.boxSizing = 'border-box';
-  legenda.style.background = 'linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.18), transparent)';
-  legenda.style.color = '#fff';
+  // Fundo com brilho da cor da Ultimate + preto (pra manter leitura), tudo inline —
+  // não depende de nenhum CSS externo carregar/vencer conflito de especificidade.
+  legenda.style.background = 'radial-gradient(120% 160% at 50% 20%, ' + corUlt + '40, rgba(0,0,0,.8) 55%, rgba(0,0,0,.2) 80%, transparent)';
+  legenda.style.setProperty('--ult-cor', corUlt);
+  legenda.style.setProperty('--ult-cor2', corUlt2);
+  legenda.classList.remove('legenda-ultimate-colorida');
+  void legenda.offsetWidth;
+  legenda.classList.add('legenda-ultimate-colorida');
+  legenda.style.color = corUlt;
   legenda.style.fontWeight = '900';
   legenda.style.fontSize = 'clamp(16px,3.6vw,34px)';
   legenda.style.zIndex = '1000001';
   legenda.style.whiteSpace = 'normal';
   legenda.style.textAlign = 'center';
-  legenda.style.textShadow = '0 3px 12px #000, 0 0 18px rgba(255,255,255,.65)';
+  // Halo de 2 cores também setado inline (redundante com a classe CSS de propósito —
+  // garante que apareça mesmo se o CSS externo não carregar).
+  legenda.style.textShadow = '0 3px 10px #000, -2px 0 12px ' + corUlt + ', 2px 0 12px ' + corUlt2 + ', 0 0 24px ' + corUlt + ', 0 0 40px ' + corUlt2;
 
   if (window.playUltimateVoice) window.playUltimateVoice(ultimateId);
 
@@ -1285,7 +1344,7 @@ function aplicarDanoUltimate(dono) {
     registrarDanoServidor(danoUltimate);
     tremerTela();
     piscarDano("inimigo");
-    criarNumeroDano(danoUltimate, inimigoX, inimigoY - 90, "#ffd23f");
+    criarNumeroDano(danoUltimate, inimigoX, inimigoY - 90, "#ab8406");
   } else {
     const stats = statsPorTier[bossAtual.tier || bossAtual.id];
     danoUltimate = stats.danoUltimateFixo || (200 * bossAtual.tier);

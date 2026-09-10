@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Arcane Clash — Arena PvP</title>
+<style>
+  :root{
+    --bg:#06070f; --panel:rgba(14,16,32,.82); --border:rgba(255,255,255,.1);
+    --grad1:#7b5cff; --grad2:#42efff; --gold:#ffd166; --danger:#ff5c6c; --ok:#5cffb0;
+    --bronze:#c07a3e; --prata:#c7d0da; --ouro:#ffd166; --diamante:#7ee8ff; --desafiante:#ff5cf1;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0%,#161c3d 0%,#06070f 60%);
+    font-family:system-ui,sans-serif;color:#fff;overflow-x:hidden}
+  .hidden{display:none!important}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+    background:rgba(8,9,20,.7);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;backdrop-filter:blur(8px)}
+  .topbar .title{font-weight:900;letter-spacing:1px;background:linear-gradient(135deg,var(--grad1),var(--grad2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;font-size:18px}
+  .btn-voltar{background:rgba(255,255,255,.08);border:1px solid var(--border);color:#fff;padding:8px 12px;
+    border-radius:10px;font-weight:700;cursor:pointer;font-size:13px}
+  .container{max-width:520px;margin:0 auto;padding:16px 14px 90px}
+
+  /* ===== CARD RANK/PERFIL ===== */
+  .profile-card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:16px;
+    display:flex;align-items:center;gap:14px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  .avatar-ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:30px;background:#12142a;border:3px solid var(--rank-color,#c07a3e);flex-shrink:0;overflow:hidden}
+  .avatar-ring img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+  .profile-info{flex:1;min-width:0}
+  .profile-name{font-weight:800;font-size:16px}
+  .rank-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.5px;
+    padding:3px 9px;border-radius:20px;margin-top:4px;background:color-mix(in srgb,var(--rank-color,#c07a3e) 25%,transparent);
+    color:var(--rank-color,#c07a3e);border:1px solid var(--rank-color,#c07a3e)}
+  .stat-row{display:flex;gap:14px;margin-top:8px;font-size:12px;color:#9aa3c7}
+  .stat-row b{color:#fff}
+  .xp-bar-wrap{height:7px;border-radius:6px;background:rgba(255,255,255,.08);margin-top:8px;overflow:hidden}
+  .xp-bar-fill{height:100%;background:linear-gradient(90deg,var(--grad1),var(--grad2));border-radius:6px;transition:width .4s}
+
+  /* ===== BOTÃO BATALHA ===== */
+  .btn-batalha{width:100%;margin-top:18px;padding:20px;border:none;border-radius:20px;font-size:20px;font-weight:900;
+    letter-spacing:1px;color:#0a0d1c;cursor:pointer;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,var(--grad1),var(--grad2));box-shadow:0 0 30px rgba(123,92,255,.5),0 8px 24px rgba(0,0,0,.4)}
+  .btn-batalha:active{transform:scale(.97)}
+  .btn-batalha::after{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(255,255,255,.35),transparent);
+    transform:translateX(-120%);animation:shine 3s infinite}
+  @keyframes shine{60%{transform:translateX(120%)}100%{transform:translateX(120%)}}
+  .btn-locked{opacity:.45;filter:grayscale(.6)}
+
+  /* ===== TABS ===== */
+  .tabs{display:flex;gap:8px;margin-top:18px;overflow-x:auto;padding-bottom:2px}
+  .tab-btn{flex:none;padding:9px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.05);
+    color:#9aa3c7;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+  .tab-btn.active{background:linear-gradient(135deg,var(--grad1),var(--grad2));color:#0a0d1c;border-color:transparent}
+  .panel{margin-top:14px;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px}
+
+  /* ===== CARDS GENÉRICOS ===== */
+  .item-card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;
+    border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--border);margin-bottom:10px}
+  .item-card.locked{opacity:.4}
+  .item-name{font-weight:700;font-size:14px}
+  .item-sub{font-size:11px;color:#9aa3c7;margin-top:2px}
+  .btn-buy{background:linear-gradient(135deg,#ffd166,#ff9d1a);color:#3a2200;border:none;border-radius:10px;
+    padding:8px 12px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap}
+  .btn-buy:disabled{opacity:.4;cursor:not-allowed}
+
+  .ranking-row{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px}
+  .ranking-row:nth-child(odd){background:rgba(255,255,255,.03)}
+  .ranking-pos{width:26px;font-weight:900;color:var(--gold);text-align:center}
+
+  /* ===== OVERLAYS DE FLUXO ===== */
+  .overlay{position:fixed;inset:0;background:radial-gradient(circle at 50% 40%,#161c3d,#04050b 70%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;text-align:center;padding:20px}
+  .search-symbol{font-size:38px;font-weight:900;letter-spacing:8px;color:var(--grad2);text-shadow:0 0 20px var(--grad2);
+    min-height:48px}
+  .search-label{margin-top:14px;font-weight:700;letter-spacing:2px;color:#9aa3c7}
+  .btn-cancelar{margin-top:26px;background:rgba(255,255,255,.08);border:1px solid var(--border);color:#fff;
+    padding:10px 18px;border-radius:12px;cursor:pointer}
+
+  .vs-wrap{display:flex;align-items:center;gap:16px;width:100%;max-width:440px}
+  .vs-player{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;
+    animation:slideIn .5s ease}
+  .vs-player:last-child{animation:slideInR .5s ease}
+  @keyframes slideIn{from{transform:translateX(-60px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes slideInR{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
+  .vs-avatar{width:56px;height:56px;border-radius:50%;background:#12142a;display:flex;align-items:center;
+    justify-content:center;font-size:26px;margin:0 auto 8px;border:2px solid var(--grad2)}
+  .vs-mid{font-weight:900;font-size:26px;color:var(--danger);text-shadow:0 0 16px var(--danger)}
+
+  .countdown-num{font-size:80px;font-weight:900;color:var(--grad2);text-shadow:0 0 30px var(--grad2)}
+
+  /* ===== ARENA DE BATALHA ===== */
+  .arena{position:fixed;inset:0;background:linear-gradient(180deg,#0e1230,#04050b);z-index:40;display:flex;
+    flex-direction:column}
+  .hp-zone{padding:14px;display:flex;flex-direction:column;gap:10px}
+  .hp-line{display:flex;align-items:center;gap:8px}
+  .hp-avatar{width:34px;height:34px;border-radius:50%;background:#12142a;border:2px solid var(--grad2);
+    display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .hp-info{flex:1}
+  .hp-name{font-size:12px;font-weight:700;display:flex;justify-content:space-between}
+  .hp-bar-wrap{height:12px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:3px}
+  .hp-bar-fill{height:100%;border-radius:8px;transition:width .3s}
+  .hp-bar-fill.me{background:linear-gradient(90deg,#39ff8a,#1ad1c9)}
+  .hp-bar-fill.foe{background:linear-gradient(90deg,#ff5c6c,#ff2d2d)}
+  .battle-mid{flex:1;display:flex;align-items:center;justify-content:center;font-size:13px;color:#6b7399}
+  .battle-controls{display:flex;gap:10px;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+  .skill-btn{flex:1;padding:16px 6px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.06);
+    color:#fff;font-weight:800;font-size:12px;cursor:pointer;position:relative}
+  .skill-btn.ult{background:linear-gradient(135deg,#ff9d1a,#ff2d2d)}
+  .skill-btn:disabled{opacity:.35}
+  .btn-dash{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.08);border:1px solid var(--border);
+    color:#fff;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:700}
+
+  /* ===== PROMOÇÃO DE RANK ===== */
+  .promo-overlay{position:fixed;inset:0;background:rgba(4,5,11,.92);z-index:60;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center}
+  .promo-rank-old{font-size:16px;color:#9aa3c7;letter-spacing:2px}
+  .promo-arrow{font-size:30px;margin:6px 0;color:var(--grad2)}
+  .promo-rank-new{font-size:40px;font-weight:900;letter-spacing:2px;text-shadow:0 0 30px currentColor;
+    animation:pop .5s ease}
+  @keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  .promo-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .p-dot{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--gold);animation:rise 1.4s ease-out forwards}
+  @keyframes rise{from{transform:translateY(0);opacity:1}to{transform:translateY(-160px);opacity:0}}
+
+  .locked-msg{text-align:center;padding:40px 20px;color:#9aa3c7}
+  .locked-msg b{color:var(--gold)}
+
+  /* ===== THUMB DE PET NA LOJA ===== */
+  .pet-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;
+    border:2px solid var(--gold);box-shadow:0 0 10px rgba(255,209,102,.5);background:#0a0d1c}
+  .pet-thumb.locked{filter:grayscale(1);opacity:.5;box-shadow:none;border-color:var(--border)}
+
+  /* ===== RETOQUE ESTILO "ARENA COMPETITIVA" (tipo Roblox/Free Fire) ===== */
+  .topbar .title{text-shadow:0 0 12px var(--grad2)}
+  .profile-card{border-width:2px;border-image:linear-gradient(135deg,var(--grad1),var(--grad2)) 1}
+  .rank-pill{text-shadow:0 0 6px currentColor;letter-spacing:1px}
+  .btn-batalha{text-shadow:0 1px 0 rgba(255,255,255,.4);border:2px solid rgba(255,255,255,.4)}
+  .tab-btn.active{box-shadow:0 0 14px rgba(123,92,255,.6)}
+  .skill-btn{text-transform:uppercase;letter-spacing:1px;border-width:2px}
+  .skill-btn.ult{box-shadow:0 0 18px rgba(255,45,45,.55);border-color:rgba(255,255,255,.5)}
+  .hp-bar-fill.me{box-shadow:0 0 8px #39ff8a inset}
+  .hp-bar-fill.foe{box-shadow:0 0 8px #ff2d2d inset}
+  .vs-mid{animation:pulseVs 1s infinite}
+  @keyframes pulseVs{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+  .ranking-pos{text-shadow:0 0 8px var(--gold)}
+
+  /* ===== LOJA EM GRID COLORIDO (estilo FF/Roblox) ===== */
+  .loja-secao-titulo{font-weight:900;letter-spacing:1px;margin:16px 2px 10px;font-size:13px;
+    text-transform:uppercase;display:flex;align-items:center;gap:6px}
+  .loja-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .loja-card{position:relative;border-radius:16px;padding:12px 10px;display:flex;flex-direction:column;
+    align-items:center;text-align:center;gap:6px;overflow:hidden;border:2px solid var(--lc-cor,#7b5cff);
+    background:linear-gradient(160deg, color-mix(in srgb,var(--lc-cor,#7b5cff) 22%,#0e1024) 0%, #0a0c1c 100%);
+    box-shadow:0 0 16px color-mix(in srgb,var(--lc-cor,#7b5cff) 45%,transparent), inset 0 0 20px rgba(255,255,255,.03)}
+  .loja-card.locked{filter:grayscale(.85) brightness(.6);opacity:.55}
+  .loja-card .lc-icone{font-size:28px;filter:drop-shadow(0 0 6px var(--lc-cor,#7b5cff))}
+  .loja-card .lc-pet-img{width:56px;height:56px;border-radius:12px;object-fit:cover;border:2px solid var(--lc-cor,#ffd166);
+    box-shadow:0 0 10px var(--lc-cor,#ffd166)}
+  .loja-card .lc-nome{font-weight:800;font-size:12px;line-height:1.2}
+  .loja-card .lc-sub{font-size:10px;color:#9aa3c7;min-height:12px}
+  .loja-card .lc-btn{width:100%;margin-top:2px;padding:8px 4px;border:none;border-radius:10px;font-weight:900;font-size:12px;
+    cursor:pointer;color:#0a0d1c;background:linear-gradient(135deg,var(--lc-cor,#ffd166),color-mix(in srgb,var(--lc-cor,#ffd166) 60%,white))}
+  .loja-card .lc-btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(1)}
+  .loja-card .lc-faixa{position:absolute;top:8px;right:-26px;transform:rotate(35deg);background:var(--lc-cor,#7b5cff);
+    color:#0a0d1c;font-size:9px;font-weight:900;padding:2px 26px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+
+  /* ===== RESPONSIVIDADE ===== */
+  .countdown-num{font-size:clamp(48px,14vw,80px)}
+  .vs-mid{font-size:clamp(20px,6vw,26px)}
+
+  /* telas bem estreitas (celulares antigos, <360px) */
+  @media (max-width:359px){
+    .container{padding:12px 8px 80px}
+    .profile-card{padding:12px;gap:10px}
+    .avatar-ring{width:52px;height:52px;font-size:24px}
+    .btn-batalha{padding:16px;font-size:17px}
+    .skill-btn{padding:12px 4px;font-size:11px}
+    .tab-btn{padding:8px 10px;font-size:12px}
+  }
+
+  /* celular em landscape (pouca altura) — a arena precisa caber sem cortar os botões */
+  @media (max-height:480px) and (orientation:landscape){
+    .arena{flex-direction:row;flex-wrap:wrap}
+    .hp-zone{width:100%;padding:8px 12px;gap:4px}
+    .battle-mid{flex-basis:100%;font-size:11px}
+    .battle-controls{padding:8px 14px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+    .skill-btn{padding:10px 6px;font-size:11px}
+    .overlay{padding:10px}
+    .countdown-num{font-size:clamp(36px,10vh,60px)}
+    .vs-wrap{gap:8px}
+  }
+
+  /* tablets/desktop — não deixar tudo esticado, mantém proporção de app mobile */
+  @media (min-width:700px){
+    .container{max-width:520px}
+    .topbar{max-width:520px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border)}
+    .arena{max-width:520px;width:100%;left:50%;right:auto;transform:translateX(-50%);border-left:1px solid var(--border);border-right:1px solid var(--border)}
+    body{background:radial-gradient(circle at 50% 0%,#161c3d 0%,#06070f 60%) fixed}
+  }
+
+  /* telas muito grandes (monitor) — evita que os cards da loja/ranking fiquem gigantes */
+  @media (min-width:1000px){
+    .container{max-width:560px}
+  }
+
+  /* safe-area em qualquer overlay fullscreen (notch/ilha dinâmica) */
+  .overlay, .arena, .promo-overlay{padding-top:max(20px, env(safe-area-inset-top));padding-left:max(0px, env(safe-area-inset-left));padding-right:max(0px, env(safe-area-inset-right))}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="btn-voltar" onclick="window.location.href='index.html'">← Lobby</button>
+  <div class="title">ARENA PvP</div>
+  <div style="width:70px"></div>
+</div>
+
+<div id="tela-bloqueado" class="container hidden">
+  <div class="locked-msg">
+    🔒<br><br>
+    O PvP é liberado depois de derrotar o <b>Boss 5</b>.<br>Volte para o lobby e continue sua jornada!
+  </div>
+</div>
+
+<div id="tela-pvp" class="container hidden">
+
+  <div class="profile-card" id="profile-card" style="--rank-color:#c07a3e">
+    <div class="avatar-ring" id="pvp-avatar">🧙</div>
+    <div class="profile-info">
+      <div class="profile-name" id="pvp-nome">Jogador</div>
+      <div class="rank-pill" id="pvp-rank-pill">BRONZE</div>
+      <div class="stat-row">
+        <span>🏆 <b id="pvp-trofeus">0</b></span>
+        <span>Nível <b id="pvp-nivel">1</b></span>
+        <span><b id="pvp-vitorias">0</b>V / <b id="pvp-derrotas">0</b>D</span>
+      </div>
+      <div class="xp-bar-wrap"><div class="xp-bar-fill" id="pvp-xp-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <button class="btn-batalha" id="btn-batalha" onclick="iniciarBusca()">⚔ BATALHA</button>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="equip" onclick="trocarAba('equip')">Equipamento</button>
+    <button class="tab-btn" data-tab="loja" onclick="trocarAba('loja')">Loja</button>
+    <button class="tab-btn" data-tab="inv" onclick="trocarAba('inv')">Inventário</button>
+    <button class="tab-btn" data-tab="rank" onclick="trocarAba('rank')">Ranking</button>
+  </div>
+
+  <div class="panel" id="painel-equip"></div>
+  <div class="panel hidden" id="painel-loja"></div>
+  <div class="panel hidden" id="painel-inv"></div>
+  <div class="panel hidden" id="painel-rank"></div>
+</div>
+
+<!-- OVERLAYS -->
+<div id="overlay-busca" class="overlay hidden">
+  <div class="search-symbol" id="search-symbol">S</div>
+  <div class="search-label">PROCURANDO OPONENTE</div>
+  <button class="btn-cancelar" onclick="cancelarBusca()">Cancelar</button>
+</div>
+
+<div id="overlay-vs" class="overlay hidden">
+  <div class="vs-wrap">
+    <div class="vs-player">
+      <div class="vs-avatar" id="vs-avatar1">🧙</div>
+      <div id="vs-nome1" style="font-weight:800;font-size:14px"></div>
+      <div id="vs-rank1" style="font-size:11px;color:#9aa3c7;margin-top:4px"></div>
+    </div>
+    <div class="vs-mid">VS</div>
+    <div class="vs-player">
+      <div class="vs-avatar" id="vs-avatar2">🧙</div>
+      <div id="vs-nome2" style="font-weight:800;font-size:14px"></div>
+      <div id="vs-rank2" style="font-size:11px;color:#9aa3c7;margin-top:4px"></div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay-countdown" class="overlay hidden">
+  <div class="countdown-num" id="countdown-num">3</div>
+</div>
+
+<div id="arena" class="arena hidden">
+  <div class="hp-zone">
+    <div class="hp-line">
+      <div class="hp-avatar" id="arena-avatar-me">🧙</div>
+      <div class="hp-info">
+        <div class="hp-name"><span id="arena-nome-me">Você</span><span id="arena-hp-me-txt">1000/1000</span></div>
+        <div class="hp-bar-wrap"><div class="hp-bar-fill me" id="arena-hp-me" style="width:100%"></div></div>
+      </div>
+    </div>
+    <div class="hp-line">
+      <div class="hp-avatar" id="arena-avatar-foe">🧙</div>
+      <div class="hp-info">
+        <div class="hp-name"><span id="arena-nome-foe">Oponente</span><span id="arena-hp-foe-txt">1000/1000</span></div>
+        <div class="hp-bar-wrap"><div class="hp-bar-fill foe" id="arena-hp-foe" style="width:100%"></div></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn-dash" onclick="usarDash()">💨 Dash</button>
+  <div class="battle-mid" id="arena-log">A batalha começou!</div>
+  <div class="battle-controls">
+    <button class="skill-btn" id="btn-skill1" onclick="usarSkill(1)">SKILL 1</button>
+    <button class="skill-btn" id="btn-skill2" onclick="usarSkill(2)">SKILL 2</button>
+    <button class="skill-btn ult" id="btn-ultimate" onclick="usarUltimate()">ULTIMATE</button>
+  </div>
+</div>
+
+<div id="overlay-promocao" class="promo-overlay hidden">
+  <div class="promo-particles" id="promo-particles"></div>
+  <div class="promo-rank-old" id="promo-rank-old">PRATA</div>
+  <div class="promo-arrow">↑</div>
+  <div class="promo-rank-new" id="promo-rank-new">OURO</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="features.js"></script>
+<script>
+const SUPABASE_URL = 'https://nwithfitohtygvxrysgv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_-JX98qu3_yPXqGp--R-aMw_nSHDBCOR';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const RANK_COLORS = {bronze:'#c07a3e',prata:'#c7d0da',ouro:'#ffd166',diamante:'#7ee8ff',desafiante:'#ff5cf1'};
+const RANK_LABEL = {bronze:'BRONZE',prata:'PRATA',ouro:'OURO',diamante:'DIAMANTE',desafiante:'DESAFIANTE'};
+const RANK_NIVEL = {bronze:1,prata:2,ouro:3,diamante:4,desafiante:5};
+
+let perfilAtual = null;
+let userId = null;
+let matchAtual = null;
+let filaTimer = null;
+let searchFrame = 0;
+
+async function init() {
+  const { data: sessao } = await sb.auth.getSession();
+  if (!sessao.session) { window.location.href = 'login.html'; return; }
+  userId = sessao.session.user.id;
+
+  const { data: player } = await sb.from('Player').select('bosses_derrotados, username, avatar_emoji, avatar_image_url, name_color')
+    .eq('user_id', userId).single();
+
+  const bosses = player?.bosses_derrotados || [];
+  const derrotouBoss5 = Array.isArray(bosses) ? bosses.includes(5) : (bosses && bosses['5']);
+
+  if (!derrotouBoss5) {
+    document.getElementById('tela-bloqueado').classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('tela-pvp').classList.remove('hidden');
+  const nomeEl = document.getElementById('pvp-nome');
+  nomeEl.textContent = player?.username || 'Jogador';
+  nomeEl.style.color = player?.name_color || '#ffffff';
+  colocarAvatarNoElemento(document.getElementById('pvp-avatar'), player?.avatar_image_url, player?.avatar_emoji || '🧙');
+
+  await carregarPerfilPvp();
+  renderEquip();
+  carregarRanking();
+
+  const { data: partidaAtiva } = await sb.from('pvp_matches')
+    .select('id').eq('status', 'ativa')
+    .or(`jogador1.eq.${userId},jogador2.eq.${userId}`)
+    .maybeSingle();
+  if (partidaAtiva) {
+    matchAtual = partidaAtiva.id;
+    entrarArena();
+  }
+}
+
+function colocarAvatarNoElemento(el, imageUrl, emoji = '🧙') {
+  if (!el) return;
+  el.textContent = '';
+  if (imageUrl) {
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = 'Avatar do jogador';
+    img.loading = 'eager';
+    img.onerror = () => { el.textContent = emoji; };
+    el.appendChild(img);
+  } else {
+    el.textContent = emoji;
+  }
+}
+
+async function carregarPerfilPvp() {
+  // pvp_obter_perfil garante (cria se preciso) e devolve o pvp_profile do usuário,
+  // sem nenhum efeito colateral de matchmaking (ao contrário de pvp_entrar_fila,
+  // que exige boss5 derrotado e insere o jogador na fila de busca).
+  await sb.rpc('pvp_obter_perfil').catch(()=>{});
+  await refreshPerfil();
+}
+
+async function refreshPerfil() {
+  const { data } = await sb.from('pvp_profile').select('*').eq('user_id', userId).maybeSingle();
+  if (!data) return;
+  perfilAtual = data;
+  document.getElementById('profile-card').style.setProperty('--rank-color', RANK_COLORS[data.rank]);
+  document.getElementById('pvp-rank-pill').textContent = RANK_LABEL[data.rank];
+  document.getElementById('pvp-trofeus').textContent = data.trofeus_atuais;
+  document.getElementById('pvp-nivel').textContent = data.nivel_pvp;
+  document.getElementById('pvp-vitorias').textContent = data.vitorias;
+  document.getElementById('pvp-derrotas').textContent = data.derrotas;
+  document.getElementById('pvp-xp-fill').style.width = ((data.xp_pvp % 500) / 500 * 100) + '%';
+}
+
+function trocarAba(nome) {
+  ['equip','loja','inv','rank'].forEach(t => {
+    document.getElementById('painel-'+t).classList.toggle('hidden', t !== nome);
+    document.querySelector(`.tab-btn[data-tab="${t}"]`).classList.toggle('active', t === nome);
+  });
+  if (nome === 'loja') renderLoja();
+  if (nome === 'inv') renderInventarioPvp();
+  if (nome === 'rank') carregarRanking();
+}
+
+const SKILL1_LISTA = ['RelampagoSkill1','SomSkill1','CirculoSkill1','VentoSkill1','AguaSkill1','VenenoSkill1','SolSkill1','MeteoroSkill1'];
+const SKILL2_LISTA = ['RaioSkill2','GeloSkill2','FuracaoSkill2','MetalSkill2','MagmaSkill2','AbismoSkill2','MeteoroSkill2','SolSkill2','EstrelaSkill2','BlackholeSkill2'];
+const ULT_LISTA = ['Ultimate7','Ultimate9','Ultimate5','Ultimate2','Ultimate4','Ultimate3','Ultimate1','Ultimate8','Ultimate10'];
+
+function renderEquip() {
+  if (!perfilAtual) { refreshPerfil().then(renderEquip); return; }
+  const el = document.getElementById('painel-equip');
+  el.innerHTML = `
+    <div class="item-card"><div><div class="item-name">❤️ HP</div><div class="item-sub">Base PvP</div></div><b>1000</b></div>
+    ${linhaEvolucao('skill1', 'SKILL 1', perfilAtual.skill1_pvp, SKILL1_LISTA)}
+    ${linhaEvolucao('skill2', 'SKILL 2', perfilAtual.skill2_pvp, SKILL2_LISTA)}
+    ${linhaEvolucao('ultimate', 'ULTIMATE', perfilAtual.ultimate_pvp, ULT_LISTA)}
+  `;
+}
+
+function linhaEvolucao(tipo, label, atual, lista) {
+  const idx = lista.indexOf(atual);
+  const max = idx >= lista.length - 1;
+  const custo = max ? 0 : 5 * (idx + 1);
+  return `<div class="item-card">
+    <div><div class="item-name">${label}: ${atual}</div><div class="item-sub">${max ? 'NÍVEL MÁXIMO' : 'Próxima: ' + lista[idx+1]}</div></div>
+    <button class="btn-buy" ${max?'disabled':''} onclick="evoluirSkill('${tipo}')">${max?'MAX':'⬆ '+custo+' 🏆'}</button>
+  </div>`;
+}
+
+async function evoluirSkill(tipo) {
+  const { data, error } = await sb.rpc('pvp_evoluir_skill', { p_tipo: tipo });
+  if (error) { alert('Não foi possível evoluir: ' + error.message); return; }
+  if (data?.nivel_maximo) { alert('NÍVEL MÁXIMO!'); return; }
+  mostrarFlashEvolucao(data.anterior, data.novo);
+  await refreshPerfil();
+  renderEquip();
+}
+
+function mostrarFlashEvolucao(anterior, novo) {
+  const div = document.createElement('div');
+  div.className = 'promo-overlay';
+  div.innerHTML = `<div class="promo-rank-old">${anterior}</div><div class="promo-arrow">⬆</div>
+    <div class="promo-rank-new" style="color:var(--grad2)">${novo}</div>`;
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 1600);
+}
+
+const POCOES_BASICAS = [
+  {id:'PocaoDiamantesPvp', nome:'Poção de Diamantes', custo:20, rankMin:1},
+  {id:'PocaoMoedasPvp', nome:'Poção de Moedas', custo:20, rankMin:1},
+  {id:'PocaoDamagePvp', nome:'Poção de Damage', custo:20, rankMin:1},
+  {id:'PocaoLuckyPvp', nome:'Poção de Lucky', custo:20, rankMin:1},
+];
+const POCOES_AVANCADAS = [
+  {id:'PocaoEscudoPvp', nome:'Poção de Escudo', custo:300, rankMin:3},
+  {id:'PocaoRegeneracaoPvp', nome:'Poção de Regeneração', custo:300, rankMin:3},
+  {id:'PocaoVelocidadePvp', nome:'Poção de Velocidade', custo:300, rankMin:3},
+  {id:'PocaoFuriaPvp', nome:'Poção de Fúria', custo:300, rankMin:3},
+];
+
+const RECOMPENSAS = [
+  {id:'PvpMoedas5000', nome:'5.000 moedas', custo:200, rankMin:2},
+  {id:'PvpDiamantes50', nome:'50 diamantes', custo:150, rankMin:2},
+  {id:'PvpPetJulia', nome:'Pet Julia', custo:300, rankMin:2, img:'JuliaBanner.gif'},
+  {id:'PvpPetPeidaLeite', nome:'Pet PeidaLeite', custo:1000, rankMin:3, img:'PeidaLeiteBanner.gif'},
+  {id:'PvpMoedas10000', nome:'10.000 moedas', custo:800, rankMin:4},
+  {id:'PvpDiamantes150', nome:'150 diamantes', custo:450, rankMin:4},
+  {id:'PvpPetKauan', nome:'Pet Kauan', custo:2500, rankMin:4, img:'KauanBanner.gif'},
+  {id:'PvpMoedas50000', nome:'50.000 moedas', custo:3000, rankMin:5},
+  {id:'PvpDiamantes300', nome:'300 diamantes', custo:900, rankMin:5},
+  {id:'PvpPetPaulaoDoPneu', nome:'Pet PaulaoDoPneu', custo:10000, rankMin:5, img:'PaulaoDoPneuBanner.gif'},
+];
+
+function renderLoja() {
+  const el = document.getElementById('painel-loja');
+  const meuRank = perfilAtual ? RANK_NIVEL[perfilAtual.rank] : 1;
+  const todas = [...POCOES_BASICAS, ...POCOES_AVANCADAS];
+  const nomeRank = (n) => RANK_LABEL[Object.keys(RANK_NIVEL).find(k=>RANK_NIVEL[k]===n)];
+  const dano = perfilAtual?.dano_upgrade_nivel || 0;
+  const danoMax = dano >= 20;
+  const custoDano = danoMax ? 0 : 15 * (dano + 1);
+
+  const CORES_RANK = {1:'#cd7f32',2:'#c7d0da',3:'#ffd166',4:'#7ee8ff',5:'#ff2d9e'};
+
+  const cardPocao = (p) => {
+    const bloqueado = meuRank < p.rankMin;
+    return `<div class="loja-card ${bloqueado?'locked':''}" style="--lc-cor:#39ff8a">
+      <span class="lc-icone">🧪</span>
+      <div class="lc-nome">${p.nome}</div>
+      <div class="lc-sub">${bloqueado ? 'Requer '+nomeRank(p.rankMin) : '5 min'}</div>
+      <button class="lc-btn" ${bloqueado?'disabled':''} onclick="comprarPocao('${p.id}')">${p.custo} 🏆</button>
+    </div>`;
+  };
+
+  const cardRecompensa = (r) => {
+    const bloqueado = meuRank < r.rankMin;
+    const cor = r.img ? '#ffd166' : (r.id.includes('Diamante') ? '#7ee8ff' : '#ffd166');
+    const conteudoIcone = r.img
+      ? `<img src="${r.img}" alt="${r.nome}" class="lc-pet-img" onerror="this.outerHTML='<span class=&quot;lc-icone&quot;>🐾</span>'">`
+      : `<span class="lc-icone">${r.id.includes('Diamante')?'💎':'🪙'}</span>`;
+    return `<div class="loja-card ${bloqueado?'locked':''}" style="--lc-cor:${cor}">
+      ${r.img ? '<span class="lc-faixa">RARO</span>' : ''}
+      ${conteudoIcone}
+      <div class="lc-nome">${r.nome}</div>
+      <div class="lc-sub">${bloqueado ? 'Requer '+nomeRank(r.rankMin) : 'Rank ' + nomeRank(r.rankMin)}</div>
+      <button class="lc-btn" ${bloqueado?'disabled':''} onclick="comprarRecompensa('${r.id}')">${r.custo} 🏆</button>
+    </div>`;
+  };
+
+  const cardRoleta = (r) => {
+    const bloqueado = meuRank < r.rankMin;
+    const cor = CORES_RANK[r.rankMin] || '#7b5cff';
+    return `<div class="loja-card ${bloqueado?'locked':''}" style="--lc-cor:${cor}">
+      <span class="lc-icone">🎡</span>
+      <div class="lc-nome">${nomeRank(r.rankMin)}</div>
+      <div class="lc-sub">${bloqueado ? 'Bloqueado' : 'Giro'}</div>
+      <button class="lc-btn" ${bloqueado?'disabled':''} onclick="girarRoletaPvp('${r.id}')">${r.custo} 🏆</button>
+    </div>`;
+  };
+
+  el.innerHTML =
+    '<div class="item-sub" style="margin-bottom:10px">Poções ativam por 5 minutos, controladas pelo servidor.</div>' +
+    '<div class="loja-secao-titulo" style="color:#39ff8a">🧪 Poções</div>' +
+    `<div class="loja-grid">${todas.map(cardPocao).join('')}</div>` +
+    '<div class="loja-secao-titulo" style="color:#ffd166">🎁 Recompensas por rank</div>' +
+    `<div class="loja-grid">${RECOMPENSAS.map(cardRecompensa).join('')}</div>` +
+    '<div class="loja-secao-titulo" style="color:#ff5050">🗡 Melhoria de Dano (só PvP)</div>' +
+    `<div class="loja-card" style="--lc-cor:#ff5050;width:100%;max-width:100%">
+      <span class="lc-icone">⚔</span>
+      <div class="lc-nome">Nível ${dano}/20</div>
+      <div class="lc-sub">${danoMax ? 'NÍVEL MÁXIMO' : '+2% dano PvP por nível'}</div>
+      <button class="lc-btn" ${danoMax?'disabled':''} onclick="melhorarDano()">${danoMax?'MAX':custoDano+' 🏆'}</button>
+    </div>` +
+    '<div class="loja-secao-titulo" style="color:#7b5cff">🎡 Roleta PvP</div>' +
+    `<div class="loja-grid">${ROLETA_TIERS.map(cardRoleta).join('')}</div>`;
+}
+
+const ROLETA_TIERS = [
+  {id:'bronze', custo:30, rankMin:1},
+  {id:'prata', custo:80, rankMin:2},
+  {id:'ouro', custo:200, rankMin:3},
+  {id:'diamante', custo:450, rankMin:4},
+  {id:'desafiante', custo:900, rankMin:5},
+];
+
+async function girarRoletaPvp(tier) {
+  const { data, error } = await sb.rpc('pvp_girar_roleta', { p_tier: tier });
+  if (error) { alert('Erro no giro: ' + error.message); return; }
+  const nomesPremio = {moedas:'Moedas', diamantes:'Diamantes', trofeus_bonus:'Troféus bônus', pocao_furia:'Poção de Fúria'};
+  alert(`🎉 Você ganhou: ${nomesPremio[data.premio] || data.premio}${data.valor?' x'+data.valor:''}`);
+  await refreshPerfil();
+  renderLoja();
+}
+
+async function comprarPocao(id) {
+  const { error } = await sb.rpc('pvp_comprar_pocao', { p_pocao_id: id });
+  if (error) { alert('Erro na compra: ' + error.message); return; }
+  await refreshPerfil();
+  renderLoja();
+}
+
+async function comprarRecompensa(id) {
+  const { error } = await sb.rpc('pvp_comprar_recompensa', { p_item_id: id });
+  if (error) { alert('Erro na compra: ' + error.message); return; }
+  await refreshPerfil();
+  renderLoja();
+}
+
+async function melhorarDano() {
+  const { error } = await sb.rpc('pvp_melhorar_dano');
+  if (error) { alert('Erro: ' + error.message); return; }
+  await refreshPerfil();
+  renderLoja();
+}
+
+async function renderInventarioPvp() {
+  const el = document.getElementById('painel-inv');
+  const { data } = await sb.from('pvp_inventory').select('item_id, obtido_em').eq('user_id', userId);
+  if (!data || !data.length) { el.innerHTML = '<div class="item-sub">Nenhum personagem exclusivo do PvP ainda.</div>'; return; }
+  el.innerHTML = data.map(i => `<div class="item-card"><div class="item-name">${i.item_id}</div></div>`).join('');
+}
+
+function premioPorPosicao(pos) {
+  if (pos === 1) return '🏆 Pet exclusivo';
+  if (pos <= 4) return '🤗 Um abraço';
+  if (pos <= 10) return '🤝 Aperto de mão';
+  return '';
+}
+
+async function carregarRanking() {
+  const el = document.getElementById('painel-rank');
+  const { data: porVitorias } = await sb.from('pvp_profile').select('user_id, vitorias, rank').order('vitorias', {ascending:false}).limit(10);
+  const { data: porTrofeus } = await sb.from('pvp_profile').select('user_id, trofeus_totais_historico, rank').order('trofeus_totais_historico', {ascending:false}).limit(10);
+  el.innerHTML = `<div style="font-weight:800;margin-bottom:6px">🏅 TOP 10 VITÓRIAS</div>` +
+    (porVitorias||[]).map((r,i)=>`<div class="ranking-row"><span class="ranking-pos">#${i+1}</span><span style="flex:1">${r.user_id.slice(0,8)}…</span><b>${r.vitorias}V</b></div>`).join('') +
+    `<div style="font-weight:800;margin:14px 0 6px">🏆 TOP 10 TROFÉUS TOTAIS (temporada)</div>` +
+    (porTrofeus||[]).map((r,i)=>`<div class="ranking-row"><span class="ranking-pos">#${i+1}</span><span style="flex:1">${r.user_id.slice(0,8)}…</span><b>${r.trofeus_totais_historico}🏆</b></div><div class="item-sub" style="padding-left:36px;margin-top:-4px">${premioPorPosicao(i+1)}</div>`).join('');
+}
+
+/* ================= MATCHMAKING ================= */
+let filaChannel = null;
+
+async function iniciarBusca() {
+  const { error } = await sb.rpc('pvp_entrar_fila');
+  if (error) {
+    if (error.message === 'boss5_nao_derrotado') { alert('Derrote o Boss 5 primeiro!'); return; }
+    if (error.message === 'partida_ativa_em_andamento') { alert('Você já tem uma partida em andamento!'); location.reload(); return; }
+    alert(error.message);
+    return;
+  }
+  matchJaAceito = false;
+  document.getElementById('overlay-busca').classList.remove('hidden');
+  searchFrame = 0;
+  filaTimer = setInterval(pollFila, 2500);
+  pollFila();
+
+  filaChannel = sb.channel('pvp_match_found_'+userId)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pvp_matches', filter: `jogador1=eq.${userId}` }, (payload) => aceitarMatchEncontrado(payload.new.id))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pvp_matches', filter: `jogador2=eq.${userId}` }, (payload) => aceitarMatchEncontrado(payload.new.id))
+    .subscribe();
+}
+
+let matchJaAceito = false;
+async function aceitarMatchEncontrado(matchId) {
+  if (matchJaAceito) return;
+  matchJaAceito = true;
+  clearInterval(filaTimer);
+  if (filaChannel) { sb.removeChannel(filaChannel); filaChannel = null; }
+  matchAtual = matchId;
+  await mostrarVs(matchId);
+}
+
+async function pollFila() {
+  searchFrame++;
+  document.getElementById('search-symbol').textContent = 'S'.repeat(1 + (searchFrame % 3));
+  const { data: matchId } = await sb.rpc('pvp_tentar_match');
+  if (matchId) await aceitarMatchEncontrado(matchId);
+}
+
+function cancelarBusca() {
+  clearInterval(filaTimer);
+  matchJaAceito = false;
+  if (filaChannel) { sb.removeChannel(filaChannel); filaChannel = null; }
+  sb.rpc('pvp_sair_fila');
+  document.getElementById('overlay-busca').classList.add('hidden');
+}
+
+async function mostrarVs(matchId) {
+  document.getElementById('overlay-busca').classList.add('hidden');
+  const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
+  const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
+  const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp').eq('user_id', oponenteId).maybeSingle();
+  const { data: oponentePlayer } = await sb.from('Player').select('username, avatar_emoji').eq('user_id', oponenteId).maybeSingle();
+
+  document.getElementById('vs-nome1').textContent = 'Você';
+  document.getElementById('vs-rank1').textContent = RANK_LABEL[perfilAtual?.rank || 'bronze'] + ' • Nv.' + (perfilAtual?.nivel_pvp||1);
+  document.getElementById('vs-avatar1').textContent = document.getElementById('pvp-avatar').textContent;
+
+  document.getElementById('vs-nome2').textContent = oponentePlayer?.username || 'Oponente';
+  document.getElementById('vs-rank2').textContent = RANK_LABEL[oponentePerfil?.rank || 'bronze'] + ' • Nv.' + (oponentePerfil?.nivel_pvp||1);
+  document.getElementById('vs-avatar2').textContent = oponentePlayer?.avatar_emoji || '🧙';
+
+  document.getElementById('overlay-vs').classList.remove('hidden');
+  setTimeout(iniciarCountdown, 2200);
+}
+
+function iniciarCountdown() {
+  document.getElementById('overlay-vs').classList.add('hidden');
+  document.getElementById('overlay-countdown').classList.remove('hidden');
+  let n = 3;
+  const el = document.getElementById('countdown-num');
+  el.textContent = n;
+  const t = setInterval(() => {
+    n--;
+    if (n <= 0) { clearInterval(t); document.getElementById('overlay-countdown').classList.add('hidden'); entrarArena(); return; }
+    el.textContent = n;
+  }, 800);
+}
+
+/* ================= COMBATE (simplificado, HP/dano validados via RPC no servidor) ================= */
+let hpMe = 1000, hpFoe = 1000, souJogador1 = false, arenaPollTimer = null, dashCooldownAte = 0;
+let ultimoSkill2Me = null, ultimoSkill2Foe = null, matchChannel = null;
+
+function entrarArena() {
+  hpMe = 1000; hpFoe = 1000;
+  ultimoSkill2Me = null; ultimoSkill2Foe = null;
+  document.getElementById('arena').classList.remove('hidden');
+  atualizarHpBars();
+  if (typeof window.playBossMusic === 'function') window.playBossMusic(6);
+  sb.from('pvp_matches').select('jogador1,j1_skill2_at,j2_skill2_at').eq('id', matchAtual).single().then(({data}) => {
+    souJogador1 = data?.jogador1 === userId;
+    ultimoSkill2Me = souJogador1 ? data?.j1_skill2_at : data?.j2_skill2_at;
+    ultimoSkill2Foe = souJogador1 ? data?.j2_skill2_at : data?.j1_skill2_at;
+  });
+
+  matchChannel = sb.channel('pvp_match_'+matchAtual)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pvp_matches', filter: `id=eq.${matchAtual}` }, (payload) => processarEstadoPartida(payload.new))
+    .subscribe();
+
+  arenaPollTimer = setInterval(pollEstadoPartida, 4000); // fallback caso o realtime falhe
+}
+
+function sairDaArenaRealtime() {
+  if (matchChannel) { sb.removeChannel(matchChannel); matchChannel = null; }
+  clearInterval(arenaPollTimer);
+}
+
+async function pollEstadoPartida() {
+  const { data: m } = await sb.from('pvp_matches').select('hp1,hp2,status,ultimate_lock_owner,ultimate_lock_expira_em,j1_skill2_at,j2_skill2_at').eq('id', matchAtual).single();
+  if (m) processarEstadoPartida(m);
+}
+
+async function processarEstadoPartida(m) {
+  if (!m) return;
+  hpMe = souJogador1 ? m.hp1 : m.hp2;
+  hpFoe = souJogador1 ? m.hp2 : m.hp1;
+  atualizarHpBars();
+  const ultimateOcupada = m.ultimate_lock_owner && m.ultimate_lock_owner !== userId && new Date(m.ultimate_lock_expira_em) > new Date();
+  document.getElementById('btn-ultimate').disabled = !!ultimateOcupada;
+
+  // detecta skill2 do oponente pra tocar Impacto.mp3
+  const skill2FoeAgora = souJogador1 ? m.j2_skill2_at : m.j1_skill2_at;
+  if (skill2FoeAgora && skill2FoeAgora !== ultimoSkill2Foe) {
+    ultimoSkill2Foe = skill2FoeAgora;
+    if (typeof window.playSfx === 'function') window.playSfx('Impacto.mp3', 0.5);
+  }
+
+  if (m.status !== 'ativa' || hpMe <= 0 || hpFoe <= 0) {
+    clearInterval(arenaPollTimer);
+    await finalizarPartida(hpFoe <= 0 ? userId : (souJogador1 ? null : userId));
+  }
+}
+
+function atualizarHpBars() {
+  document.getElementById('arena-hp-me').style.width = Math.max(0,hpMe/10)+'%';
+  document.getElementById('arena-hp-foe').style.width = Math.max(0,hpFoe/10)+'%';
+  document.getElementById('arena-hp-me-txt').textContent = `${Math.max(0,hpMe)}/1000`;
+  document.getElementById('arena-hp-foe-txt').textContent = `${Math.max(0,hpFoe)}/1000`;
+}
+
+async function usarSkill(n) {
+  const { data, error } = await sb.rpc('pvp_usar_skill', { p_match: matchAtual, p_tipo: 'skill'+n });
+  if (error) { document.getElementById('arena-log').textContent = error.message === 'em_cooldown' ? 'Skill em recarga...' : 'Ação inválida'; return; }
+  hpMe = souJogador1 ? data.hp1 : data.hp2;
+  hpFoe = souJogador1 ? data.hp2 : data.hp1;
+  atualizarHpBars();
+  if (n === 2 && typeof window.playSfx === 'function') window.playSfx('Impacto.mp3', 0.5);
+  document.getElementById('arena-log').textContent = data.desviou ? 'Oponente desviou parte do golpe!' : `Você usou Skill ${n}!`;
+  if (data.fim) { clearInterval(arenaPollTimer); await finalizarPartida(data.vencedor); }
+}
+
+async function usarUltimate() {
+  const { data: liberado, error } = await sb.rpc('pvp_ativar_ultimate', { p_match: matchAtual, p_duracao_ms: 3000 });
+  if (error || !liberado) {
+    document.getElementById('arena-log').textContent = 'Ultimate bloqueada — oponente já está usando a dele!';
+    return;
+  }
+  document.getElementById('arena-log').textContent = 'ULTIMATE ATIVADA!';
+  setTimeout(async () => {
+    const { data, error: err2 } = await sb.rpc('pvp_usar_skill', { p_match: matchAtual, p_tipo: 'ultimate' });
+    if (err2) return;
+    hpMe = souJogador1 ? data.hp1 : data.hp2;
+    hpFoe = souJogador1 ? data.hp2 : data.hp1;
+    atualizarHpBars();
+    if (data.fim) { clearInterval(arenaPollTimer); await finalizarPartida(data.vencedor); }
+  }, 1000);
+}
+
+async function usarDash() {
+  const { data: ok } = await sb.rpc('pvp_usar_dash', { p_match: matchAtual });
+  document.getElementById('arena-log').textContent = ok ? 'Desvio!' : 'Dash em recarga...';
+}
+
+async function finalizarPartida(vencedor) {
+  clearInterval(arenaPollTimer);
+  sairDaArenaRealtime();
+  if (typeof window.stopBossMusic === 'function') window.stopBossMusic();
+  if (!vencedor) { document.getElementById('arena').classList.add('hidden'); return; }
+  const euGanhei = vencedor === userId;
+  if (euGanhei) { if (typeof window.playVictorySound === 'function') window.playVictorySound(); }
+  else { if (typeof window.playDefeatSound === 'function') window.playDefeatSound(); }
+  const { data } = await sb.rpc('pvp_registrar_resultado', { p_match: matchAtual, p_vencedor: vencedor }).catch(()=>({data:null}));
+  document.getElementById('arena').classList.add('hidden');
+  await refreshPerfil();
+  if (data?.subiu_rank) mostrarPromocao(data.rank_novo);
+  renderEquip();
+}
+
+function mostrarPromocao(novoRank) {
+  const overlay = document.getElementById('overlay-promocao');
+  document.getElementById('promo-rank-old').textContent = RANK_LABEL[perfilAtual.rank] || '';
+  document.getElementById('promo-rank-new').textContent = RANK_LABEL[novoRank];
+  document.getElementById('promo-rank-new').style.color = RANK_COLORS[novoRank];
+  const particles = document.getElementById('promo-particles');
+  particles.innerHTML = '';
+  for (let i=0;i<16;i++){
+    const d = document.createElement('div');
+    d.className='p-dot';
+    d.style.left = (10+Math.random()*80)+'%';
+    d.style.bottom = '30%';
+    d.style.animationDelay = (Math.random()*.4)+'s';
+    particles.appendChild(d);
+  }
+  overlay.classList.remove('hidden');
+  setTimeout(()=>overlay.classList.add('hidden'), 2600);
+}
+
+init();
+</script>
+</body>
+</html>
