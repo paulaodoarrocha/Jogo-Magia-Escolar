@@ -603,8 +603,46 @@ let novaPartidaChannel = null;
 function escutarPartidasNovas() {
   if (novaPartidaChannel) return;
   novaPartidaChannel = sb.channel('pvp_nova_partida_'+userId)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pvp_matches', filter: `jogador1=eq.${userId}` }, (payload) => aceitarMatchEncontrado(payload.new.id))
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pvp_matches', filter: `jogador2=eq.${userId}` }, (payload) => aceitarMatchEncontrado(payload.new.id))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pvp_matches', filter: `jogador1=eq.${userId}` }, (payload) => tratarNovaLinhaPvp(payload.new))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pvp_matches', filter: `jogador2=eq.${userId}` }, (payload) => tratarNovaLinhaPvp(payload.new))
+    .subscribe();
+}
+
+function tratarNovaLinhaPvp(match) {
+  if (match.status === 'convite') {
+    // Só quem foi desafiado (jogador2) vê o popup de aceitar/recusar.
+    if (match.jogador2 === userId) mostrarConvitePvp(match);
+    else escutarRespostaConvite(match.id);
+    return;
+  }
+  aceitarMatchEncontrado(match.id);
+}
+
+async function mostrarConvitePvp(match) {
+  const { data: desafiante } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: match.jogador1 }).catch(() => ({ data: null }));
+  const nome = desafiante?.username || 'Um jogador';
+  const aceitou = confirm(`${nome} te desafiou para um combate!\n\nDeseja aceitar?`);
+  const { data, error } = await sb.rpc('pvp_responder_desafio', { p_match: match.id, p_aceitar: aceitou }).catch(e => ({ error: e }));
+  if (error) { console.error('Falha ao responder desafio:', error); return; }
+  if (data?.aceito) {
+    matchAtual = match.id;
+    await mostrarVs(match.id);
+  }
+}
+
+// Quem desafiou espera a resposta ouvindo a MESMA linha (UPDATE) até virar 'ativa' ou 'cancelada'.
+function escutarRespostaConvite(matchId) {
+  const canal = sb.channel('pvp_resposta_convite_'+matchId)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pvp_matches', filter: `id=eq.${matchId}` }, (payload) => {
+      if (payload.new.status === 'ativa') {
+        sb.removeChannel(canal);
+        matchAtual = matchId;
+        mostrarVs(matchId);
+      } else if (payload.new.status === 'cancelada') {
+        sb.removeChannel(canal);
+        alert('Seu desafio foi recusado ou expirou.');
+      }
+    })
     .subscribe();
 }
 
@@ -1075,12 +1113,9 @@ async function desafiarAmigo(amigoId) {
   const { data, error } = await sb.rpc('pvp_desafiar_amigo', { p_amigo: amigoId });
   if (error) { alert('Erro: ' + error.message); return; }
   if (data && data.ok === false) { alert(data.motivo); return; }
-  // A entrada na arena acontece sozinha pros dois jogadores via escutarPartidasNovas()
-  // (escuta permanente ligada no init()), que detecta o INSERT em pvp_matches.
   if (data && data.match_id) {
-    await aceitarMatchEncontrado(data.match_id);
-  } else {
-    alert('Desafio enviado! A partida vai abrir sozinha quando seu amigo aceitar.');
+    alert('Desafio enviado! Assim que seu amigo aceitar, a partida começa automaticamente.');
+    escutarRespostaConvite(data.match_id);
   }
 }
 window.desafiarAmigo = desafiarAmigo;
@@ -1226,58 +1261,27 @@ function iniciarCountdown() {
 
 function mostrarApresentacao() {
   document.getElementById('overlay-vs').classList.remove('hidden');
+  // Antes eram 8s de "apresentação" + 15s de escolha manual de cenário = 23s parado
+  // esperando o jogador — tempo de sobra pro navegador pausar a aba em segundo plano
+  // e travar a partida pro outro lado. Agora escolhe o cenário sozinho e entra rápido.
   setTimeout(() => {
     document.getElementById('overlay-vs').classList.add('hidden');
-    mostrarSelecaoCenario();
-  }, 8000);
+    entrarNaArenaComCenarioAutomatico();
+  }, 1500);
 }
 
 const CENARIOS_PVP = ['Arlan','Marcos','Miguel','Carlos','Lucas','Davi','Arthur','Vinicius','GuilermeChucro','PaulaoDoPneu'];
-let cenarioTimer = null, cenarioEscolhido = null, cenarioFinal = null;
+let cenarioFinal = null;
 
-function mostrarSelecaoCenario() {
-  cenarioEscolhido = null;
-  cenarioFinal = null;
-  const grid = document.getElementById('cenario-grid');
-  grid.innerHTML = CENARIOS_PVP.map(nome => `
-    <div class="cenario-card" data-nome="${nome}" onclick="escolherCenario('${nome}')">
-      <img src="${nome}.png" alt="${nome}">
-      <div class="cenario-nome">${nome}</div>
-    </div>`).join('');
-
-  document.getElementById('overlay-cenario').classList.remove('hidden');
-  let restante = 15;
-  const timerEl = document.getElementById('cenario-timer');
-  timerEl.textContent = restante;
-  clearInterval(cenarioTimer);
-  cenarioTimer = setInterval(async () => {
-    restante--;
-    timerEl.textContent = Math.max(restante, 0);
-    if (restante <= 0) {
-      clearInterval(cenarioTimer);
-      await finalizarSelecaoCenario();
-    }
-  }, 1000);
-}
-
-async function escolherCenario(nome) {
-  cenarioEscolhido = nome;
-  document.querySelectorAll('.cenario-card').forEach(el => el.classList.toggle('selecionado', el.dataset.nome === nome));
-  await sb.rpc('pvp_escolher_imagem', { p_match: matchAtual, p_imagem: nome }).catch(() => {});
-}
-window.escolherCenario = escolherCenario;
-
-async function finalizarSelecaoCenario() {
-  document.getElementById('overlay-cenario').classList.add('hidden');
+async function entrarNaArenaComCenarioAutomatico() {
   try {
+    const cenarioSorteado = CENARIOS_PVP[Math.floor(Math.random() * CENARIOS_PVP.length)];
+    await sb.rpc('pvp_escolher_imagem', { p_match: matchAtual, p_imagem: cenarioSorteado }).catch(() => {});
     const { data } = await sb.rpc('pvp_resolver_imagens', { p_match: matchAtual }).catch(() => ({ data: null }));
-    cenarioFinal = data?.imagem_final || cenarioEscolhido || CENARIOS_PVP[0];
+    cenarioFinal = data?.imagem_final || cenarioSorteado;
     entrarArena();
   } catch (e) {
-    // Se algo der errado aqui, o overlay do cenário já foi escondido e o jogador
-    // cairia "vazio" na tela do lobby com a partida ainda ativa no servidor.
-    // Em vez disso, tenta retomar a partida direto (mesmo fluxo do reload manual).
-    console.error('Falha ao finalizar seleção de cenário:', e);
+    console.error('Falha ao entrar na arena:', e);
     if (matchAtual) await retomarPartidaAtiva(matchAtual);
   }
 }
@@ -1293,7 +1297,6 @@ document.addEventListener('visibilitychange', () => {
   const arenaVisivel = !document.getElementById('arena')?.classList.contains('hidden');
   if (arenaVisivel) return;
 
-  clearInterval(cenarioTimer);
   document.getElementById('overlay-countdown')?.classList.add('hidden');
   document.getElementById('overlay-vs')?.classList.add('hidden');
   document.getElementById('overlay-cenario')?.classList.add('hidden');
