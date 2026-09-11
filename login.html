@@ -128,6 +128,22 @@ document.getElementById('btn-fazer-cadastro').addEventListener('click', async ()
   window.location.href = 'index.html';
 });
 
+document.getElementById('btn-fazer-login').addEventListener('click', async () => {
+  limparErro();
+
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+
+  if (!email || !senha) return mostrarErro('Preencha e-mail e senha.');
+
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+
+  if (error) return mostrarErro('E-mail ou senha incorretos.');
+
+  sessionStorage.setItem('acabouDeLogar','1');
+  window.location.href = 'index.html';
+});
+
 </script>
 </body>
 </html>
