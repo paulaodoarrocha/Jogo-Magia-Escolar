@@ -308,6 +308,7 @@
     <button class="skill-btn" id="btn-skill2" onclick="usarSkill(2)">SKILL 2</button>
     <button class="skill-btn ult" id="btn-ultimate" onclick="usarUltimate()">ULTIMATE</button>
   </div>
+  <button class="btn-voltar" style="margin:10px auto 0;display:block;opacity:.7" onclick="confirmarDesistencia()">🏳 Desistir</button>
 </div>
 
 <div id="overlay-promocao" class="promo-overlay hidden">
@@ -803,12 +804,12 @@ async function pollFila() {
   if (matchId) await aceitarMatchEncontrado(matchId);
 }
 
-function cancelarBusca() {
+async function cancelarBusca() {
   clearInterval(filaTimer);
-  matchJaAceito = false;
+  matchJaAceito = true; // trava: ignora qualquer resposta de match que já estava "em voo"
   if (filaChannel) { sb.removeChannel(filaChannel); filaChannel = null; }
-  sb.rpc('pvp_sair_fila');
   document.getElementById('overlay-busca').classList.add('hidden');
+  await sb.rpc('pvp_sair_fila');
 }
 
 async function mostrarVs(matchId) {
@@ -936,6 +937,25 @@ async function usarDash() {
   const { data: ok } = await sb.rpc('pvp_usar_dash', { p_match: matchAtual });
   document.getElementById('arena-log').textContent = ok ? 'Desvio!' : 'Dash em recarga...';
 }
+
+async function confirmarDesistencia() {
+  if (!confirm('Tem certeza que quer desistir? Isso conta como derrota.')) return;
+  await desistirPartida();
+}
+window.confirmarDesistencia = confirmarDesistencia;
+
+async function desistirPartida() {
+  clearInterval(arenaPollTimer);
+  const { data, error } = await sb.rpc('pvp_desistir', { p_match: matchAtual }).catch(e => ({ error: e }));
+  if (error) { alert('Erro: ' + (error.message || 'não foi possível desistir')); return; }
+  sairDaArenaRealtime();
+  if (typeof window.stopBossMusic === 'function') window.stopBossMusic();
+  if (typeof window.playDefeatSound === 'function') window.playDefeatSound();
+  document.getElementById('arena').classList.add('hidden');
+  await refreshPerfil();
+  renderEquip();
+}
+window.desistirPartida = desistirPartida;
 
 async function finalizarPartida(vencedor) {
   clearInterval(arenaPollTimer);
