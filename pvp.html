@@ -535,21 +535,31 @@ async function init() {
 }
 
 async function retomarPartidaAtiva(matchId) {
-  const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
-  if (!match) return;
-  const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
-  oponenteIdArena = oponenteId;
-  const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
-  const { data: oponentePlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', oponenteId).maybeSingle();
-  const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
-  meuPlayerArena = meuPlayer || null;
-  oponentePlayerArena = oponentePlayer || null;
-  oponentePerfilArena = oponentePerfil || null;
+  try {
+    const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
+    if (!match) return;
+    const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
+    oponenteIdArena = oponenteId;
+    const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
+    // A tabela "Player" só permite (via RLS) cada um ler a própria linha — buscar direto
+    // aqui pra pegar o nome/avatar do OPONENTE sempre voltava vazio, e por isso ele
+    // aparecia como "Oponente" sem foto. Por isso usamos a RPC pública abaixo pro oponente.
+    const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
+    const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
+    meuPlayerArena = meuPlayer || null;
+    oponentePlayerArena = oponentePlayer || null;
+    oponentePerfilArena = oponentePerfil || null;
 
-  const { data: resolvido } = await sb.rpc('pvp_resolver_imagens', { p_match: matchId }).catch(() => ({ data: null }));
-  cenarioFinal = resolvido?.imagem_final || match.imagem_final || CENARIOS_PVP[0];
+    const { data: resolvido } = await sb.rpc('pvp_resolver_imagens', { p_match: matchId }).catch(() => ({ data: null }));
+    cenarioFinal = resolvido?.imagem_final || match.imagem_final || CENARIOS_PVP[0];
 
-  entrarArena();
+    entrarArena();
+  } catch (e) {
+    // Nunca falhar em silêncio — sem isso o jogador ficava "preso" no lobby sem nenhuma mensagem.
+    console.error('Falha ao retomar a arena da partida ativa:', e);
+    alert('Não foi possível carregar sua partida em andamento. Recarregando...');
+    location.reload();
+  }
 }
 
 // Escuta permanente de novas partidas (matchmaking OU desafio de amigo).
@@ -1064,16 +1074,23 @@ async function iniciarBusca() {
 // (é o que causava o jogador ficar preso na tela do lobby vendo sempre
 // "partida em andamento" ao tentar batalhar de novo).
 async function retomarPartidaExistente() {
-  const { data: partidaAtiva } = await sb.from('pvp_matches')
-    .select('id').eq('status', 'ativa')
-    .or(`jogador1.eq.${userId},jogador2.eq.${userId}`)
-    .maybeSingle();
-  if (partidaAtiva) {
-    matchAtual = partidaAtiva.id;
-    await retomarPartidaAtiva(matchAtual);
-  } else {
-    // Servidor disse que havia partida ativa mas ela já não existe mais (corrida entre abas/telas) — só nesse caso recarrega.
-    alert('Você já tem uma partida em andamento!');
+  try {
+    const { data: partidaAtiva } = await sb.from('pvp_matches')
+      .select('id').eq('status', 'ativa')
+      .or(`jogador1.eq.${userId},jogador2.eq.${userId}`)
+      .maybeSingle();
+    if (partidaAtiva) {
+      matchAtual = partidaAtiva.id;
+      await retomarPartidaAtiva(matchAtual);
+    } else {
+      // Servidor disse que havia partida ativa mas ela já não existe mais (corrida entre abas/telas) — só nesse caso recarrega.
+      alert('Você já tem uma partida em andamento!');
+      location.reload();
+    }
+  } catch (e) {
+    // Nunca falhar em silêncio aqui — sem isso o clique em BATALHA não fazia nada visível.
+    console.error('Falha ao retomar partida ativa:', e);
+    alert('Você já tem uma partida em andamento, mas houve um erro ao carregá-la. Recarregando...');
     location.reload();
   }
 }
@@ -1125,7 +1142,9 @@ async function mostrarVs(matchId) {
   const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
   oponenteIdArena = oponenteId;
   const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
-  const { data: oponentePlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', oponenteId).maybeSingle();
+  // Idem: "Player" só é legível pelo próprio dono via RLS, então o nome/foto do
+  // oponente precisam vir por uma RPC pública (senão some e cai no fallback "Oponente").
+  const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
   const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
 
   meuPlayerArena = meuPlayer || null;
