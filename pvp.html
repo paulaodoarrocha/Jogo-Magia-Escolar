@@ -541,19 +541,16 @@ async function retomarPartidaAtiva(matchId) {
     const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
     oponenteIdArena = oponenteId;
     const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
-    // A tabela "Player" só permite (via RLS) cada um ler a própria linha — buscar direto
-    // aqui pra pegar o nome/avatar do OPONENTE sempre voltava vazio, e por isso ele
-    // aparecia como "Oponente" sem foto. Por isso usamos a RPC pública abaixo pro oponente.
-    const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
     const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
     meuPlayerArena = meuPlayer || null;
-    oponentePlayerArena = oponentePlayer || null;
+    oponentePlayerArena = null;
     oponentePerfilArena = oponentePerfil || null;
 
     const { data: resolvido } = await sb.rpc('pvp_resolver_imagens', { p_match: matchId }).catch(() => ({ data: null }));
     cenarioFinal = resolvido?.imagem_final || match.imagem_final || CENARIOS_PVP[0];
 
     entrarArena();
+    carregarNomeOponente(oponenteId); // não-bloqueante: nome/avatar do oponente chegam depois, sem travar a entrada na arena
   } catch (e) {
     // Nunca falhar em silêncio — sem isso o jogador ficava "preso" no lobby sem nenhuma mensagem.
     console.error('Falha ao retomar a arena da partida ativa:', e);
@@ -1136,19 +1133,44 @@ async function cancelarBusca() {
 
 let meuPlayerArena = null, oponentePlayerArena = null, oponentePerfilArena = null, oponenteIdArena = null;
 
+// Busca nome/avatar/cor do oponente pela RPC pública (a tabela "Player" só é legível pelo
+// próprio dono via RLS — por isso o nome do oponente sempre virava "Oponente" sem foto).
+// É chamada sem "await" de propósito: se travar ou falhar por qualquer motivo, o jogo
+// já está rodando (arena/VS já montados com o fallback "Oponente") e só atualiza o
+// nome/foto quando (e se) a resposta chegar — nunca trava a entrada na partida.
+async function carregarNomeOponente(oponenteId) {
+  try {
+    const resp = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId });
+    const dados = resp?.data;
+    if (!dados) return;
+    oponentePlayerArena = dados;
+    const nomeVs = document.getElementById('vs-nome2');
+    if (nomeVs) { nomeVs.textContent = dados.username || 'Oponente'; nomeVs.style.color = dados.name_color || '#ffffff'; }
+    const avatarVs = document.getElementById('vs-avatar2');
+    if (avatarVs) colocarAvatarNoElemento(avatarVs, dados.avatar_image_url, dados.avatar_emoji || '🧙');
+    const nomeArena = document.getElementById('arena-nome-foe');
+    if (nomeArena) {
+      nomeArena.textContent = dados.username || 'Oponente';
+      nomeArena.style.color = dados.name_color || '#ffffff';
+    }
+    const avatarArena = document.getElementById('arena-avatar-foe');
+    if (avatarArena) colocarAvatarNoElemento(avatarArena, dados.avatar_image_url, dados.avatar_emoji || '🧙');
+  } catch (e) {
+    console.error('Falha ao carregar nome/avatar do oponente (não crítico):', e);
+  }
+}
+
 async function mostrarVs(matchId) {
   document.getElementById('overlay-busca').classList.add('hidden');
   const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
   const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
   oponenteIdArena = oponenteId;
   const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
-  // Idem: "Player" só é legível pelo próprio dono via RLS, então o nome/foto do
-  // oponente precisam vir por uma RPC pública (senão some e cai no fallback "Oponente").
-  const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
   const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
 
   meuPlayerArena = meuPlayer || null;
-  oponentePlayerArena = oponentePlayer || null;
+  oponentePlayerArena = null;
+  carregarNomeOponente(oponenteId); // não-bloqueante: nome/avatar do oponente chegam depois, sem travar a tela de VS
   oponentePerfilArena = oponentePerfil || null;
 
   document.getElementById('vs-nome1').textContent = meuPlayer?.username || 'Você';
@@ -1156,10 +1178,10 @@ async function mostrarVs(matchId) {
   document.getElementById('vs-rank1').innerHTML = emblemaPatente(perfilAtual?.rank || 'bronze') + RANK_LABEL[perfilAtual?.rank || 'bronze'] + ' • Nv.' + (perfilAtual?.nivel_pvp||1);
   colocarAvatarNoElemento(document.getElementById('vs-avatar1'), meuPlayer?.avatar_image_url, meuPlayer?.avatar_emoji || '🧙');
 
-  document.getElementById('vs-nome2').textContent = oponentePlayer?.username || 'Oponente';
-  document.getElementById('vs-nome2').style.color = oponentePlayer?.name_color || '#ffffff';
+  document.getElementById('vs-nome2').textContent = 'Oponente';
+  document.getElementById('vs-nome2').style.color = '#ffffff';
   document.getElementById('vs-rank2').innerHTML = emblemaPatente(oponentePerfil?.rank || 'bronze') + RANK_LABEL[oponentePerfil?.rank || 'bronze'] + ' • Nv.' + (oponentePerfil?.nivel_pvp||1);
-  colocarAvatarNoElemento(document.getElementById('vs-avatar2'), oponentePlayer?.avatar_image_url, oponentePlayer?.avatar_emoji || '🧙');
+  colocarAvatarNoElemento(document.getElementById('vs-avatar2'), null, '🧙');
 
   document.getElementById('overlay-countdown').classList.remove('hidden');
   iniciarCountdown();
