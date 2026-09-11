@@ -1047,7 +1047,7 @@ async function iniciarBusca() {
   const { error } = await sb.rpc('pvp_entrar_fila');
   if (error) {
     if (error.message === 'boss5_nao_derrotado') { alert('Derrote o Boss 5 primeiro!'); return; }
-    if (error.message === 'partida_ativa_em_andamento') { alert('Você já tem uma partida em andamento!'); location.reload(); return; }
+    if (error.message === 'partida_ativa_em_andamento') { await retomarPartidaExistente(); return; }
     alert(error.message);
     return;
   }
@@ -1057,6 +1057,25 @@ async function iniciarBusca() {
   filaTimer = setInterval(pollFila, 1100); // era 2500ms — reduzido pra diminuir o delay até achar o VS
   pollFila();
   escutarPartidasNovas(); // já cobre o INSERT do match; não precisa duplicar o canal
+}
+
+// Busca a partida "ativa" do jogador direto no servidor e retoma na arena,
+// em vez de só recarregar a página e torcer pro init() achar ela sozinho
+// (é o que causava o jogador ficar preso na tela do lobby vendo sempre
+// "partida em andamento" ao tentar batalhar de novo).
+async function retomarPartidaExistente() {
+  const { data: partidaAtiva } = await sb.from('pvp_matches')
+    .select('id').eq('status', 'ativa')
+    .or(`jogador1.eq.${userId},jogador2.eq.${userId}`)
+    .maybeSingle();
+  if (partidaAtiva) {
+    matchAtual = partidaAtiva.id;
+    await retomarPartidaAtiva(matchAtual);
+  } else {
+    // Servidor disse que havia partida ativa mas ela já não existe mais (corrida entre abas/telas) — só nesse caso recarrega.
+    alert('Você já tem uma partida em andamento!');
+    location.reload();
+  }
 }
 
 let matchJaAceito = false;
@@ -1188,9 +1207,17 @@ window.escolherCenario = escolherCenario;
 
 async function finalizarSelecaoCenario() {
   document.getElementById('overlay-cenario').classList.add('hidden');
-  const { data } = await sb.rpc('pvp_resolver_imagens', { p_match: matchAtual }).catch(() => ({ data: null }));
-  cenarioFinal = data?.imagem_final || cenarioEscolhido || CENARIOS_PVP[0];
-  entrarArena();
+  try {
+    const { data } = await sb.rpc('pvp_resolver_imagens', { p_match: matchAtual }).catch(() => ({ data: null }));
+    cenarioFinal = data?.imagem_final || cenarioEscolhido || CENARIOS_PVP[0];
+    entrarArena();
+  } catch (e) {
+    // Se algo der errado aqui, o overlay do cenário já foi escondido e o jogador
+    // cairia "vazio" na tela do lobby com a partida ainda ativa no servidor.
+    // Em vez disso, tenta retomar a partida direto (mesmo fluxo do reload manual).
+    console.error('Falha ao finalizar seleção de cenário:', e);
+    if (matchAtual) await retomarPartidaAtiva(matchAtual);
+  }
 }
 
 /* ================= COMBATE (simplificado, HP/dano validados via RPC no servidor) ================= */
@@ -1325,7 +1352,13 @@ async function pollEstadoPartida() {
 
 async function processarEstadoPartida(m) {
   if (!m) return;
-  aplicarHp(souJogador1 ? m.hp1 : m.hp2, souJogador1 ? m.hp2 : m.hp1);
+  // hp1/hp2 podem chegar nulos/indefinidos num update fora de hora (ex.: logo após a
+  // escolha do cenário, antes do combate realmente começar no servidor). Nesse caso
+  // ignoramos o valor em vez de tratar como HP zerado, senão a partida termina sozinha
+  // e o jogador volta pro lobby com a partida ainda marcada como "ativa" no servidor.
+  const novoHpMe = souJogador1 ? m.hp1 : m.hp2;
+  const novoHpFoe = souJogador1 ? m.hp2 : m.hp1;
+  aplicarHp(Number.isFinite(novoHpMe) ? novoHpMe : hpMe, Number.isFinite(novoHpFoe) ? novoHpFoe : hpFoe);
   const ultimateOcupada = m.ultimate_lock_owner && m.ultimate_lock_owner !== userId && new Date(m.ultimate_lock_expira_em) > new Date();
   document.getElementById('btn-ultimate').disabled = !!ultimateOcupada;
 
