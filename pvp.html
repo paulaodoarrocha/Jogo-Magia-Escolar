@@ -578,18 +578,16 @@ async function retomarPartidaAtiva(matchId) {
     // Nunca falhar em silêncio — sem isso o jogador ficava "preso" no lobby sem nenhuma mensagem.
     console.error('Falha ao retomar a arena da partida ativa:', e);
 
-    // Evita o loop infinito: se já tentamos recarregar por causa dessa MESMA partida antes,
-    // não tenta de novo — em vez disso, desiste da partida travada pra liberar o jogador.
+    // Evita o loop infinito de reload sem PUNIR ninguém com derrota (isso já causou
+    // vitória/derrota "aleatória" quando o problema era só um travamento de tela, não desistência real).
     const chaveLoop = 'pvpRetryMatch_' + matchId;
     if (sessionStorage.getItem(chaveLoop)) {
       sessionStorage.removeItem(chaveLoop);
-      try {
-        await sb.rpc('pvp_desistir', { p_match: matchId });
-      } catch (e2) {
-        console.error('Falha ao desistir da partida travada:', e2);
-      }
-      alert('Sua partida estava travada e foi encerrada. Você vai voltar pro lobby.');
-      location.reload();
+      alert('Não conseguimos carregar sua partida agora. Se o problema persistir, ela será cancelada automaticamente em alguns minutos (sem contar derrota). Tente novamente em instantes.');
+      document.getElementById('overlay-busca')?.classList.add('hidden');
+      document.getElementById('overlay-countdown')?.classList.add('hidden');
+      document.getElementById('overlay-vs')?.classList.add('hidden');
+      document.getElementById('overlay-cenario')?.classList.add('hidden');
       return;
     }
 
@@ -1175,31 +1173,39 @@ let meuPlayerArena = null, oponentePlayerArena = null, oponentePerfilArena = nul
 
 async function mostrarVs(matchId) {
   document.getElementById('overlay-busca').classList.add('hidden');
-  const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
-  const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
-  oponenteIdArena = oponenteId;
-  const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
-  // Idem: "Player" só é legível pelo próprio dono via RLS, então o nome/foto do
-  // oponente precisam vir por uma RPC pública (senão some e cai no fallback "Oponente").
-  const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
-  const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
+  try {
+    const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
+    const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
+    oponenteIdArena = oponenteId;
+    const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
+    // Idem: "Player" só é legível pelo próprio dono via RLS, então o nome/foto do
+    // oponente precisam vir por uma RPC pública (senão some e cai no fallback "Oponente").
+    const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
+    const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
 
-  meuPlayerArena = meuPlayer || null;
-  oponentePlayerArena = oponentePlayer || null;
-  oponentePerfilArena = oponentePerfil || null;
+    meuPlayerArena = meuPlayer || null;
+    oponentePlayerArena = oponentePlayer || null;
+    oponentePerfilArena = oponentePerfil || null;
 
-  document.getElementById('vs-nome1').textContent = meuPlayer?.username || 'Você';
-  document.getElementById('vs-nome1').style.color = meuPlayer?.name_color || '#ffffff';
-  document.getElementById('vs-rank1').innerHTML = emblemaPatente(perfilAtual?.rank || 'bronze') + RANK_LABEL[perfilAtual?.rank || 'bronze'] + ' • Nv.' + (perfilAtual?.nivel_pvp||1);
-  colocarAvatarNoElemento(document.getElementById('vs-avatar1'), meuPlayer?.avatar_image_url, meuPlayer?.avatar_emoji || '🧙');
+    document.getElementById('vs-nome1').textContent = meuPlayer?.username || 'Você';
+    document.getElementById('vs-nome1').style.color = meuPlayer?.name_color || '#ffffff';
+    document.getElementById('vs-rank1').innerHTML = emblemaPatente(perfilAtual?.rank || 'bronze') + RANK_LABEL[perfilAtual?.rank || 'bronze'] + ' • Nv.' + (perfilAtual?.nivel_pvp||1);
+    colocarAvatarNoElemento(document.getElementById('vs-avatar1'), meuPlayer?.avatar_image_url, meuPlayer?.avatar_emoji || '🧙');
 
-  document.getElementById('vs-nome2').textContent = oponentePlayer?.username || 'Oponente';
-  document.getElementById('vs-nome2').style.color = oponentePlayer?.name_color || '#ffffff';
-  document.getElementById('vs-rank2').innerHTML = emblemaPatente(oponentePerfil?.rank || 'bronze') + RANK_LABEL[oponentePerfil?.rank || 'bronze'] + ' • Nv.' + (oponentePerfil?.nivel_pvp||1);
-  colocarAvatarNoElemento(document.getElementById('vs-avatar2'), oponentePlayer?.avatar_image_url, oponentePlayer?.avatar_emoji || '🧙');
+    document.getElementById('vs-nome2').textContent = oponentePlayer?.username || 'Oponente';
+    document.getElementById('vs-nome2').style.color = oponentePlayer?.name_color || '#ffffff';
+    document.getElementById('vs-rank2').innerHTML = emblemaPatente(oponentePerfil?.rank || 'bronze') + RANK_LABEL[oponentePerfil?.rank || 'bronze'] + ' • Nv.' + (oponentePerfil?.nivel_pvp||1);
+    colocarAvatarNoElemento(document.getElementById('vs-avatar2'), oponentePlayer?.avatar_image_url, oponentePlayer?.avatar_emoji || '🧙');
 
-  document.getElementById('overlay-countdown').classList.remove('hidden');
-  iniciarCountdown();
+    document.getElementById('overlay-countdown').classList.remove('hidden');
+    iniciarCountdown();
+  } catch (e) {
+    // Sem isso, qualquer falha aqui fazia o pareamento simplesmente "parar" e voltar
+    // pro lobby, sem nenhum aviso — e a partida ficava presa como ativa no servidor.
+    console.error('Falha ao mostrar a tela de VS:', e);
+    matchAtual = matchId;
+    await retomarPartidaAtiva(matchId);
+  }
 }
 
 function iniciarCountdown() {
@@ -1275,6 +1281,24 @@ async function finalizarSelecaoCenario() {
     if (matchAtual) await retomarPartidaAtiva(matchAtual);
   }
 }
+
+// Celular/navegador pausa os temporizadores (contagem, tela de VS, escolha de cenário)
+// quando a aba vai pra segundo plano. Sem isso, o jogador que troca de aba durante essa
+// espera nunca chega na arena, a partida fica "presa" como ativa, e o outro jogador
+// vê "partida em andamento" ao tentar batalhar de novo. Ao voltar pra aba, força a
+// entrada direta na arena em vez de confiar que os timers vão continuar de onde pararam.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (!matchAtual) return;
+  const arenaVisivel = !document.getElementById('arena')?.classList.contains('hidden');
+  if (arenaVisivel) return;
+
+  clearInterval(cenarioTimer);
+  document.getElementById('overlay-countdown')?.classList.add('hidden');
+  document.getElementById('overlay-vs')?.classList.add('hidden');
+  document.getElementById('overlay-cenario')?.classList.add('hidden');
+  retomarPartidaAtiva(matchAtual);
+});
 
 /* ================= COMBATE (simplificado, HP/dano validados via RPC no servidor) ================= */
 let hpMe = 1000, hpFoe = 1000, hpMeMax = 1000, hpFoeMax = 1000, souJogador1 = false, arenaPollTimer = null, dashCooldownAte = 0;
