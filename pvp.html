@@ -85,7 +85,8 @@
   @keyframes slideIn{from{transform:translateX(-60px);opacity:0}to{transform:translateX(0);opacity:1}}
   @keyframes slideInR{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
   .vs-avatar{width:56px;height:56px;border-radius:50%;background:#12142a;display:flex;align-items:center;
-    justify-content:center;font-size:26px;margin:0 auto 8px;border:2px solid var(--grad2)}
+    justify-content:center;font-size:26px;margin:0 auto 8px;border:2px solid var(--grad2);overflow:hidden}
+  .vs-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
   .vs-mid{font-weight:900;font-size:26px;color:var(--danger);text-shadow:0 0 16px var(--danger)}
 
   .countdown-num{font-size:80px;font-weight:900;color:var(--grad2);text-shadow:0 0 30px var(--grad2)}
@@ -95,20 +96,62 @@
     flex-direction:column}
   .hp-zone{padding:14px;display:flex;flex-direction:column;gap:10px}
   .hp-line{display:flex;align-items:center;gap:8px}
-  .hp-avatar{width:34px;height:34px;border-radius:50%;background:#12142a;border:2px solid var(--grad2);
-    display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .hp-avatar{width:34px;height:34px;border-radius:50%;background:#12142a;border:2px solid var(--rank-color,var(--grad2));
+    display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;overflow:hidden}
+  .hp-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+  .hp-avatar.foe{border-color:var(--danger)}
   .hp-info{flex:1}
   .hp-name{font-size:12px;font-weight:700;display:flex;justify-content:space-between}
   .hp-bar-wrap{height:12px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:3px}
   .hp-bar-fill{height:100%;border-radius:8px;transition:width .3s}
   .hp-bar-fill.me{background:linear-gradient(90deg,#39ff8a,#1ad1c9)}
   .hp-bar-fill.foe{background:linear-gradient(90deg,#ff5c6c,#ff2d2d)}
-  .battle-mid{flex:1;display:flex;align-items:center;justify-content:center;font-size:13px;color:#6b7399}
+  .battle-mid{flex:1;display:flex;flex-direction:column;min-height:0}
+  .battle-stage{position:relative;flex:1;display:flex;align-items:center;justify-content:space-between;
+    padding:10px 22px;overflow:hidden;
+    background:radial-gradient(ellipse at 50% 60%, rgba(123,92,255,.16) 0%, rgba(6,7,15,0) 70%);}
+  .battle-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.55}
+  .battle-particles::before,.battle-particles::after{content:"";position:absolute;width:160%;height:160%;left:-30%;top:-30%;
+    background:repeating-radial-gradient(circle at 20% 30%, rgba(123,92,255,.10) 0 2px, transparent 2px 60px),
+               repeating-radial-gradient(circle at 80% 70%, rgba(66,239,255,.08) 0 2px, transparent 2px 70px);
+    animation:driftBg 14s linear infinite;}
+  .battle-particles::after{animation-duration:20s;animation-direction:reverse;opacity:.6}
+  @keyframes driftBg{from{transform:translate(0,0)}to{transform:translate(-6%,6%)}}
+  .fighter{position:relative;display:flex;flex-direction:column;align-items:center;z-index:2}
+  .fighter-portrait{width:64px;height:64px;border-radius:16px;background:rgba(255,255,255,.06);
+    border:2px solid var(--rank-color,var(--grad2));display:flex;align-items:center;justify-content:center;
+    font-size:30px;overflow:hidden;animation:fighterIdle 2.6s ease-in-out infinite;
+    box-shadow:0 0 18px rgba(123,92,255,.35)}
+  .fighter-portrait img{width:100%;height:100%;object-fit:cover}
+  .fighter-foe .fighter-portrait{border-color:var(--danger);box-shadow:0 0 18px rgba(255,45,45,.35);animation-delay:.3s}
+  .fighter-shadow{width:38px;height:8px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(2px);margin-top:4px}
+  @keyframes fighterIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .battle-vs-spark{font-size:20px;color:#ffd166;text-shadow:0 0 14px #ffd166;animation:sparkPulse 1.1s ease-in-out infinite;z-index:2}
+  @keyframes sparkPulse{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
+  .fighter.hit .fighter-portrait{animation:fighterHit .35s ease}
+  @keyframes fighterHit{0%{filter:brightness(1)}30%{filter:brightness(2.2) drop-shadow(0 0 10px #ff2d2d);transform:translateX(-6px)}60%{transform:translateX(4px)}100%{filter:brightness(1);transform:translateX(0)}}
+  .fighter.ko .fighter-portrait{filter:grayscale(1) brightness(.5);animation:none}
+  .dmg-pop-zone{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:1px;height:1px;pointer-events:none}
+  .dmg-pop{position:absolute;left:50%;top:0;transform:translateX(-50%);font-weight:900;font-size:15px;color:#ff5050;
+    text-shadow:0 0 8px rgba(0,0,0,.6);white-space:nowrap;animation:dmgPop .8s ease-out forwards}
+  .dmg-pop.heal{color:#39ff8a}
+  .dmg-pop.dodge{color:#7ee8ff;font-size:12px}
+  @keyframes dmgPop{0%{opacity:0;transform:translate(-50%,6px) scale(.8)}20%{opacity:1;transform:translate(-50%,-6px) scale(1.1)}100%{opacity:0;transform:translate(-50%,-38px) scale(1)}}
+  .arena.shake{animation:arenaShake .32s ease}
+  @keyframes arenaShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+  .battle-log{font-size:12px;color:#9aa3c7;text-align:center;padding:6px 10px 2px;min-height:16px}
   .battle-controls{display:flex;gap:10px;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
-  .skill-btn{flex:1;padding:16px 6px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.06);
-    color:#fff;font-weight:800;font-size:12px;cursor:pointer;position:relative}
+  .skill-btn{flex:1;padding:10px 6px 12px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.06);
+    color:#fff;font-weight:800;font-size:12px;cursor:pointer;position:relative;display:flex;flex-direction:column;
+    align-items:center;gap:6px;transition:transform .12s}
+  .skill-btn:active:not(:disabled){transform:scale(.93)}
+  .skill-btn .skill-icon{width:34px;height:34px;border-radius:10px;object-fit:cover;background:rgba(0,0,0,.25);
+    border:1px solid rgba(255,255,255,.25)}
   .skill-btn.ult{background:linear-gradient(135deg,#ff9d1a,#ff2d2d)}
+  .skill-btn.ult .skill-icon{border-color:rgba(255,255,255,.5)}
   .skill-btn:disabled{opacity:.35}
+  .skill-btn.usando{animation:skillPop .35s ease}
+  @keyframes skillPop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
   .btn-dash{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.08);border:1px solid var(--border);
     color:#fff;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:700}
 
@@ -117,6 +160,8 @@
     align-items:center;justify-content:center;text-align:center}
   .promo-rank-old{font-size:16px;color:#9aa3c7;letter-spacing:2px}
   .promo-arrow{font-size:30px;margin:6px 0;color:var(--grad2)}
+  .promo-overlay.rebaixamento .promo-arrow{color:#ff5050}
+  .promo-overlay.rebaixamento{background:radial-gradient(circle at 50% 55%, rgba(255,40,40,.18), rgba(5,6,15,.92))}
   .promo-rank-new{font-size:40px;font-weight:900;letter-spacing:2px;text-shadow:0 0 30px currentColor;
     animation:pop .5s ease}
   @keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
@@ -243,7 +288,7 @@
   <button class="btn-batalha" id="btn-batalha" onclick="iniciarBusca()">⚔ BATALHA</button>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="equip" onclick="trocarAba('equip')">Equipamento</button>
+    <button class="tab-btn active" data-tab="equip" onclick="trocarAba('equip')">Skills</button>
     <button class="tab-btn" data-tab="loja" onclick="trocarAba('loja')">Loja</button>
     <button class="tab-btn" data-tab="inv" onclick="trocarAba('inv')">Inventário</button>
     <button class="tab-btn" data-tab="rank" onclick="trocarAba('rank')">Ranking</button>
@@ -302,11 +347,36 @@
     </div>
   </div>
   <button class="btn-dash" onclick="usarDash()">💨 Dash</button>
-  <div class="battle-mid" id="arena-log">A batalha começou!</div>
+  <div class="battle-mid">
+    <div class="battle-stage" id="battle-stage">
+      <div class="battle-particles" id="battle-particles"></div>
+      <div class="fighter fighter-me" id="fighter-me">
+        <div class="dmg-pop-zone" id="dmg-pop-me"></div>
+        <div class="fighter-portrait" id="fighter-portrait-me">🧙</div>
+        <div class="fighter-shadow"></div>
+      </div>
+      <div class="battle-vs-spark">⚡</div>
+      <div class="fighter fighter-foe" id="fighter-foe">
+        <div class="dmg-pop-zone" id="dmg-pop-foe"></div>
+        <div class="fighter-portrait" id="fighter-portrait-foe">🧙</div>
+        <div class="fighter-shadow"></div>
+      </div>
+    </div>
+    <div class="battle-log" id="arena-log">A batalha começou!</div>
+  </div>
   <div class="battle-controls">
-    <button class="skill-btn" id="btn-skill1" onclick="usarSkill(1)">SKILL 1</button>
-    <button class="skill-btn" id="btn-skill2" onclick="usarSkill(2)">SKILL 2</button>
-    <button class="skill-btn ult" id="btn-ultimate" onclick="usarUltimate()">ULTIMATE</button>
+    <button class="skill-btn" id="btn-skill1" onclick="usarSkill(1)">
+      <img class="skill-icon" id="icon-skill1" src="RelampagoSkill1.gif" alt="" onerror="this.style.display='none'">
+      SKILL 1
+    </button>
+    <button class="skill-btn" id="btn-skill2" onclick="usarSkill(2)">
+      <img class="skill-icon" id="icon-skill2" src="RaioSkill2.gif" alt="" onerror="this.style.display='none'">
+      SKILL 2
+    </button>
+    <button class="skill-btn ult" id="btn-ultimate" onclick="usarUltimate()">
+      <img class="skill-icon" id="icon-ultimate" src="Arlan.png" alt="" onerror="this.style.display='none'">
+      ULTIMATE
+    </button>
   </div>
   <button class="btn-voltar" style="margin:10px auto 0;display:block;opacity:.7" onclick="confirmarDesistencia()">🏳 Desistir</button>
 </div>
@@ -314,7 +384,7 @@
 <div id="overlay-promocao" class="promo-overlay hidden">
   <div class="promo-particles" id="promo-particles"></div>
   <div class="promo-rank-old" id="promo-rank-old">PRATA</div>
-  <div class="promo-arrow">↑</div>
+  <div class="promo-arrow" id="promo-arrow">↑</div>
   <div class="promo-rank-new" id="promo-rank-new">OURO</div>
 </div>
 
@@ -334,6 +404,28 @@ let userId = null;
 let matchAtual = null;
 let filaTimer = null;
 let searchFrame = 0;
+let pvpLobbyMusic = null;
+
+// Música do lobby da arena PvP (Boss5Music.mp3), no mesmo volume da música
+// do lobby principal (0.05 — ver setLobbyMusic em features.js).
+function tocarMusicaLobbyPvp() {
+  if (typeof window.setLobbyMusic === 'function') window.setLobbyMusic(false); // pausa a música do lobby principal
+  if (pvpLobbyMusic) {
+    if (pvpLobbyMusic.paused) { const p = pvpLobbyMusic.play(); if (p && p.catch) p.catch(() => {}); }
+    return;
+  }
+  pvpLobbyMusic = new Audio('Boss5Music.mp3');
+  pvpLobbyMusic.loop = true;
+  pvpLobbyMusic.preload = 'auto';
+  pvpLobbyMusic.volume = 0.05;
+  const tentarTocar = () => { const p = pvpLobbyMusic.play(); if (p && p.catch) p.catch(() => {}); };
+  tentarTocar();
+  document.addEventListener('pointerdown', tentarTocar, { once: true, capture: true });
+}
+function pararMusicaLobbyPvp() {
+  if (pvpLobbyMusic) { pvpLobbyMusic.pause(); pvpLobbyMusic.currentTime = 0; }
+}
+window.addEventListener('beforeunload', pararMusicaLobbyPvp);
 
 async function init() {
   const { data: sessao } = await sb.auth.getSession();
@@ -357,7 +449,13 @@ async function init() {
   nomeEl.style.color = player?.name_color || '#ffffff';
   colocarAvatarNoElemento(document.getElementById('pvp-avatar'), player?.avatar_image_url, player?.avatar_emoji || '🧙');
 
-  await carregarPerfilPvp();
+  try {
+    await carregarPerfilPvp();
+  } catch (e) {
+    console.error('Falha ao carregar perfil PvP:', e);
+    document.getElementById('painel-equip').innerHTML =
+      '<div class="item-sub">Não foi possível carregar suas skills. Puxe pra atualizar ou reabra a Arena PvP.</div>';
+  }
   renderEquip();
   carregarRanking();
 
@@ -368,6 +466,8 @@ async function init() {
   if (partidaAtiva) {
     matchAtual = partidaAtiva.id;
     entrarArena();
+  } else {
+    tocarMusicaLobbyPvp();
   }
 }
 
@@ -424,11 +524,31 @@ const SKILL1_LISTA = ['RelampagoSkill1','SomSkill1','CirculoSkill1','VentoSkill1
 const SKILL2_LISTA = ['RaioSkill2','GeloSkill2','FuracaoSkill2','MetalSkill2','MagmaSkill2','AbismoSkill2','MeteoroSkill2','SolSkill2','EstrelaSkill2','BlackholeSkill2'];
 const ULT_LISTA = ['Ultimate7','Ultimate9','Ultimate5','Ultimate2','Ultimate4','Ultimate3','Ultimate1','Ultimate8','Ultimate10'];
 
+let tentativasRenderEquip = 0;
 function renderEquip() {
-  if (!perfilAtual) { refreshPerfil().then(renderEquip); return; }
+  if (!perfilAtual) {
+    tentativasRenderEquip++;
+    document.getElementById('painel-equip').innerHTML =
+      tentativasRenderEquip > 3
+        ? '<div class="item-sub">Não foi possível carregar suas skills agora. Feche e abra a Arena PvP de novo.</div>'
+        : '<div class="item-sub">Carregando suas skills...</div>';
+    if (tentativasRenderEquip <= 3) refreshPerfil().then(renderEquip).catch(renderEquip);
+    return;
+  }
+  tentativasRenderEquip = 0;
   const el = document.getElementById('painel-equip');
+  const hpMax = 1000 + (perfilAtual.dano_upgrade_nivel || 0) * 25;
+  const LIMIAR_DEMOCAO = {bronze:null,prata:6,ouro:5,diamante:4,desafiante:3};
+  const limiarDemocao = LIMIAR_DEMOCAO[perfilAtual.rank];
+  const derrotasSeguidas = perfilAtual.derrotas_seguidas || 0;
+  const avisoRebaixamento = (limiarDemocao && derrotasSeguidas > 0)
+    ? `<div class="item-card" style="border-color:${derrotasSeguidas >= limiarDemocao - 1 ? '#ff5050' : 'var(--border)'}">
+        <div><div class="item-name">⚠️ Sequência de derrotas</div><div class="item-sub">${derrotasSeguidas}/${limiarDemocao} — perde mais ${Math.max(0,limiarDemocao - derrotasSeguidas)} e desce de rank</div></div>
+      </div>`
+    : '';
   el.innerHTML = `
-    <div class="item-card"><div><div class="item-name">❤️ HP</div><div class="item-sub">Base PvP</div></div><b>1000</b></div>
+    <div class="item-card"><div><div class="item-name">❤️ HP Máximo (PvP)</div><div class="item-sub">Base 1000 + melhorias da loja</div></div><b>${hpMax}</b></div>
+    ${avisoRebaixamento}
     <div class="item-card" style="flex-direction:column;align-items:stretch;gap:6px">
       <div class="item-name">📝 Descrição do perfil</div>
       <input id="input-bio" maxlength="60" placeholder="Ex: Pode juntar todo mundo, não dá um de mim" value="${(minhaBio||'').replace(/"/g,'&quot;')}" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff">
@@ -437,6 +557,7 @@ function renderEquip() {
     ${linhaEvolucao('skill1', 'SKILL 1', perfilAtual.skill1_pvp, SKILL1_LISTA)}
     ${linhaEvolucao('skill2', 'SKILL 2', perfilAtual.skill2_pvp, SKILL2_LISTA)}
     ${linhaEvolucao('ultimate', 'ULTIMATE', perfilAtual.ultimate_pvp, ULT_LISTA)}
+    <div class="item-sub" style="margin-top:6px">💨 Dash: desvia 55% do dano do próximo golpe recebido por 0,6s. Recarrega a cada 4s.</div>
   `;
   document.getElementById('input-bio')?.addEventListener('input', (e) => {
     document.getElementById('bio-count').textContent = e.target.value.length;
@@ -560,11 +681,11 @@ function renderLoja() {
     `<div class="loja-grid">${todas.map(cardPocao).join('')}</div>` +
     '<div class="loja-secao-titulo" style="color:#ffd166">🎁 Recompensas por rank</div>' +
     `<div class="loja-grid">${RECOMPENSAS.map(cardRecompensa).join('')}</div>` +
-    '<div class="loja-secao-titulo" style="color:#ff5050">🗡 Melhoria de Dano (só PvP)</div>' +
+    '<div class="loja-secao-titulo" style="color:#ff5050">❤️ Melhoria de Vida (só PvP)</div>' +
     `<div class="loja-card" style="--lc-cor:#ff5050;width:100%;max-width:100%">
-      <span class="lc-icone">⚔</span>
+      <span class="lc-icone">❤️</span>
       <div class="lc-nome">Nível ${dano}/20</div>
-      <div class="lc-sub">${danoMax ? 'NÍVEL MÁXIMO' : '+2% dano PvP por nível'}</div>
+      <div class="lc-sub">${danoMax ? 'NÍVEL MÁXIMO (+500 HP)' : '+25 HP máximo, só no PvP, por nível'}</div>
       <button class="lc-btn" ${danoMax?'disabled':''} onclick="melhorarDano()">${danoMax?'MAX':custoDano+' 🏆'}</button>
     </div>` +
     '<div class="loja-secao-titulo" style="color:#7b5cff">🎡 Roleta PvP</div>' +
@@ -612,8 +733,9 @@ async function melhorarDano() {
 async function renderInventarioPvp() {
   const el = document.getElementById('painel-inv');
   const { data } = await sb.from('pvp_inventory').select('item_id, obtido_em').eq('user_id', userId);
-  if (!data || !data.length) { el.innerHTML = '<div class="item-sub">Nenhum personagem exclusivo do PvP ainda.</div>'; return; }
-  el.innerHTML = data.map(i => `<div class="item-card"><div class="item-name">${i.item_id}</div></div>`).join('');
+  const aviso = '<div class="item-sub" style="margin-bottom:10px">Suas skills equipadas (Skill 1, Skill 2 e Ultimate) e a melhoria de vida ficam na aba <b>Skills</b>. Aqui embaixo ficam os personagens/pets exclusivos do PvP.</div>';
+  if (!data || !data.length) { el.innerHTML = aviso + '<div class="item-sub">Nenhum personagem exclusivo do PvP ainda.</div>'; return; }
+  el.innerHTML = aviso + data.map(i => `<div class="item-card"><div class="item-name">${i.item_id}</div></div>`).join('');
 }
 
 function premioPorPosicao(pos) {
@@ -824,20 +946,29 @@ async function cancelarBusca() {
   await sb.rpc('pvp_sair_fila');
 }
 
+let meuPlayerArena = null, oponentePlayerArena = null, oponentePerfilArena = null;
+
 async function mostrarVs(matchId) {
   document.getElementById('overlay-busca').classList.add('hidden');
   const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
   const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
-  const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp').eq('user_id', oponenteId).maybeSingle();
-  const { data: oponentePlayer } = await sb.from('Player').select('username, avatar_emoji').eq('user_id', oponenteId).maybeSingle();
+  const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel').eq('user_id', oponenteId).maybeSingle();
+  const { data: oponentePlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', oponenteId).maybeSingle();
+  const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
 
-  document.getElementById('vs-nome1').textContent = 'Você';
+  meuPlayerArena = meuPlayer || null;
+  oponentePlayerArena = oponentePlayer || null;
+  oponentePerfilArena = oponentePerfil || null;
+
+  document.getElementById('vs-nome1').textContent = meuPlayer?.username || 'Você';
+  document.getElementById('vs-nome1').style.color = meuPlayer?.name_color || '#ffffff';
   document.getElementById('vs-rank1').textContent = RANK_LABEL[perfilAtual?.rank || 'bronze'] + ' • Nv.' + (perfilAtual?.nivel_pvp||1);
-  document.getElementById('vs-avatar1').textContent = document.getElementById('pvp-avatar').textContent;
+  colocarAvatarNoElemento(document.getElementById('vs-avatar1'), meuPlayer?.avatar_image_url, meuPlayer?.avatar_emoji || '🧙');
 
   document.getElementById('vs-nome2').textContent = oponentePlayer?.username || 'Oponente';
+  document.getElementById('vs-nome2').style.color = oponentePlayer?.name_color || '#ffffff';
   document.getElementById('vs-rank2').textContent = RANK_LABEL[oponentePerfil?.rank || 'bronze'] + ' • Nv.' + (oponentePerfil?.nivel_pvp||1);
-  document.getElementById('vs-avatar2').textContent = oponentePlayer?.avatar_emoji || '🧙';
+  colocarAvatarNoElemento(document.getElementById('vs-avatar2'), oponentePlayer?.avatar_image_url, oponentePlayer?.avatar_emoji || '🧙');
 
   document.getElementById('overlay-vs').classList.remove('hidden');
   setTimeout(iniciarCountdown, 2200);
@@ -857,14 +988,38 @@ function iniciarCountdown() {
 }
 
 /* ================= COMBATE (simplificado, HP/dano validados via RPC no servidor) ================= */
-let hpMe = 1000, hpFoe = 1000, souJogador1 = false, arenaPollTimer = null, dashCooldownAte = 0;
+let hpMe = 1000, hpFoe = 1000, hpMeMax = 1000, hpFoeMax = 1000, souJogador1 = false, arenaPollTimer = null, dashCooldownAte = 0;
 let ultimoSkill2Me = null, ultimoSkill2Foe = null, matchChannel = null;
 
 function entrarArena() {
-  hpMe = 1000; hpFoe = 1000;
+  hpMeMax = 1000 + (perfilAtual?.dano_upgrade_nivel || 0) * 25;
+  hpFoeMax = 1000 + (oponentePerfilArena?.dano_upgrade_nivel || 0) * 25;
+  hpMe = hpMeMax; hpFoe = hpFoeMax;
   ultimoSkill2Me = null; ultimoSkill2Foe = null;
   document.getElementById('arena').classList.remove('hidden');
   atualizarHpBars();
+
+  // Nome, foto de perfil e cor do nome — exatamente como configurados no lobby
+  const nomeMeEl = document.getElementById('arena-nome-me');
+  const nomeFoeEl = document.getElementById('arena-nome-foe');
+  nomeMeEl.textContent = meuPlayerArena?.username || 'Você';
+  nomeMeEl.style.color = meuPlayerArena?.name_color || '#ffffff';
+  nomeFoeEl.textContent = oponentePlayerArena?.username || 'Oponente';
+  nomeFoeEl.style.color = oponentePlayerArena?.name_color || '#ffffff';
+  colocarAvatarNoElemento(document.getElementById('arena-avatar-me'), meuPlayerArena?.avatar_image_url, meuPlayerArena?.avatar_emoji || '🧙');
+  colocarAvatarNoElemento(document.getElementById('arena-avatar-foe'), oponentePlayerArena?.avatar_image_url, oponentePlayerArena?.avatar_emoji || '🧙');
+  colocarAvatarNoElemento(document.getElementById('fighter-portrait-me'), meuPlayerArena?.avatar_image_url, meuPlayerArena?.avatar_emoji || '🧙');
+  colocarAvatarNoElemento(document.getElementById('fighter-portrait-foe'), oponentePlayerArena?.avatar_image_url, oponentePlayerArena?.avatar_emoji || '🧙');
+  document.getElementById('fighter-me').classList.remove('hit','ko');
+  document.getElementById('fighter-foe').classList.remove('hit','ko');
+
+  // Ícones das skills e ultimate equipadas de verdade (evoluídas na aba Skills)
+  const iconSkill1 = document.getElementById('icon-skill1');
+  const iconSkill2 = document.getElementById('icon-skill2');
+  if (iconSkill1) { iconSkill1.style.display=''; iconSkill1.src = (perfilAtual?.skill1_pvp || 'RelampagoSkill1') + '.gif'; }
+  if (iconSkill2) { iconSkill2.style.display=''; iconSkill2.src = (perfilAtual?.skill2_pvp || 'RaioSkill2') + '.gif'; }
+
+  pararMusicaLobbyPvp();
   if (typeof window.playBossMusic === 'function') window.playBossMusic(6);
   sb.from('pvp_matches').select('jogador1,j1_skill2_at,j2_skill2_at').eq('id', matchAtual).single().then(({data}) => {
     souJogador1 = data?.jogador1 === userId;
@@ -891,9 +1046,7 @@ async function pollEstadoPartida() {
 
 async function processarEstadoPartida(m) {
   if (!m) return;
-  hpMe = souJogador1 ? m.hp1 : m.hp2;
-  hpFoe = souJogador1 ? m.hp2 : m.hp1;
-  atualizarHpBars();
+  aplicarHp(souJogador1 ? m.hp1 : m.hp2, souJogador1 ? m.hp2 : m.hp1);
   const ultimateOcupada = m.ultimate_lock_owner && m.ultimate_lock_owner !== userId && new Date(m.ultimate_lock_expira_em) > new Date();
   document.getElementById('btn-ultimate').disabled = !!ultimateOcupada;
 
@@ -911,18 +1064,47 @@ async function processarEstadoPartida(m) {
 }
 
 function atualizarHpBars() {
-  document.getElementById('arena-hp-me').style.width = Math.max(0,hpMe/10)+'%';
-  document.getElementById('arena-hp-foe').style.width = Math.max(0,hpFoe/10)+'%';
-  document.getElementById('arena-hp-me-txt').textContent = `${Math.max(0,hpMe)}/1000`;
-  document.getElementById('arena-hp-foe-txt').textContent = `${Math.max(0,hpFoe)}/1000`;
+  document.getElementById('arena-hp-me').style.width = Math.max(0, hpMe/hpMeMax*100)+'%';
+  document.getElementById('arena-hp-foe').style.width = Math.max(0, hpFoe/hpFoeMax*100)+'%';
+  document.getElementById('arena-hp-me-txt').textContent = `${Math.max(0,hpMe)}/${hpMeMax}`;
+  document.getElementById('arena-hp-foe-txt').textContent = `${Math.max(0,hpFoe)}/${hpFoeMax}`;
+}
+
+// Aplica novos valores de HP e dispara os efeitos visuais (dano/cura/shake/knockout).
+// Sempre usar isso em vez de atribuir hpMe/hpFoe direto, senão o combate visual some.
+function aplicarHp(novoMe, novoFoe) {
+  const deltaMe = novoMe - hpMe;
+  const deltaFoe = novoFoe - hpFoe;
+  hpMe = novoMe; hpFoe = novoFoe;
+  atualizarHpBars();
+  if (deltaFoe < -0.5) efeitoImpacto('foe', Math.round(-deltaFoe));
+  else if (deltaFoe > 0.5) efeitoImpacto('foe', Math.round(deltaFoe), 'cura');
+  if (deltaMe < -0.5) efeitoImpacto('me', Math.round(-deltaMe));
+  else if (deltaMe > 0.5) efeitoImpacto('me', Math.round(deltaMe), 'cura');
+  if (hpMe <= 0) document.getElementById('fighter-me')?.classList.add('ko');
+  if (hpFoe <= 0) document.getElementById('fighter-foe')?.classList.add('ko');
+}
+
+function efeitoImpacto(lado, valor, tipo) {
+  const fighterEl = document.getElementById(lado === 'me' ? 'fighter-me' : 'fighter-foe');
+  const popZone = document.getElementById(lado === 'me' ? 'dmg-pop-me' : 'dmg-pop-foe');
+  if (!fighterEl || !popZone) return;
+  if (tipo !== 'cura') {
+    fighterEl.classList.remove('hit'); void fighterEl.offsetWidth; fighterEl.classList.add('hit');
+    const arenaEl = document.getElementById('arena');
+    if (arenaEl) { arenaEl.classList.remove('shake'); void arenaEl.offsetWidth; arenaEl.classList.add('shake'); }
+  }
+  const pop = document.createElement('div');
+  pop.className = 'dmg-pop' + (tipo === 'cura' ? ' heal' : '');
+  pop.textContent = (tipo === 'cura' ? '+' : '-') + valor;
+  popZone.appendChild(pop);
+  setTimeout(() => pop.remove(), 850);
 }
 
 async function usarSkill(n) {
   const { data, error } = await sb.rpc('pvp_usar_skill', { p_match: matchAtual, p_tipo: 'skill'+n });
   if (error) { document.getElementById('arena-log').textContent = error.message === 'em_cooldown' ? 'Skill em recarga...' : 'Ação inválida'; return; }
-  hpMe = souJogador1 ? data.hp1 : data.hp2;
-  hpFoe = souJogador1 ? data.hp2 : data.hp1;
-  atualizarHpBars();
+  aplicarHp(souJogador1 ? data.hp1 : data.hp2, souJogador1 ? data.hp2 : data.hp1);
   if (n === 2 && typeof window.playSfx === 'function') window.playSfx('Impacto.mp3', 0.5);
   document.getElementById('arena-log').textContent = data.desviou ? 'Oponente desviou parte do golpe!' : `Você usou Skill ${n}!`;
   if (data.fim) { clearInterval(arenaPollTimer); await finalizarPartida(data.vencedor); }
@@ -938,9 +1120,7 @@ async function usarUltimate() {
   setTimeout(async () => {
     const { data, error: err2 } = await sb.rpc('pvp_usar_skill', { p_match: matchAtual, p_tipo: 'ultimate' });
     if (err2) return;
-    hpMe = souJogador1 ? data.hp1 : data.hp2;
-    hpFoe = souJogador1 ? data.hp2 : data.hp1;
-    atualizarHpBars();
+    aplicarHp(souJogador1 ? data.hp1 : data.hp2, souJogador1 ? data.hp2 : data.hp1);
     if (data.fim) { clearInterval(arenaPollTimer); await finalizarPartida(data.vencedor); }
   }, 1000);
 }
@@ -958,13 +1138,16 @@ window.confirmarDesistencia = confirmarDesistencia;
 
 async function desistirPartida() {
   clearInterval(arenaPollTimer);
+  const rankAntes = perfilAtual?.rank;
   const { data, error } = await sb.rpc('pvp_desistir', { p_match: matchAtual }).catch(e => ({ error: e }));
   if (error) { alert('Erro: ' + (error.message || 'não foi possível desistir')); return; }
   sairDaArenaRealtime();
   if (typeof window.stopBossMusic === 'function') window.stopBossMusic();
   if (typeof window.playDefeatSound === 'function') window.playDefeatSound();
   document.getElementById('arena').classList.add('hidden');
+  tocarMusicaLobbyPvp();
   await refreshPerfil();
+  compararRankEMostrarOverlay(rankAntes);
   renderEquip();
 }
 window.desistirPartida = desistirPartida;
@@ -973,31 +1156,47 @@ async function finalizarPartida(vencedor) {
   clearInterval(arenaPollTimer);
   sairDaArenaRealtime();
   if (typeof window.stopBossMusic === 'function') window.stopBossMusic();
-  if (!vencedor) { document.getElementById('arena').classList.add('hidden'); return; }
+  if (!vencedor) { document.getElementById('arena').classList.add('hidden'); tocarMusicaLobbyPvp(); return; }
   const euGanhei = vencedor === userId;
   if (euGanhei) { if (typeof window.playVictorySound === 'function') window.playVictorySound(); }
   else { if (typeof window.playDefeatSound === 'function') window.playDefeatSound(); }
-  const { data } = await sb.rpc('pvp_registrar_resultado', { p_match: matchAtual, p_vencedor: vencedor }).catch(()=>({data:null}));
+  const rankAntes = perfilAtual?.rank;
+  await sb.rpc('pvp_registrar_resultado', { p_match: matchAtual, p_vencedor: vencedor }).catch(()=>({data:null}));
   document.getElementById('arena').classList.add('hidden');
+  tocarMusicaLobbyPvp();
   await refreshPerfil();
-  if (data?.subiu_rank) mostrarPromocao(data.rank_novo);
+  compararRankEMostrarOverlay(rankAntes);
   renderEquip();
 }
 
-function mostrarPromocao(novoRank) {
+// Comparação local (funciona pros dois jogadores, mesmo que só um deles tenha
+// conseguido executar pvp_registrar_resultado por causa da corrida entre os clientes).
+const ORDEM_RANK = ['bronze','prata','ouro','diamante','desafiante'];
+function compararRankEMostrarOverlay(rankAntes) {
+  if (!rankAntes || !perfilAtual || perfilAtual.rank === rankAntes) return;
+  const antes = ORDEM_RANK.indexOf(rankAntes);
+  const depois = ORDEM_RANK.indexOf(perfilAtual.rank);
+  mostrarPromocao(rankAntes, perfilAtual.rank, depois < antes);
+}
+
+function mostrarPromocao(rankAntigo, novoRank, desceu) {
   const overlay = document.getElementById('overlay-promocao');
-  document.getElementById('promo-rank-old').textContent = RANK_LABEL[perfilAtual.rank] || '';
+  document.getElementById('promo-rank-old').textContent = RANK_LABEL[rankAntigo] || '';
   document.getElementById('promo-rank-new').textContent = RANK_LABEL[novoRank];
-  document.getElementById('promo-rank-new').style.color = RANK_COLORS[novoRank];
+  document.getElementById('promo-rank-new').style.color = desceu ? '#ff5050' : RANK_COLORS[novoRank];
+  document.getElementById('promo-arrow').textContent = desceu ? '↓' : '↑';
+  overlay.classList.toggle('rebaixamento', desceu);
   const particles = document.getElementById('promo-particles');
   particles.innerHTML = '';
-  for (let i=0;i<16;i++){
-    const d = document.createElement('div');
-    d.className='p-dot';
-    d.style.left = (10+Math.random()*80)+'%';
-    d.style.bottom = '30%';
-    d.style.animationDelay = (Math.random()*.4)+'s';
-    particles.appendChild(d);
+  if (!desceu) {
+    for (let i=0;i<16;i++){
+      const d = document.createElement('div');
+      d.className='p-dot';
+      d.style.left = (10+Math.random()*80)+'%';
+      d.style.bottom = '30%';
+      d.style.animationDelay = (Math.random()*.4)+'s';
+      particles.appendChild(d);
+    }
   }
   overlay.classList.remove('hidden');
   setTimeout(()=>overlay.classList.add('hidden'), 2600);
