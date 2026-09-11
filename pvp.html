@@ -213,19 +213,32 @@
   .loja-card.locked{filter:grayscale(.85) brightness(.6);opacity:.55}
   .loja-card.equipado{border-color:#3dffa0;box-shadow:0 0 16px rgba(61,255,160,.35)}
 
-  .skill-evo-card{border-radius:16px;padding:12px 14px;margin-bottom:10px;background:rgba(255,255,255,.035);
-    border:1px solid color-mix(in srgb, var(--sk-cor,#7b5cff) 55%, transparent);box-shadow:0 0 8px -3px var(--sk-cor,#7b5cff)}
-  .skill-evo-topo{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
-  .skill-evo-label{font-weight:900;font-size:13px;letter-spacing:.5px}
-  .skill-evo-raridade{font-size:11px;font-weight:700}
-  .skill-evo-corpo{display:flex;align-items:center;justify-content:center;gap:10px}
-  .skill-evo-icone{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0}
-  .skill-evo-icone img{width:52px;height:52px;object-fit:contain;border-radius:12px;background:rgba(0,0,0,.25);
-    border:2px solid var(--sk-cor,#7b5cff)}
+  .skill-evo-card{position:relative;border-radius:18px;padding:14px 16px;margin-bottom:12px;overflow:hidden;
+    background:linear-gradient(160deg, color-mix(in srgb, var(--sk-cor,#7b5cff) 16%, #0e1024) 0%, #0a0c1c 100%);
+    border:1px solid color-mix(in srgb, var(--sk-cor,#7b5cff) 60%, transparent);
+    box-shadow:0 10px 26px rgba(0,0,0,.35), 0 0 22px -6px var(--sk-cor,#7b5cff), inset 0 0 24px rgba(255,255,255,.03);
+    transition:transform .2s ease, box-shadow .2s ease}
+  .skill-evo-card:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.4), 0 0 28px -4px var(--sk-cor,#7b5cff), inset 0 0 24px rgba(255,255,255,.04)}
+  .skill-evo-card::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent,color-mix(in srgb, var(--sk-cor,#7b5cff) 14%, transparent),transparent);
+    transform:translateX(-120%);animation:skillEvoShine 5s ease-in-out infinite}
+  @keyframes skillEvoShine{0%,55%{transform:translateX(-120%)}75%{transform:translateX(120%)}100%{transform:translateX(120%)}}
+  .skill-evo-topo{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;position:relative;z-index:1}
+  .skill-evo-label{font-weight:900;font-size:13px;letter-spacing:1px;text-shadow:0 0 12px color-mix(in srgb, var(--sk-cor,#7b5cff) 60%, transparent)}
+  .skill-evo-raridade{font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px;
+    background:color-mix(in srgb, var(--sk-cor,#7b5cff) 20%, transparent);border:1px solid color-mix(in srgb, var(--sk-cor,#7b5cff) 55%, transparent)}
+  .skill-evo-corpo{display:flex;align-items:center;justify-content:center;gap:14px;position:relative;z-index:1}
+  .skill-evo-icone{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:0}
+  .skill-evo-icone img{width:58px;height:58px;object-fit:contain;border-radius:14px;background:rgba(0,0,0,.3);
+    border:2px solid var(--sk-cor,#7b5cff);box-shadow:0 0 16px -2px var(--sk-cor,#7b5cff)}
   .skill-evo-icone.prox img{opacity:.85;filter:saturate(1.3)}
-  .skill-evo-nome-atual{font-size:10px;color:#c7cfe8;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:78px}
-  .skill-evo-seta{font-size:18px;color:var(--sk-cor,#7b5cff);flex-shrink:0}
-  .skill-evo-maxtag{flex:1;text-align:center;font-weight:800;font-size:12px;color:#3dffa0}
+  .skill-evo-nome-atual{font-size:10px;color:#c7cfe8;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:82px;font-weight:600}
+  .skill-evo-seta{font-size:20px;color:var(--sk-cor,#7b5cff);flex-shrink:0;text-shadow:0 0 10px var(--sk-cor,#7b5cff)}
+  .skill-evo-maxtag{flex:1;text-align:center;font-weight:900;font-size:12px;letter-spacing:.5px;color:#3dffa0;
+    text-shadow:0 0 10px rgba(61,255,160,.5)}
+  @media (min-width:700px){
+    #painel-equip{display:grid;grid-template-columns:1fr;gap:0}
+    .skill-evo-card{padding:16px 20px}
+  }
   .loja-card .lc-icone{font-size:28px;filter:drop-shadow(0 0 6px var(--lc-cor,#7b5cff))}
   .loja-card .lc-pet-img{width:56px;height:56px;border-radius:12px;object-fit:cover;border:2px solid var(--lc-cor,#ffd166);
     box-shadow:0 0 10px var(--lc-cor,#ffd166)}
@@ -291,7 +304,7 @@
 <div id="tela-bloqueado" class="container hidden">
   <div class="locked-msg">
     🔒<br><br>
-    O PvP é liberado depois de derrotar o <b>Boss 5</b>.<br>Volte para o lobby e continue sua jornada!
+    O PvP é liberado depois de derrotar o <b>Boss 4</b>.<br>Volte para o lobby e continue sua jornada!
   </div>
 </div>
 
@@ -498,9 +511,9 @@ async function init() {
     .eq('user_id', userId).single();
 
   const bosses = player?.bosses_derrotados || [];
-  const derrotouBoss5 = Array.isArray(bosses) ? bosses.includes(5) : (bosses && bosses['5']);
+  const derrotouBoss4 = Array.isArray(bosses) ? bosses.includes(4) : (bosses && bosses['4']);
 
-  if (!derrotouBoss5) {
+  if (!derrotouBoss4) {
     document.getElementById('tela-bloqueado').classList.remove('hidden');
     return;
   }
@@ -541,16 +554,19 @@ async function retomarPartidaAtiva(matchId) {
     const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
     oponenteIdArena = oponenteId;
     const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
+    // A tabela "Player" só permite (via RLS) cada um ler a própria linha — buscar direto
+    // aqui pra pegar o nome/avatar do OPONENTE sempre voltava vazio, e por isso ele
+    // aparecia como "Oponente" sem foto. Por isso usamos a RPC pública abaixo pro oponente.
+    const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
     const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
     meuPlayerArena = meuPlayer || null;
-    oponentePlayerArena = null;
+    oponentePlayerArena = oponentePlayer || null;
     oponentePerfilArena = oponentePerfil || null;
 
     const { data: resolvido } = await sb.rpc('pvp_resolver_imagens', { p_match: matchId }).catch(() => ({ data: null }));
     cenarioFinal = resolvido?.imagem_final || match.imagem_final || CENARIOS_PVP[0];
 
     entrarArena();
-    carregarNomeOponente(oponenteId); // não-bloqueante: nome/avatar do oponente chegam depois, sem travar a entrada na arena
   } catch (e) {
     // Nunca falhar em silêncio — sem isso o jogador ficava "preso" no lobby sem nenhuma mensagem.
     console.error('Falha ao retomar a arena da partida ativa:', e);
@@ -1053,7 +1069,7 @@ let filaChannel = null;
 async function iniciarBusca() {
   const { error } = await sb.rpc('pvp_entrar_fila');
   if (error) {
-    if (error.message === 'boss5_nao_derrotado') { alert('Derrote o Boss 5 primeiro!'); return; }
+    if (error.message === 'boss4_nao_derrotado') { alert('Derrote o Boss 4 primeiro!'); return; }
     if (error.message === 'partida_ativa_em_andamento') { await retomarPartidaExistente(); return; }
     alert(error.message);
     return;
@@ -1133,44 +1149,19 @@ async function cancelarBusca() {
 
 let meuPlayerArena = null, oponentePlayerArena = null, oponentePerfilArena = null, oponenteIdArena = null;
 
-// Busca nome/avatar/cor do oponente pela RPC pública (a tabela "Player" só é legível pelo
-// próprio dono via RLS — por isso o nome do oponente sempre virava "Oponente" sem foto).
-// É chamada sem "await" de propósito: se travar ou falhar por qualquer motivo, o jogo
-// já está rodando (arena/VS já montados com o fallback "Oponente") e só atualiza o
-// nome/foto quando (e se) a resposta chegar — nunca trava a entrada na partida.
-async function carregarNomeOponente(oponenteId) {
-  try {
-    const resp = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId });
-    const dados = resp?.data;
-    if (!dados) return;
-    oponentePlayerArena = dados;
-    const nomeVs = document.getElementById('vs-nome2');
-    if (nomeVs) { nomeVs.textContent = dados.username || 'Oponente'; nomeVs.style.color = dados.name_color || '#ffffff'; }
-    const avatarVs = document.getElementById('vs-avatar2');
-    if (avatarVs) colocarAvatarNoElemento(avatarVs, dados.avatar_image_url, dados.avatar_emoji || '🧙');
-    const nomeArena = document.getElementById('arena-nome-foe');
-    if (nomeArena) {
-      nomeArena.textContent = dados.username || 'Oponente';
-      nomeArena.style.color = dados.name_color || '#ffffff';
-    }
-    const avatarArena = document.getElementById('arena-avatar-foe');
-    if (avatarArena) colocarAvatarNoElemento(avatarArena, dados.avatar_image_url, dados.avatar_emoji || '🧙');
-  } catch (e) {
-    console.error('Falha ao carregar nome/avatar do oponente (não crítico):', e);
-  }
-}
-
 async function mostrarVs(matchId) {
   document.getElementById('overlay-busca').classList.add('hidden');
   const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
   const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
   oponenteIdArena = oponenteId;
   const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
+  // Idem: "Player" só é legível pelo próprio dono via RLS, então o nome/foto do
+  // oponente precisam vir por uma RPC pública (senão some e cai no fallback "Oponente").
+  const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
   const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
 
   meuPlayerArena = meuPlayer || null;
-  oponentePlayerArena = null;
-  carregarNomeOponente(oponenteId); // não-bloqueante: nome/avatar do oponente chegam depois, sem travar a tela de VS
+  oponentePlayerArena = oponentePlayer || null;
   oponentePerfilArena = oponentePerfil || null;
 
   document.getElementById('vs-nome1').textContent = meuPlayer?.username || 'Você';
@@ -1178,10 +1169,10 @@ async function mostrarVs(matchId) {
   document.getElementById('vs-rank1').innerHTML = emblemaPatente(perfilAtual?.rank || 'bronze') + RANK_LABEL[perfilAtual?.rank || 'bronze'] + ' • Nv.' + (perfilAtual?.nivel_pvp||1);
   colocarAvatarNoElemento(document.getElementById('vs-avatar1'), meuPlayer?.avatar_image_url, meuPlayer?.avatar_emoji || '🧙');
 
-  document.getElementById('vs-nome2').textContent = 'Oponente';
-  document.getElementById('vs-nome2').style.color = '#ffffff';
+  document.getElementById('vs-nome2').textContent = oponentePlayer?.username || 'Oponente';
+  document.getElementById('vs-nome2').style.color = oponentePlayer?.name_color || '#ffffff';
   document.getElementById('vs-rank2').innerHTML = emblemaPatente(oponentePerfil?.rank || 'bronze') + RANK_LABEL[oponentePerfil?.rank || 'bronze'] + ' • Nv.' + (oponentePerfil?.nivel_pvp||1);
-  colocarAvatarNoElemento(document.getElementById('vs-avatar2'), null, '🧙');
+  colocarAvatarNoElemento(document.getElementById('vs-avatar2'), oponentePlayer?.avatar_image_url, oponentePlayer?.avatar_emoji || '🧙');
 
   document.getElementById('overlay-countdown').classList.remove('hidden');
   iniciarCountdown();

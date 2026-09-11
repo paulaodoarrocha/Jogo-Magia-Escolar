@@ -278,8 +278,8 @@
            const { data: player } = await window.supabaseClient.from('Player')
              .select('bosses_derrotados').eq('user_id', window.currentUserId).single();
            const bosses = player?.bosses_derrotados || [];
-           const ok = Array.isArray(bosses) ? bosses.includes(5) : !!(bosses && bosses['5']);
-           if (!ok) { alert('🔒 Derrote o Boss 5 para desbloquear o PvP!'); return; }
+           const ok = Array.isArray(bosses) ? bosses.includes(4) : !!(bosses && bosses['4']);
+           if (!ok) { alert('🔒 Derrote o Boss 4 para desbloquear o PvP!'); return; }
          } catch (e) {}
          window.location.href = 'pvp.html';
        }
@@ -438,7 +438,7 @@
      </h2>
     </div>
    </div>
-   <div class="characters-grid boot-content" id="personagens-conteudo"><div class="empty-state boot-loader"><div class="empty-icon">🎴</div><b>CARREGANDO COLEÇÃO...</b></div></div>
+   <div class="boot-content" id="personagens-conteudo"><div class="empty-state boot-loader"><div class="empty-icon">🎴</div><b>CARREGANDO COLEÇÃO...</b></div></div>
    <button class="btn-primary" id="btn-fundir">
     ✦ FUNDIR 5 IGUAIS
    </button>
