@@ -20,7 +20,7 @@
     -webkit-background-clip:text;background-clip:text;color:transparent;font-size:18px}
   .btn-voltar{background:rgba(255,255,255,.08);border:1px solid var(--border);color:#fff;padding:8px 12px;
     border-radius:10px;font-weight:700;cursor:pointer;font-size:13px}
-  .container{max-width:520px;margin:0 auto;padding:16px 14px 90px}
+  .container{max-width:520px;margin:0 auto;padding:16px 14px 90px;position:relative}
 
   /* ===== CARD RANK/PERFIL ===== */
   .profile-card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:16px;
@@ -213,8 +213,8 @@
   .loja-card.locked{filter:grayscale(.85) brightness(.6);opacity:.55}
   .loja-card.equipado{border-color:#3dffa0;box-shadow:0 0 16px rgba(61,255,160,.35)}
 
-  .skill-evo-card{border-radius:16px;padding:12px 14px;margin-bottom:10px;background:rgba(255,255,255,.04);
-    border:1px solid var(--sk-cor,#7b5cff);box-shadow:0 0 14px -4px var(--sk-cor,#7b5cff)}
+  .skill-evo-card{border-radius:16px;padding:12px 14px;margin-bottom:10px;background:rgba(255,255,255,.035);
+    border:1px solid color-mix(in srgb, var(--sk-cor,#7b5cff) 55%, transparent);box-shadow:0 0 8px -3px var(--sk-cor,#7b5cff)}
   .skill-evo-topo{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
   .skill-evo-label{font-weight:900;font-size:13px;letter-spacing:.5px}
   .skill-evo-raridade{font-size:11px;font-weight:700}
@@ -296,6 +296,8 @@
 </div>
 
 <div id="tela-pvp" class="container hidden">
+
+  <button id="btn-musica-pvp" onclick="alternarMusicaPvp()" style="position:absolute;top:10px;right:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;width:36px;height:36px;font-size:16px;cursor:pointer;z-index:5">🔊</button>
 
   <div class="profile-card" id="profile-card" style="--rank-color:#c07a3e">
     <div class="avatar-ring" id="pvp-avatar">🧙</div>
@@ -433,6 +435,21 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const RANK_COLORS = {bronze:'#c07a3e',prata:'#c7d0da',ouro:'#ffd166',diamante:'#7ee8ff',desafiante:'#ff5cf1'};
 const RANK_LABEL = {bronze:'BRONZE',prata:'PRATA',ouro:'OURO',diamante:'DIAMANTE',desafiante:'DESAFIANTE'};
+
+// Emblema de patente estilo FF: pontas variam (1 a 5) conforme o rank sobe, cor bate com RANK_COLORS.
+const RANK_PONTAS = {bronze:1,prata:2,ouro:3,diamante:4,desafiante:5};
+function emblemaPatente(rank, tamanho = 15) {
+  const cor = RANK_COLORS[rank] || '#7b5cff';
+  const pontas = RANK_PONTAS[rank] || 1;
+  const marcas = Array.from({length: pontas}, (_, i) =>
+    `<rect x="${5 + i * 3.4}" y="15" width="2.2" height="5" rx="0.6" fill="${cor}"/>`
+  ).join('');
+  return `<svg class="rank-emblema" viewBox="0 0 24 24" width="${tamanho}" height="${tamanho}" style="vertical-align:-3px;margin-right:3px;flex-shrink:0">
+    <path fill="${cor}" fill-opacity=".22" stroke="${cor}" stroke-width="1.3" d="M12 2l4 2.3 4.6.6-1 4.4L21 13l-1.4 4.4-4.6.7L12 22l-3-3.9-4.6-.7L3 13l1.4-3.7-1-4.4L8 4.3z"/>
+    <circle cx="12" cy="10.5" r="3.4" fill="${cor}"/>
+    ${marcas}
+  </svg>`;
+}
 const RANK_NIVEL = {bronze:1,prata:2,ouro:3,diamante:4,desafiante:5};
 
 let perfilAtual = null;
@@ -441,19 +458,18 @@ let matchAtual = null;
 let filaTimer = null;
 let searchFrame = 0;
 let pvpLobbyMusic = null;
+let pvpMusicaLigada = true;
 
-// Música do lobby da arena PvP (Boss5Music.mp3), no mesmo volume da música
-// do lobby principal (0.05 — ver setLobbyMusic em features.js).
+// Música do lobby da arena PvP (Boss6Music.mp3), volume 0.07.
 function tocarMusicaLobbyPvp() {
   if (typeof window.setLobbyMusic === 'function') window.setLobbyMusic(false); // pausa a música do lobby principal
-  if (pvpLobbyMusic) {
-    if (pvpLobbyMusic.paused) { const p = pvpLobbyMusic.play(); if (p && p.catch) p.catch(() => {}); }
-    return;
+  if (!pvpLobbyMusic) {
+    pvpLobbyMusic = new Audio('Boss6Music.mp3');
+    pvpLobbyMusic.loop = true;
+    pvpLobbyMusic.preload = 'auto';
   }
-  pvpLobbyMusic = new Audio('Boss5Music.mp3');
-  pvpLobbyMusic.loop = true;
-  pvpLobbyMusic.preload = 'auto';
-  pvpLobbyMusic.volume = 0.05;
+  pvpLobbyMusic.volume = pvpMusicaLigada ? 0.07 : 0;
+  if (!pvpMusicaLigada) return;
   const tentarTocar = () => { const p = pvpLobbyMusic.play(); if (p && p.catch) p.catch(() => {}); };
   tentarTocar();
   document.addEventListener('pointerdown', tentarTocar, { once: true, capture: true });
@@ -462,6 +478,16 @@ function pararMusicaLobbyPvp() {
   if (pvpLobbyMusic) { pvpLobbyMusic.pause(); pvpLobbyMusic.currentTime = 0; }
 }
 window.addEventListener('beforeunload', pararMusicaLobbyPvp);
+
+function alternarMusicaPvp() {
+  pvpMusicaLigada = !pvpMusicaLigada;
+  const btn = document.getElementById('btn-musica-pvp');
+  if (btn) btn.textContent = pvpMusicaLigada ? '🔊' : '🔇';
+  if (pvpLobbyMusic) pvpLobbyMusic.volume = pvpMusicaLigada ? 0.07 : 0;
+  if (pvpMusicaLigada) tocarMusicaLobbyPvp();
+  else pvpLobbyMusic?.pause();
+}
+window.alternarMusicaPvp = alternarMusicaPvp;
 
 async function init() {
   const { data: sessao } = await sb.auth.getSession();
@@ -567,7 +593,7 @@ async function refreshPerfil() {
   const { data: pl } = await sb.from('Player').select('bio').eq('user_id', userId).maybeSingle();
   minhaBio = pl?.bio || '';
   document.getElementById('profile-card').style.setProperty('--rank-color', RANK_COLORS[data.rank]);
-  document.getElementById('pvp-rank-pill').textContent = RANK_LABEL[data.rank];
+  document.getElementById('pvp-rank-pill').innerHTML = emblemaPatente(data.rank) + RANK_LABEL[data.rank];
   document.getElementById('pvp-trofeus').textContent = data.trofeus_atuais;
   document.getElementById('pvp-nivel').textContent = data.nivel_pvp;
   document.getElementById('pvp-vitorias').textContent = data.vitorias;
@@ -838,7 +864,7 @@ async function renderInventarioPvp() {
     <div class="loja-grid">
       ${BOSSES_EQUIP.map(b => `
         <div class="loja-card ${b.id === bossAtual ? 'equipado' : ''}" style="--lc-cor:#7b5cff;cursor:pointer" onclick="equiparBossPvp('${b.id}')">
-          <img src="${b.id}.png" alt="${b.id}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">
+          <img src="${b.id}.jpg" alt="${b.id}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">
           <div class="lc-nome">${b.id}</div>
           <div class="lc-sub">${b.rank}</div>
           <button class="lc-btn" ${b.id === bossAtual ? 'disabled' : ''} onclick="event.stopPropagation();equiparBossPvp('${b.id}')">${b.id === bossAtual ? '✔ EQUIPADO' : 'EQUIPAR'}</button>
@@ -927,7 +953,7 @@ async function abrirPerfilPublico(userId) {
       <div style="font-weight:800;font-size:17px;color:${cor}">${data.username||'Jogador'}${data.vip?' 👑':''}</div>
       ${bio ? `<div style="margin-top:6px;font-size:12px;color:#9aa3c7;font-style:italic">"${bio.replace(/</g,'&lt;')}"</div>` : ''}
 
-      <div class="rank-pill" style="--rank-color:${rankCor};margin-top:12px">🏅 ${rankLabel} • Nv. ${data.nivel_pvp ?? 1}</div>
+      <div class="rank-pill" style="--rank-color:${rankCor};margin-top:12px">${emblemaPatente(data.rank_pvp || 'bronze')}${rankLabel} • Nv. ${data.nivel_pvp ?? 1}</div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
         <div class="item-card" style="margin:0;flex-direction:column;align-items:flex-start;gap:2px">
@@ -1028,7 +1054,7 @@ async function iniciarBusca() {
   matchJaAceito = false;
   document.getElementById('overlay-busca').classList.remove('hidden');
   searchFrame = 0;
-  filaTimer = setInterval(pollFila, 2500);
+  filaTimer = setInterval(pollFila, 1100); // era 2500ms — reduzido pra diminuir o delay até achar o VS
   pollFila();
   escutarPartidasNovas(); // já cobre o INSERT do match; não precisa duplicar o canal
 }
@@ -1089,12 +1115,12 @@ async function mostrarVs(matchId) {
 
   document.getElementById('vs-nome1').textContent = meuPlayer?.username || 'Você';
   document.getElementById('vs-nome1').style.color = meuPlayer?.name_color || '#ffffff';
-  document.getElementById('vs-rank1').textContent = RANK_LABEL[perfilAtual?.rank || 'bronze'] + ' • Nv.' + (perfilAtual?.nivel_pvp||1);
+  document.getElementById('vs-rank1').innerHTML = emblemaPatente(perfilAtual?.rank || 'bronze') + RANK_LABEL[perfilAtual?.rank || 'bronze'] + ' • Nv.' + (perfilAtual?.nivel_pvp||1);
   colocarAvatarNoElemento(document.getElementById('vs-avatar1'), meuPlayer?.avatar_image_url, meuPlayer?.avatar_emoji || '🧙');
 
   document.getElementById('vs-nome2').textContent = oponentePlayer?.username || 'Oponente';
   document.getElementById('vs-nome2').style.color = oponentePlayer?.name_color || '#ffffff';
-  document.getElementById('vs-rank2').textContent = RANK_LABEL[oponentePerfil?.rank || 'bronze'] + ' • Nv.' + (oponentePerfil?.nivel_pvp||1);
+  document.getElementById('vs-rank2').innerHTML = emblemaPatente(oponentePerfil?.rank || 'bronze') + RANK_LABEL[oponentePerfil?.rank || 'bronze'] + ' • Nv.' + (oponentePerfil?.nivel_pvp||1);
   colocarAvatarNoElemento(document.getElementById('vs-avatar2'), oponentePlayer?.avatar_image_url, oponentePlayer?.avatar_emoji || '🧙');
 
   document.getElementById('overlay-countdown').classList.remove('hidden');
@@ -1227,8 +1253,8 @@ function entrarArena() {
   colocarAvatarNoElemento(document.getElementById('arena-avatar-me'), meuPlayerArena?.avatar_image_url, meuPlayerArena?.avatar_emoji || '🧙');
   colocarAvatarNoElemento(document.getElementById('arena-avatar-foe'), oponentePlayerArena?.avatar_image_url, oponentePlayerArena?.avatar_emoji || '🧙');
   // Portraits da luta usam o boss/skin equipado no PvP (só visual, não afeta dano) — Arlan é o padrão.
-  const bossMeImg = (perfilAtual?.boss_equipado || 'Arlan') + '.png';
-  const bossFoeImg = (oponentePerfilArena?.boss_equipado || 'Arlan') + '.png';
+  const bossMeImg = (perfilAtual?.boss_equipado || 'Arlan') + '.jpg';
+  const bossFoeImg = (oponentePerfilArena?.boss_equipado || 'Arlan') + '.jpg';
   colocarAvatarNoElemento(document.getElementById('fighter-portrait-me'), bossMeImg, '🧙');
   colocarAvatarNoElemento(document.getElementById('fighter-portrait-foe'), bossFoeImg, '🧙');
   document.getElementById('fighter-me').classList.remove('hit','ko','escudo-ativo');
@@ -1240,8 +1266,10 @@ function entrarArena() {
   // Ícones das skills e ultimate equipadas de verdade (evoluídas na aba Skills)
   const iconSkill1 = document.getElementById('icon-skill1');
   const iconSkill2 = document.getElementById('icon-skill2');
+  const iconUltimate = document.getElementById('icon-ultimate');
   if (iconSkill1) { iconSkill1.style.display=''; iconSkill1.src = (perfilAtual?.skill1_pvp || 'RelampagoSkill1') + '.gif'; }
   if (iconSkill2) { iconSkill2.style.display=''; iconSkill2.src = (perfilAtual?.skill2_pvp || 'RaioSkill2') + '.gif'; }
+  if (iconUltimate) { iconUltimate.style.display=''; iconUltimate.src = (perfilAtual?.ultimate_pvp || 'Ultimate7') + '.gif'; }
 
   pararMusicaLobbyPvp();
   if (typeof window.playBossMusic === 'function') window.playBossMusic(6);
@@ -1251,17 +1279,42 @@ function entrarArena() {
     ultimoSkill2Foe = souJogador1 ? data?.j2_skill2_at : data?.j1_skill2_at;
   });
 
-  matchChannel = sb.channel('pvp_match_'+matchAtual)
+  matchChannel = sb.channel('pvp_match_'+matchAtual, { config: { presence: { key: userId } } })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pvp_matches', filter: `id=eq.${matchAtual}` }, (payload) => processarEstadoPartida(payload.new))
     .on('broadcast', { event: 'mover' }, ({ payload }) => { posFoe = payload.pos; aplicarPosicoes(); })
-    .subscribe();
+    .on('presence', { event: 'leave' }, ({ key }) => { if (key === oponenteIdArena) agendarChecagemAbandono(); })
+    .on('presence', { event: 'join' }, ({ key }) => { if (key === oponenteIdArena) cancelarChecagemAbandono(); })
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') { try { await matchChannel.track({ online_at: Date.now() }); } catch (_) {} }
+    });
 
   arenaPollTimer = setInterval(pollEstadoPartida, 4000); // fallback caso o realtime falhe
+}
+
+// Se o oponente cai/fecha o app/sai de raiva, o Realtime avisa que ele saiu do canal (evento 'leave').
+// Espera um tempo curto (reconexões rápidas de wifi/4g não devem contar como abandono) e, se ele
+// não voltar, declara vitória automática pra quem ficou.
+let abandonoTimer = null;
+function agendarChecagemAbandono() {
+  if (!matchAtual) return;
+  clearTimeout(abandonoTimer);
+  abandonoTimer = setTimeout(async () => {
+    if (!matchAtual) return;
+    const { error } = await sb.rpc('pvp_declarar_abandono', { p_match: matchAtual }).catch(e => ({ error: e }));
+    if (!error) {
+      document.getElementById('arena-log').textContent = 'Oponente desconectou — vitória!';
+    }
+  }, 8000); // 8s de tolerância antes de considerar abandono
+}
+function cancelarChecagemAbandono() {
+  clearTimeout(abandonoTimer);
+  abandonoTimer = null;
 }
 
 function sairDaArenaRealtime() {
   if (matchChannel) { sb.removeChannel(matchChannel); matchChannel = null; }
   clearInterval(arenaPollTimer);
+  cancelarChecagemAbandono();
   pararMover();
 }
 
