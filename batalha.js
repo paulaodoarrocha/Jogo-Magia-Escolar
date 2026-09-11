@@ -304,20 +304,60 @@ function calcularLimitesMundo() {
 
 let movendoDireita = false, movendoEsquerda = false, movendoCima = false, movendoBaixo = false;
 
-function configurarBotaoMovimento(botao, ligar) {
-  botao.addEventListener("pointerdown", function (evento) {
-    evento.target.setPointerCapture(evento.pointerId);
-    ligar(true);
-  });
-  botao.addEventListener("pointerup", function () { ligar(false); });
-  botao.addEventListener("pointercancel", function () { ligar(false); });
-  botao.addEventListener("contextmenu", function (evento) { evento.preventDefault(); });
-}
+// Joystick de arrastar (substitui as setas ▲◀▼▶): mesmas variáveis movendo*
+// continuam alimentando a física existente, só troca a forma de disparar.
+(function configurarJoystickBoss() {
+  const base = document.getElementById("boss-joystick-base");
+  const knob = document.getElementById("boss-joystick-knob");
+  if (!base || !knob) return;
 
-configurarBotaoMovimento(document.getElementById("Direita"), function (v) { movendoDireita = v; });
-configurarBotaoMovimento(document.getElementById("Esquerda"), function (v) { movendoEsquerda = v; });
-configurarBotaoMovimento(document.getElementById("Cima"), function (v) { movendoCima = v; });
-configurarBotaoMovimento(document.getElementById("Baixo"), function (v) { movendoBaixo = v; });
+  const RAIO = 32;
+  const ZONA_MORTA = 8;
+  let arrastando = false;
+  let pointerId = null;
+
+  function mover(clientX, clientY) {
+    const rect = base.getBoundingClientRect();
+    const centroX = rect.left + rect.width / 2;
+    const centroY = rect.top + rect.height / 2;
+    let dx = clientX - centroX;
+    let dy = clientY - centroY;
+    const dist = Math.hypot(dx, dy);
+    if (dist > RAIO) { dx = (dx / dist) * RAIO; dy = (dy / dist) * RAIO; }
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+    movendoDireita = dx > ZONA_MORTA;
+    movendoEsquerda = dx < -ZONA_MORTA;
+    movendoBaixo = dy > ZONA_MORTA;
+    movendoCima = dy < -ZONA_MORTA;
+  }
+
+  function soltar() {
+    if (!arrastando) return;
+    arrastando = false;
+    pointerId = null;
+    knob.classList.remove("arrastando");
+    knob.style.transform = "translate(-50%, -50%)";
+    movendoDireita = movendoEsquerda = movendoCima = movendoBaixo = false;
+  }
+
+  base.addEventListener("pointerdown", function (evento) {
+    evento.preventDefault();
+    arrastando = true;
+    pointerId = evento.pointerId;
+    knob.classList.add("arrastando");
+    try { base.setPointerCapture(pointerId); } catch (_) {}
+    mover(evento.clientX, evento.clientY);
+  });
+  base.addEventListener("pointermove", function (evento) {
+    if (!arrastando || evento.pointerId !== pointerId) return;
+    mover(evento.clientX, evento.clientY);
+  });
+  base.addEventListener("pointerup", soltar);
+  base.addEventListener("pointercancel", soltar);
+  base.addEventListener("lostpointercapture", soltar);
+  base.addEventListener("contextmenu", function (evento) { evento.preventDefault(); });
+})();
 
 window.addEventListener("keydown", function (evento) {
   const tecla = evento.key.toLowerCase();

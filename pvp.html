@@ -1187,7 +1187,16 @@ async function pollFila() {
   // Se já existe partida ativa pra esse jogador (ele foi pareado por outro jogador,
   // que criou a partida colocando ele como jogador2), a função acima só avisa via
   // exceção — antes isso era ignorado e o jogador ficava "procurando" pra sempre.
-  if (error && error.message === 'partida_ativa_em_andamento') {
+  // Checagem por .includes() (não só igualdade exata) porque a lib do Supabase
+  // às vezes envolve a mensagem original em texto adicional.
+  const avisouPartidaAtiva = error && typeof error.message === 'string' && error.message.includes('partida_ativa_em_andamento');
+
+  // Rede de segurança extra: mesmo sem erro nenhum (ex.: falha silenciosa de rede
+  // numa chamada isolada, ou corrida entre transações), a cada poll também
+  // confere direto se já existe partida 'ativa' pro jogador — sem isso, se essa
+  // única checagem de erro falhar, o jogador ficava preso em "procurando" até
+  // o timeout de 5 minutos cancelar a partida sozinha.
+  if (avisouPartidaAtiva || searchFrame % 3 === 0) {
     const { data: partidaAtiva } = await sb.from('pvp_matches')
       .select('id').eq('status', 'ativa')
       .or(`jogador1.eq.${userId},jogador2.eq.${userId}`)
