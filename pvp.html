@@ -517,9 +517,9 @@ async function init() {
     .eq('user_id', userId).single();
 
   const bosses = player?.bosses_derrotados || [];
-  const derrotouBoss4 = Array.isArray(bosses) ? bosses.includes(4) : (bosses && bosses['4']);
+  const derrotouBoss5 = Array.isArray(bosses) ? bosses.includes(5) : (bosses && bosses['5']);
 
-  if (!derrotouBoss4) {
+  if (!derrotouBoss5) {
     document.getElementById('tela-bloqueado').classList.remove('hidden');
     return;
   }
@@ -553,10 +553,20 @@ async function init() {
   }
 }
 
-async function retomarPartidaAtiva(matchId) {
+async function retomarPartidaAtiva(matchId, tentativa) {
+  tentativa = tentativa || 1;
   try {
-    const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
-    if (!match) return;
+    const { data: match, error: erroMatch } = await sb.from('pvp_matches').select('*').eq('id', matchId).maybeSingle();
+    if (erroMatch) throw erroMatch;
+    if (!match) {
+      // Partida ainda não visível pra essa leitura (pequeno atraso de replicação/consistência).
+      // Tenta de novo com um pequeno atraso em vez de desistir na primeira falha.
+      if (tentativa < 6) {
+        await new Promise(r => setTimeout(r, 400 * tentativa));
+        return retomarPartidaAtiva(matchId, tentativa + 1);
+      }
+      return;
+    }
     const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
     oponenteIdArena = oponenteId;
     const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
@@ -577,6 +587,13 @@ async function retomarPartidaAtiva(matchId) {
   } catch (e) {
     // Nunca falhar em silêncio — sem isso o jogador ficava "preso" no lobby sem nenhuma mensagem.
     console.error('Falha ao retomar a arena da partida ativa:', e);
+
+    // Antes de desistir, tenta de novo algumas vezes com atraso — a maioria das falhas
+    // aqui é um erro transitório de rede/timing, não um problema real de dados.
+    if (tentativa < 6) {
+      await new Promise(r => setTimeout(r, 400 * tentativa));
+      return retomarPartidaAtiva(matchId, tentativa + 1);
+    }
 
     // Evita o loop infinito de reload sem PUNIR ninguém com derrota (isso já causou
     // vitória/derrota "aleatória" quando o problema era só um travamento de tela, não desistência real).
@@ -1126,7 +1143,7 @@ let filaChannel = null;
 async function iniciarBusca() {
   const { error } = await sb.rpc('pvp_entrar_fila');
   if (error) {
-    if (error.message === 'boss4_nao_derrotado') { alert('Derrote o Boss 4 primeiro!'); return; }
+    if (error.message === 'boss5_nao_derrotado') { alert('Derrote o Boss 5 primeiro!'); return; }
     if (error.message === 'partida_ativa_em_andamento') { await retomarPartidaExistente(); return; }
     alert(error.message);
     return;
@@ -1218,7 +1235,13 @@ let meuPlayerArena = null, oponentePlayerArena = null, oponentePerfilArena = nul
 async function mostrarVs(matchId) {
   document.getElementById('overlay-busca').classList.add('hidden');
   try {
-    const { data: match } = await sb.from('pvp_matches').select('*').eq('id', matchId).single();
+    let match = null;
+    for (let tentativa = 1; tentativa <= 5 && !match; tentativa++) {
+      const { data } = await sb.from('pvp_matches').select('*').eq('id', matchId).maybeSingle();
+      match = data;
+      if (!match) await new Promise(r => setTimeout(r, 300 * tentativa));
+    }
+    if (!match) throw new Error('partida_nao_encontrada_apos_retries');
     const oponenteId = match.jogador1 === userId ? match.jogador2 : match.jogador1;
     oponenteIdArena = oponenteId;
     const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
