@@ -410,7 +410,7 @@ function prepararFundoSemPreto() {
 
 let x, y, inimigoX, inimigoY;
 let velX = 0, velY = 0;
-const velMax = 2.9;
+const velMax = 1.45;
 const aceleracao = 0.24;
 
 let inimigoVelX = 0, inimigoVelY = 0;
@@ -427,6 +427,15 @@ const tolerancia = 25;
 
 let ultimoSkill1Player = 0, ultimoSkill2Player = 0;
 let ultimoSkill1Inimigo = 0, ultimoSkill2Inimigo = 0;
+// --- Mecânica exclusiva do boss PaulaoDoPneu (id 10): ao chegar em 50% de vida,
+// toca um vídeo (skipável) e GuilermeChucro entra na luta como 2º boss.
+// Guilherme só ataca (25% do dano do PaulaoDoPneu), nunca usa ultimate, e não tem
+// vida própria — derrotar o PaulaoDoPneu já vence a luta (Guilherme "perde" junto).
+let guilhermeAtivo = false;
+let videoMeioBossMostrado = false;
+let guilhermeX = 0, guilhermeY = 0;
+let ultimoSkill1Guilherme = 0, ultimoSkill2Guilherme = 0;
+const MULTIPLICADOR_DANO_GUILHERME = 0.25;
 
 let cargaUltimatePlayer = 0;
 let cargaUltimateInimigo = 0;
@@ -549,6 +558,8 @@ function iniciarBatalha(boss, jogador, inventario, corAura) {
   golpesCausadosInimigo = 0; golpesRecebidosInimigo = 0;
   usosUltimatePlayerRestantes = MAX_USOS_ULTIMATE_PLAYER;
   usosUltimateInimigoRestantes = MAX_USOS_ULTIMATE_INIMIGO;
+  guilhermeAtivo = false;
+  videoMeioBossMostrado = false;
 
   const agora = Date.now();
   ultimoSkill1Player = agora; ultimoSkill2Player = agora;
@@ -703,6 +714,11 @@ function desenharBatalha() {
     };
   }
 
+  if (guilhermeAtivo) {
+    const spriteGuilherme = posicionarSprite("guilherme", "GuilermeChucro.jpg", guilhermeX, guilhermeY, 200, 200, "sprite-boss", x < guilhermeX);
+    if (spriteGuilherme) idsUsados.add("guilherme");
+  }
+
   poderes.forEach(function (p) {
     const def = skill1Defs[p.tipoSkill] || skill2Defs[p.tipoSkill.replace("__skill2_", "")];
     posicionarSprite(p.spriteId, def.gif, p.x, p.y, def.largura, def.altura, "sprite-poder", p.dirX < 0);
@@ -782,7 +798,7 @@ function atualizarMovimentoInimigo(deltaSegundos) {
 
   const dx = alvoX - inimigoX, dy = alvoY - inimigoY;
   const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-  const velInimigoMax = 2.45;
+  const velInimigoMax = 1.225;
 
   let alvoVelX = 0, alvoVelY = 0;
   if (dist > tolerancia) { alvoVelX = (dx / dist) * velInimigoMax; alvoVelY = (dy / dist) * velInimigoMax; }
@@ -824,8 +840,8 @@ function recalcularCargasUltimate() {
 
 function moverProjetil(poder, dt60) {
   const fator = Number.isFinite(dt60) ? dt60 : 1;
-  poder.x += poder.dirX * poder.velocidade * fator;
-  poder.y += poder.dirY * poder.velocidade * fator;
+  poder.x += poder.dirX * poder.velocidade * 0.5 * fator;
+  poder.y += poder.dirY * poder.velocidade * 0.5 * fator;
 }
 
 function aplicarAutoguiado(poder, alvoX, alvoY, forca, dt60) {
@@ -856,7 +872,7 @@ function atirarSkill1(origemX, origemY, dono) {
   lista.push({
     x: origemX, y: origemY, tipoSkill: idSkill,
     dirX: dx / dist, dirY: dy / dist,
-    dano: stats.dano * (dono === 'player' && typeof getPlayerDamageMultiplier==='function' ? getPlayerDamageMultiplier() : 1) * (dono === 'player' && typeof getPlayerCritChance==='function' && Math.random() < getPlayerCritChance() ? 1.75 : 1), velocidade: stats.velocidade, autoguiado: 0.05,
+    dano: stats.dano * (dono === 'player' && typeof getPlayerDamageMultiplier==='function' ? getPlayerDamageMultiplier() : 1) * (dono === 'player' && typeof getPlayerCritChance==='function' && Math.random() < getPlayerCritChance() ? 1.75 : 1) * (dono === 'guilherme' ? MULTIPLICADOR_DANO_GUILHERME : 1), velocidade: stats.velocidade, autoguiado: 0.05,
     dono: dono, criadoEm: Date.now(), spriteId: "poder" + (proximoIdPoder++),
   });
 }
@@ -879,7 +895,7 @@ function atirarSkill2(dono) {
     lista.push({
       x: origemX, y: origemY, tipoSkill: "__skill2_" + idSkill,
       dirX: dx / dist, dirY: dy / dist,
-      dano: stats.dano * (dono === 'player' && typeof getPlayerDamageMultiplier==='function' ? getPlayerDamageMultiplier() : 1) * (dono === 'player' && typeof getPlayerCritChance==='function' && Math.random() < getPlayerCritChance() ? 1.75 : 1), velocidade: stats.velocidade, autoguiado: 0.035,
+      dano: stats.dano * (dono === 'player' && typeof getPlayerDamageMultiplier==='function' ? getPlayerDamageMultiplier() : 1) * (dono === 'player' && typeof getPlayerCritChance==='function' && Math.random() < getPlayerCritChance() ? 1.75 : 1) * (dono === 'guilherme' ? MULTIPLICADOR_DANO_GUILHERME : 1), velocidade: stats.velocidade, autoguiado: 0.035,
       dono: dono, criadoEm: Date.now(), spriteId: "poder" + (proximoIdPoder++),
     });
   } else {
@@ -888,7 +904,7 @@ function atirarSkill2(dono) {
     feixesAtivos.push({
       origemX: origemX, origemY: origemY, angulo: ang, idSkill: idSkill,
       comprimentoAtual: 0, comprimentoMax: def.comprimento, largura: def.largura,
-      dano: stats.dano, dono: dono, jaAcertou: false,
+      dano: stats.dano * (dono === 'guilherme' ? MULTIPLICADOR_DANO_GUILHERME : 1), dono: dono, jaAcertou: false,
       spriteId: "feixe" + (proximoIdPoder++),
     });
   }
@@ -958,6 +974,27 @@ function atualizarBatalha(timestamp) {
   atualizarMovimentoPersonagem(deltaSegundos);
   atualizarMovimentoInimigo(deltaSegundos);
   atualizarCameraBatalha();
+
+  // Boss PaulaoDoPneu em 50% de vida: cutscene skipável, depois Guilherme entra na luta.
+  if (bossAtual?.id === 10 && !videoMeioBossMostrado && vidaEnemy > 0 && vidaEnemy <= vidaEnemyMax * 0.5) {
+    videoMeioBossMostrado = true;
+    dispararCutsceneMeioBoss();
+    return;
+  }
+
+  if (guilhermeAtivo) {
+    guilhermeX = inimigoX - 100;
+    guilhermeY = inimigoY + 40;
+    if (agora - ultimoSkill1Guilherme >= COOLDOWN_SKILL1_INIMIGO) {
+      atirarSkill1(guilhermeX, guilhermeY, "guilherme");
+      ultimoSkill1Guilherme = agora;
+    }
+    const kitSkill2Paulao = bossKits[bossAtual.tier || bossAtual.id].skill2;
+    if (kitSkill2Paulao.length > 0) {
+      const menorCooldownGuilherme = Math.min.apply(null, kitSkill2Paulao.map(function (id) { return cooldownSkill2Inimigo[id]; }));
+      if (agora - ultimoSkill2Guilherme >= menorCooldownGuilherme) { atirarSkill2("guilherme"); ultimoSkill2Guilherme = agora; }
+    }
+  }
 
   if (agora - ultimoSkill1Player >= cooldownSkill1Atual() * (typeof getPlayerCooldownMultiplier==='function' ? getPlayerCooldownMultiplier() : 1)) {
     atirarSkill1(x, y, "player");
@@ -1128,6 +1165,114 @@ if (ultimateButtonHandler) ultimateButtonHandler.addEventListener("click", funct
   dispararCutsceneUltimate("player");
 });
 
+function dispararCutsceneMeioBoss() {
+  if (!jogoAtivo) { ativarGuilherme(); return; }
+  pausarBatalha();
+
+  const modal = document.getElementById('modal-ultimate');
+  const video = document.getElementById('video-ultimate');
+  const skip = document.getElementById('btn-skip-ultimate');
+  const legenda = document.getElementById('legenda-ultimate');
+  const pauseButton = document.getElementById('btn-pause');
+  const battleControls = document.querySelector('#tela-jogo .battle-controls');
+  const telaJogo = document.getElementById('tela-jogo');
+
+  if (!modal || !video || !skip || !legenda) {
+    ativarGuilherme();
+    ultimoFrameEm = performance.now();
+    continuarBatalha();
+    return;
+  }
+
+  let terminou = false;
+  const limpar = () => {
+    video.pause();
+    video.removeAttribute('src');
+    video.onerror = null;
+    video.onended = null;
+    modal.classList.add('hidden', 'escondido');
+    modal.classList.remove('dividido', 'fallback-ultimate');
+    modal.style.display = '';
+    if (telaJogo) telaJogo.classList.remove('ultimate-open');
+    document.body.classList.remove('ultimate-playing');
+    if (pauseButton) {
+      pauseButton.hidden = false;
+      pauseButton.removeAttribute('aria-hidden');
+      pauseButton.style.display = '';
+      pauseButton.style.visibility = '';
+      pauseButton.style.pointerEvents = '';
+    }
+    if (battleControls) battleControls.style.visibility = '';
+    if (window.restoreBossMusic) window.restoreBossMusic();
+  };
+
+  const finalizar = () => {
+    if (terminou) return;
+    terminou = true;
+    limpar();
+    ativarGuilherme();
+    ultimoFrameEm = performance.now();
+    continuarBatalha();
+  };
+
+  if (telaJogo) telaJogo.classList.add('ultimate-open');
+  document.body.classList.add('ultimate-playing');
+  if (pauseButton) {
+    pauseButton.hidden = true;
+    pauseButton.setAttribute('aria-hidden', 'true');
+    pauseButton.style.display = 'none';
+    pauseButton.style.visibility = 'hidden';
+    pauseButton.style.pointerEvents = 'none';
+  }
+  if (battleControls) battleControls.style.visibility = 'hidden';
+  video.controls = false;
+  video.removeAttribute('controls');
+  video.style.pointerEvents = 'none';
+  modal.classList.remove('hidden', 'escondido');
+  modal.style.display = 'flex';
+  modal.style.position = 'fixed';
+  modal.style.inset = '0';
+  modal.style.width = '100vw';
+  modal.style.height = '100dvh';
+  modal.style.zIndex = '99999';
+  video.style.width = '100vw';
+  video.style.height = '100dvh';
+  video.style.maxWidth = 'none';
+  video.style.maxHeight = 'none';
+  video.style.objectFit = 'cover';
+  video.style.objectPosition = 'center center';
+  if (window.duckBossMusic) window.duckBossMusic();
+
+  legenda.textContent = 'PaulaoDoPneu convoca GuilermeChucro!';
+  legenda.style.display = 'block';
+  legenda.style.position = 'absolute';
+  legenda.style.top = 'clamp(72px, 14vh, 150px)';
+  legenda.style.left = '0';
+  legenda.style.width = '100%';
+  legenda.style.textAlign = 'center';
+  legenda.style.zIndex = '1000001';
+
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+  video.src = 'PauloMetadeVida.mp4';
+  video.onended = finalizar;
+  video.onerror = () => { setTimeout(finalizar, 300); };
+  video.load();
+  video.play().catch(() => {});
+
+  skip.onclick = finalizar;
+}
+
+function ativarGuilherme() {
+  guilhermeAtivo = true;
+  const agoraGuilherme = Date.now();
+  ultimoSkill1Guilherme = agoraGuilherme;
+  ultimoSkill2Guilherme = agoraGuilherme;
+  guilhermeX = inimigoX - 100;
+  guilhermeY = inimigoY + 40;
+}
+
 function dispararCutsceneUltimate(dono) {
   if (!jogoAtivo) return;
 
@@ -1251,18 +1396,18 @@ function dispararCutsceneUltimate(dono) {
     videoSplit.disableRemotePlayback = true;
   }
   modal.classList.remove('hidden', 'escondido');
-  modal.style.display = 'flex';
-  modal.style.position = 'fixed';
-  modal.style.inset = '0';
-  modal.style.width = '100vw';
-  modal.style.height = '100dvh';
-  modal.style.zIndex = '99999';
-  video.style.width = '100vw';
-  video.style.height = '100dvh';
-  video.style.maxWidth = 'none';
-  video.style.maxHeight = 'none';
-  video.style.objectFit = 'cover';
-  video.style.objectPosition = 'center center';
+  modal.style.setProperty('display', 'flex', 'important');
+  modal.style.setProperty('position', 'fixed', 'important');
+  modal.style.setProperty('inset', '0', 'important');
+  modal.style.setProperty('width', '100vw', 'important');
+  modal.style.setProperty('height', '100dvh', 'important');
+  modal.style.setProperty('z-index', '99999', 'important');
+  video.style.setProperty('width', '100vw', 'important');
+  video.style.setProperty('height', '100dvh', 'important');
+  video.style.setProperty('max-width', 'none', 'important');
+  video.style.setProperty('max-height', 'none', 'important');
+  video.style.setProperty('object-fit', 'cover', 'important');
+  video.style.setProperty('object-position', 'center center', 'important');
   if (window.duckBossMusic) window.duckBossMusic();
 
   
@@ -1324,6 +1469,7 @@ function dispararCutsceneUltimate(dono) {
 
       const sucesso = () => {
         el.oncanplay = null;
+        el.onloadeddata = null;
         el.onerror = null;
         carregando = false;
         if (terminou) return;
@@ -1332,9 +1478,11 @@ function dispararCutsceneUltimate(dono) {
       };
 
       el.oncanplay = sucesso;
+      el.onloadeddata = sucesso;
       el.onerror = () => {
         el.onerror = null;
         el.oncanplay = null;
+        el.onloadeddata = null;
         carregando = false;
         tentar();
       };
