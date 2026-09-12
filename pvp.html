@@ -147,6 +147,11 @@
   .fighter-foe .fighter-portrait{filter:drop-shadow(0 0 14px rgba(255,45,45,.45));animation-delay:.3s}
   .fighter-shadow{width:38px;height:8px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(2px);margin-top:4px}
   @keyframes fighterIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  /* Animação leve de caminhada/corrida — só troca o transform do retrato (filho),
+     nunca conflita com o transform de posição aplicado no .fighter (pai) via JS.
+     Puramente CSS (sem JS por frame), então não pesa no celular. */
+  .fighter.andando .fighter-portrait{animation:fighterWalk .42s ease-in-out infinite}
+  @keyframes fighterWalk{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-4px) rotate(-4deg)}50%{transform:translateY(-1px) rotate(0deg)}75%{transform:translateY(-4px) rotate(4deg)}}
   .battle-vs-spark{font-size:20px;color:#ffd166;text-shadow:0 0 14px #ffd166;animation:sparkPulse 1.1s ease-in-out infinite;z-index:2}
   @keyframes sparkPulse{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
   .fighter.hit .fighter-portrait{animation:fighterHit .35s ease}
@@ -189,6 +194,24 @@
     transform:translate(-50%,-50%);pointer-events:none;z-index:6;
     filter:drop-shadow(0 0 14px rgba(123,92,255,.6));animation:skillFxPop .75s ease-out forwards}
   @keyframes skillFxPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.15)}}
+
+  /* Projétil da Skill 1/2/Ultimate: some elemento único que viaja do lutador que
+     usou até o alvo (em vez do gif só "piscar" em cima de quem usou e o dano
+     já ter sido aplicado). Fica dentro de #battle-stage (position:relative),
+     então as coordenadas em px batem com as dos lutadores. */
+  .skill-projectile{position:absolute;top:0;left:0;width:64px;height:64px;z-index:7;
+    pointer-events:none;filter:drop-shadow(0 0 10px rgba(123,92,255,.55));will-change:transform}
+  .skill-projectile img{width:100%;height:100%;object-fit:contain;display:block}
+  /* Overlay do vídeo da Ultimate — reaproveita o mesmo padrão de arquivo usado na
+     batalha dos bosses (Ultimate{N}.mp4). Fica só por cima do palco (#battle-stage),
+     nunca esconde o HUD (HP, log, botões) que fica fora do #arena-vs-video-wrap
+     e continua visível/clicável embaixo. Some sozinho quando o vídeo termina. */
+  .ultimate-video-overlay{position:absolute;left:0;right:0;top:64px;bottom:150px;z-index:15;
+    display:flex;align-items:center;justify-content:center;background:rgba(4,5,11,.45);
+    pointer-events:none;opacity:0;transition:opacity .18s ease}
+  .ultimate-video-overlay.ativo{opacity:1}
+  .ultimate-video-overlay video{max-width:92%;max-height:100%;object-fit:contain;
+    filter:drop-shadow(0 0 22px rgba(123,92,255,.55));border-radius:10px}
 
   /* ===== PROMOÇÃO DE RANK ===== */
   .promo-overlay{position:fixed;inset:0;background:rgba(4,5,11,.92);z-index:60;display:flex;flex-direction:column;
@@ -437,6 +460,9 @@
       </div>
     </div>
     <div class="battle-log" id="arena-log">A batalha começou!</div>
+  </div>
+  <div class="ultimate-video-overlay hidden" id="ultimate-video-overlay">
+    <video id="ultimate-video-pvp" playsinline muted></video>
   </div>
   <div class="battle-controls">
     <button class="skill-btn" id="btn-skill1" onclick="usarSkill(1)">
@@ -975,13 +1001,15 @@ const BOSSES_EQUIP = [
   {id:'Lucas', rank:'A'}, {id:'Davi', rank:'AA+'}, {id:'Arthur', rank:'S'}, {id:'Vinicius', rank:'SS'},
   {id:'GuilermeChucro', rank:'SSS+'}, {id:'PaulaoDoPneu', rank:'Z+'}
 ];
-// Antes a imagem do personagem na arena/loja usava o nome literal do boss (Arlan.jpg,
-// Marcos.jpg...), o que exigia ter um arquivo com esse nome exato pra cada um. Agora
-// segue sempre a ordem fixa acima -> Boss1Img.png, Boss2Img.png ... Boss10Img.png
-// (mesmo padrão de nome já usado nos cenários de fundo, CENARIOS_PVP).
+// Corrigido: antes esta função devolvia "BossXImg.png" — exatamente o mesmo
+// nome de arquivo usado pelos CENÁRIOS de fundo (CENARIOS_PVP) — então o
+// personagem da arena e o cenário apontavam pro mesmo arquivo e o jogo acabava
+// mostrando planeta/lua no lugar do lutador. Os personagens são os 10 lutadores
+// usados nos bosses (Arlan.jpg, Marcos.jpg...), então a imagem do personagem
+// tem que usar o próprio id do boss + .jpg, nunca o padrão dos cenários.
 function bossImgFile(bossId) {
-  const idx = BOSSES_EQUIP.findIndex(b => b.id === bossId);
-  return 'Boss' + (idx >= 0 ? idx + 1 : 1) + 'Img.png';
+  const encontrado = BOSSES_EQUIP.find(b => b.id === bossId);
+  return (encontrado ? encontrado.id : 'Arlan') + '.jpg';
 }
 
 async function renderInventarioPvp() {
@@ -1403,6 +1431,18 @@ function calcularLimitesMovimento() {
 let MOVE_LIMITE = calcularLimitesMovimento();
 window.addEventListener('resize', () => { MOVE_LIMITE = calcularLimitesMovimento(); });
 
+// Mostra a mesma animação de caminhada no lutador do oponente quando chega um
+// pacote de movimento dele; some sozinha se parar de chegar posição nova
+// (não temos um evento explícito de "parei" do lado do oponente).
+let timerAndandoFoe = null;
+function animarCaminhadaFoe() {
+  const foeEl = document.getElementById('fighter-foe');
+  if (!foeEl) return;
+  foeEl.classList.add('andando');
+  clearTimeout(timerAndandoFoe);
+  timerAndandoFoe = setTimeout(() => foeEl.classList.remove('andando'), 220);
+}
+
 function aplicarPosicoes() {
   const meEl = document.getElementById('fighter-me');
   const foeEl = document.getElementById('fighter-foe');
@@ -1426,15 +1466,21 @@ function sincronizarPosServidor() {
   sb.rpc('pvp_atualizar_pos', { p_match: matchAtual, p_pos: valor }).then(undefined, () => {});
 }
 
+// Velocidade de movimento (NÃO mexe na velocidade das skills/projéteis).
+// Era 10px a cada 60ms; reduzida ~25% pra ficar mais lenta e natural, mas
+// continua respondendo no mesmo intervalo (sem lag perceptível no toque).
+const PASSO_MOVIMENTO = 7.5;
+
 function iniciarMover(dirX, dirY) {
   clearInterval(moverLoopTimer);
+  document.getElementById('fighter-me')?.classList.add('andando');
   moverPasso(dirX, dirY);
   moverLoopTimer = setInterval(() => moverPasso(dirX, dirY), 60);
 }
 
 function moverPasso(dirX, dirY) {
-  posMe.x = Math.max(-MOVE_LIMITE.x, Math.min(MOVE_LIMITE.x, posMe.x + dirX * 10));
-  posMe.y = Math.max(-MOVE_LIMITE.y, Math.min(MOVE_LIMITE.y, posMe.y + dirY * 10));
+  posMe.x = Math.max(-MOVE_LIMITE.x, Math.min(MOVE_LIMITE.x, posMe.x + dirX * PASSO_MOVIMENTO));
+  posMe.y = Math.max(-MOVE_LIMITE.y, Math.min(MOVE_LIMITE.y, posMe.y + dirY * PASSO_MOVIMENTO));
   aplicarPosicoes();
   if (matchChannel) matchChannel.send({ type: 'broadcast', event: 'mover', payload: { x: posMe.x, y: posMe.y } });
   sincronizarPosServidor();
@@ -1443,6 +1489,7 @@ function moverPasso(dirX, dirY) {
 function pararMover() {
   clearInterval(moverLoopTimer);
   moverLoopTimer = null;
+  document.getElementById('fighter-me')?.classList.remove('andando');
   // garante que a última posição sempre chega no servidor, mesmo que o throttle
   // tenha segurado o último envio.
   if (posServidorPendente !== null && matchAtual) {
@@ -1572,8 +1619,9 @@ function entrarArena() {
 
   matchChannel = sb.channel('pvp_match_'+matchAtual, { config: { presence: { key: userId } } })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pvp_matches', filter: `id=eq.${matchAtual}` }, (payload) => processarEstadoPartida(payload.new))
-    .on('broadcast', { event: 'mover' }, ({ payload }) => { posFoe = { x: payload.x, y: payload.y }; aplicarPosicoes(); })
-    .on('broadcast', { event: 'skillfx' }, ({ payload }) => mostrarEfeitoSkill(document.getElementById('fighter-foe'), payload.gif))
+    .on('broadcast', { event: 'mover' }, ({ payload }) => { posFoe = { x: payload.x, y: payload.y }; aplicarPosicoes(); animarCaminhadaFoe(); })
+    .on('broadcast', { event: 'skillfx' }, ({ payload }) => dispararProjetil(payload.gif, document.getElementById('fighter-foe'), document.getElementById('fighter-me'), () => mostrarEfeitoSkill(document.getElementById('fighter-me'), payload.gif)))
+    .on('broadcast', { event: 'ultimatevideo' }, ({ payload }) => mostrarVideoUltimatePvp(payload.ultimateId))
     .on('presence', { event: 'leave' }, ({ key }) => { if (key === oponenteIdArena) agendarChecagemAbandono(); })
     .on('presence', { event: 'join' }, ({ key }) => { if (key === oponenteIdArena) cancelarChecagemAbandono(); })
     .subscribe(async (status) => {
@@ -1615,6 +1663,9 @@ async function pollEstadoPartida() {
   if (m) processarEstadoPartida(m);
 }
 
+let ultimateLockOponenteAtivoFlag = false;
+function ultimateLockOponenteAtivo() { return ultimateLockOponenteAtivoFlag; }
+
 async function processarEstadoPartida(m) {
   if (!m) return;
   // hp1/hp2 podem chegar nulos/indefinidos num update fora de hora (ex.: logo após a
@@ -1624,8 +1675,21 @@ async function processarEstadoPartida(m) {
   const novoHpMe = souJogador1 ? m.hp1 : m.hp2;
   const novoHpFoe = souJogador1 ? m.hp2 : m.hp1;
   aplicarHp(Number.isFinite(novoHpMe) ? novoHpMe : hpMe, Number.isFinite(novoHpFoe) ? novoHpFoe : hpFoe);
-  const ultimateOcupada = m.ultimate_lock_owner && m.ultimate_lock_owner !== userId && new Date(m.ultimate_lock_expira_em) > new Date();
-  document.getElementById('btn-ultimate').disabled = !!ultimateOcupada;
+  // Corrigido: a comparação de dono do lock precisa ser feita como texto (String +
+  // trim), porque um espaço/tipo diferente entre o id salvo no banco e o userId
+  // local fazia "meu próprio lock" ser lido como "lock do oponente" (o bug de às
+  // vezes aparecer "inimigo usando Ultimate" sem ninguém usando). Também só conta
+  // como ocupado se o dono for realmente OUTRO jogador e o prazo ainda não passou —
+  // sem isso, nunca é considerado ocupado.
+  const donoLock = m.ultimate_lock_owner ? String(m.ultimate_lock_owner).trim() : '';
+  const meuId = String(userId || '').trim();
+  const prazoValido = m.ultimate_lock_expira_em && new Date(m.ultimate_lock_expira_em).getTime() > Date.now();
+  const ultimateOcupada = !!(donoLock && donoLock !== meuId && prazoValido);
+  ultimateLockOponenteAtivoFlag = ultimateOcupada;
+  // não sobrescreve o botão enquanto EU estou no meio da minha própria animação de
+  // Ultimate (senão o poll de 4s podia reabilitar/desabilitar o botão no meio do
+  // meu próprio uso); fora disso, o botão sempre reflete o lock real do servidor.
+  if (!ultimateEmUso) document.getElementById('btn-ultimate').disabled = ultimateOcupada;
 
   // detecta skill2 do oponente pra tocar Impacto.mp3
   const skill2FoeAgora = souJogador1 ? m.j2_skill2_at : m.j1_skill2_at;
@@ -1726,6 +1790,59 @@ function mostrarEfeitoSkill(ladoEl, gifFile) {
   setTimeout(() => fx.remove(), 750);
 }
 
+// Antes o gif da skill só piscava 1s em cima de quem atacou e o dano/servidor já
+// tinha sido aplicado ao mesmo tempo — parecia que a skill não "viajava" até o
+// alvo. Agora o gif vira um projétil de verdade: nasce em cima de quem usou,
+// viaja até o alvo (recalculando a posição dele a cada frame — "autoguiado"
+// leve) e só then a gente aplica o efeito de acerto/dano visual. O servidor
+// continua sendo a única autoridade sobre o dano/desvio: essa animação nunca
+// decide dano sozinha, ela só atrasa VISUALMENTE o "aplicarHp"/"efeitoImpacto"
+// que já veio pronto da resposta do RPC, pra sincronizar com a chegada do golpe.
+// NERF LEVE de velocidade: DURACAO_PROJETIL_MS controla isso (só a velocidade
+// do projétil visual — não mexe em cooldown nem em dano).
+const DURACAO_PROJETIL_MS = 460;
+function dispararProjetil(gifFile, atacanteEl, alvoEl, aoChegar) {
+  const stage = document.getElementById('battle-stage');
+  if (!stage || !atacanteEl || !alvoEl || !gifFile) { aoChegar && aoChegar(); return; }
+
+  const proj = document.createElement('div');
+  proj.className = 'skill-projectile';
+  const img = document.createElement('img');
+  img.src = gifFile;
+  img.alt = '';
+  img.onerror = () => { proj.remove(); };
+  proj.appendChild(img);
+  stage.appendChild(proj);
+
+  function centroRelativoAoPalco(el) {
+    const r = el.getBoundingClientRect();
+    const s = stage.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - s.left - 32, y: r.top + r.height / 2 - s.top - 32 };
+  }
+
+  const origem = centroRelativoAoPalco(atacanteEl);
+  let terminou = false;
+  const t0 = performance.now();
+
+  function passo(agora) {
+    if (terminou) return;
+    const t = Math.min(1, (agora - t0) / DURACAO_PROJETIL_MS);
+    // recalcula o alvo a cada frame -> leve autoguiado (o alvo pode ter se mexido)
+    const destino = centroRelativoAoPalco(alvoEl);
+    const x = origem.x + (destino.x - origem.x) * t;
+    const y = origem.y + (destino.y - origem.y) * t;
+    proj.style.transform = `translate(${x}px, ${y}px)`;
+    if (t < 1) {
+      requestAnimationFrame(passo);
+    } else {
+      terminou = true;
+      proj.remove();
+      aoChegar && aoChegar();
+    }
+  }
+  requestAnimationFrame(passo);
+}
+
 async function usarSkill(n) {
   // já em cooldown no cliente? nem tenta chamar o servidor
   const cdAtivoAte = n === 1 ? cdSkill1At : cdSkill2At;
@@ -1747,13 +1864,58 @@ async function usarSkill(n) {
     return;
   }
   iniciarCooldownVisual(n, n === 1 ? COOLDOWN_SKILL1_PVP_MS : COOLDOWN_SKILL2_PVP_MS);
-  aplicarHp(souJogador1 ? data.hp1 : data.hp2, souJogador1 ? data.hp2 : data.hp1);
   if (n === 2 && typeof window.playSfx === 'function') window.playSfx('Impacto.mp3', 0.5);
   const gif = (n === 1 ? perfilAtual?.skill1_pvp : perfilAtual?.skill2_pvp) + '.gif';
-  mostrarEfeitoSkill(document.getElementById('fighter-me'), gif);
   if (matchChannel) matchChannel.send({ type: 'broadcast', event: 'skillfx', payload: { gif } });
   document.getElementById('arena-log').textContent = data.desviou ? 'Oponente desviou parte do golpe!' : `Você usou Skill ${n}!`;
-  if (data.fim) { clearInterval(arenaPollTimer); await finalizarPartida(data.vencedor); }
+  // Dano só é aplicado visualmente quando o projétil chega no alvo — o servidor
+  // já decidiu se acertou ou desviou, isso aqui só sincroniza a animação.
+  dispararProjetil(gif, document.getElementById('fighter-me'), document.getElementById('fighter-foe'), () => {
+    if (!data.desviou) mostrarEfeitoSkill(document.getElementById('fighter-foe'), gif);
+    aplicarHp(souJogador1 ? data.hp1 : data.hp2, souJogador1 ? data.hp2 : data.hp1);
+    if (data.fim) { clearInterval(arenaPollTimer); finalizarPartida(data.vencedor); }
+  });
+}
+
+// Vídeo da Ultimate — reaproveita o mesmo padrão de arquivo já usado na batalha
+// dos bosses (Ultimate{N}.mp4, ver dispararCutsceneUltimate em batalha.js) em vez
+// de criar um sistema novo. Diferença proposital pro PvP: aqui NÃO pausamos o
+// jogo nem escondemos o HUD (os dois jogadores continuam jogando em tempo real),
+// é só uma camada visual por cima do palco que some sozinha quando o vídeo acaba
+// (ou depois de um tempo máximo, caso o vídeo falhe/não exista pra aquele id).
+function mostrarVideoUltimatePvp(ultimateId) {
+  const overlay = document.getElementById('ultimate-video-overlay');
+  const video = document.getElementById('ultimate-video-pvp');
+  if (!overlay || !video) return;
+  const numero = String(ultimateId || '').replace('Ultimate', '') || '7';
+  const arquivo = 'Ultimate' + numero + '.mp4';
+
+  let terminou = false;
+  const finalizar = () => {
+    if (terminou) return;
+    terminou = true;
+    overlay.classList.remove('ativo');
+    setTimeout(() => overlay.classList.add('hidden'), 200);
+    video.onended = null;
+    video.onerror = null;
+    video.pause();
+    video.removeAttribute('src');
+    if (typeof window.restoreBossMusic === 'function') window.restoreBossMusic();
+  };
+
+  video.onerror = finalizar; // arquivo não existe pra essa ultimate -> some sem travar nada
+  video.onended = finalizar;
+  video.src = arquivo;
+  overlay.classList.remove('hidden');
+  requestAnimationFrame(() => overlay.classList.add('ativo'));
+  if (typeof window.duckBossMusic === 'function') window.duckBossMusic();
+  const promessa = video.play();
+  if (promessa && promessa.catch) promessa.catch(finalizar);
+
+  // trava de segurança: nunca fica travado na tela nem impede outras ações —
+  // se o vídeo não terminar sozinho em 4s (arquivo corrompido, navegador estranho
+  // no celular etc.), força o fim.
+  setTimeout(finalizar, 4000);
 }
 
 let ultimateEmUso = false;
@@ -1770,6 +1932,9 @@ async function usarUltimate() {
       return;
     }
     document.getElementById('arena-log').textContent = 'ULTIMATE ATIVADA!';
+    const ultimateId = perfilAtual?.ultimate_pvp || 'Ultimate7';
+    mostrarVideoUltimatePvp(ultimateId);
+    if (matchChannel) matchChannel.send({ type: 'broadcast', event: 'ultimatevideo', payload: { ultimateId } });
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -1779,17 +1944,23 @@ async function usarUltimate() {
       document.getElementById('arena-log').textContent = 'Falha ao usar Ultimate. Tente de novo.';
       return;
     }
-    aplicarHp(souJogador1 ? data.hp1 : data.hp2, souJogador1 ? data.hp2 : data.hp1);
     const gifUlt = (perfilAtual?.ultimate_pvp || 'Ultimate7') + '.gif';
-    mostrarEfeitoSkill(document.getElementById('fighter-me'), gifUlt);
     if (matchChannel) matchChannel.send({ type: 'broadcast', event: 'skillfx', payload: { gif: gifUlt } });
     document.getElementById('arena-log').textContent = data.desviou ? 'Oponente desviou parte do golpe!' : 'ULTIMATE ACERTOU!';
-    if (data.fim) { clearInterval(arenaPollTimer); await finalizarPartida(data.vencedor); }
+    dispararProjetil(gifUlt, document.getElementById('fighter-me'), document.getElementById('fighter-foe'), () => {
+      if (!data.desviou) mostrarEfeitoSkill(document.getElementById('fighter-foe'), gifUlt);
+      aplicarHp(souJogador1 ? data.hp1 : data.hp2, souJogador1 ? data.hp2 : data.hp1);
+      if (data.fim) { clearInterval(arenaPollTimer); finalizarPartida(data.vencedor); }
+    });
   } finally {
     ultimateEmUso = false;
-    if (btn) btn.disabled = false;
+    // Não reabilita o botão às cegas: só reabilita se, pelo estado mais recente
+    // conhecido da partida, ninguém (nem o oponente) está com o lock ativo —
+    // evita mostrar o botão livre por um instante e depois "voltar" a travar.
+    if (btn) btn.disabled = !!ultimateLockOponenteAtivo();
   }
 }
+
 
 async function usarEscudo() {
   const { data: ok } = await sb.rpc('pvp_usar_escudo', { p_match: matchAtual });
