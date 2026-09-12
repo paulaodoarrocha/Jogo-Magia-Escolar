@@ -7,8 +7,8 @@ const bosses = [
   {id:6,tier:6,nome:'Davi',rank:'AA+',imagem:'Davi.png',skill1:'VenenoSkill1.gif',skill2:'FuracaoSkill2.gif'},
   {id:7,tier:7,nome:'Arthur',rank:'S',imagem:'Arthur.png',skill1:'SolSkill1.gif',skill2:'MetalSkill2.gif'},
   {id:8,tier:8,nome:'Vinicius',rank:'SS',imagem:'Vinicius.png',skill1:'MeteoroSkill1.gif',skill2:'MagmaSkill2.gif'},
-  {id:9,tier:9,nome:'GuilermeChucro',rank:'SSS+',imagem:'GuilermeChucro.jpg',skill1:'SolSkill1.gif',skill2:'AbismoSkill2.gif'},
-  {id:10,tier:10,nome:'PaulaoDoPneu',rank:'Z+',imagem:'PaulaoDoPneu.jpg',skill1:'VenenoSkill1.gif',skill2:'EstrelaSkill2.gif'}
+  {id:9,tier:9,nome:'GuilermeChucro',rank:'SSS+',imagem:'GuilermeChucro.png',skill1:'SolSkill1.gif',skill2:'AbismoSkill2.gif'},
+  {id:10,tier:10,nome:'PaulaoDoPneu',rank:'Z+',imagem:'PaulaoDoPneu.png',skill1:'VenenoSkill1.gif',skill2:'EstrelaSkill2.gif'}
 ];
 // Mantido em sincronia com statsPorTier em batalha.js (mesma revisão de balanceamento).
 const bossStats={
