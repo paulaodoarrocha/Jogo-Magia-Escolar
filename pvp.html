@@ -953,7 +953,7 @@ const RECOMPENSAS = [
   {id:'PvpPetKauan', nome:'Pet Kauan', custo:2500, rankMin:4, img:'KauanBanner_static.webp'},
   {id:'PvpMoedas50000', nome:'50.000 moedas', custo:3000, rankMin:5},
   {id:'PvpDiamantes300', nome:'300 diamantes', custo:900, rankMin:5},
-  {id:'PvpPetPaulaoDoPneu', nome:'Pet PaulaoDoPneu', custo:10000, rankMin:5, img:'PaulaoDoPneuBanner.jpg'},
+  {id:'PvpPetPaulaoDoPneu', nome:'Pet PaulaoDoPneu', custo:10000, rankMin:5, img:'PaulaoDoPneu.jpg'},
 ];
 
 function renderLoja() {
@@ -1215,6 +1215,12 @@ async function abrirPerfilPublico(userId) {
 }
 window.abrirPerfilPublico = abrirPerfilPublico;
 
+function avatarHtml(emoji, url) {
+  return url
+    ? `<img src="${url}" alt="" style="width:22px;height:22px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:4px">`
+    : `<span style="margin-right:4px">${emoji || '🧙'}</span>`;
+}
+
 async function carregarAmigos() {
   const el = document.getElementById('painel-amigos');
   const { data, error } = await sb.rpc('pvp_listar_amigos');
@@ -1222,30 +1228,43 @@ async function carregarAmigos() {
   if (error || !data) { el.innerHTML = '<div class="item-sub">Não foi possível carregar.</div>'; return; }
 
   const pedidos = (data.pedidos||[]).map(p => `
-    <div class="ranking-row"><span style="flex:1">${p.avatar_emoji} ${p.username}</span>
+    <div class="ranking-row"><span style="flex:1;display:flex;align-items:center">${avatarHtml(p.avatar_emoji, p.avatar_image_url)}<span style="color:${p.name_color||'#fff'}">${p.username}</span></span>
       <button class="small-btn primary" onclick="responderPedido('${p.user_id}',true)">Aceitar</button>
       <button class="small-btn" onclick="responderPedido('${p.user_id}',false)">Recusar</button>
     </div>`).join('') || '<div class="item-sub">Nenhum pedido pendente.</div>';
 
   const amigos = (data.amigos||[]).map(a => `
     <div class="ranking-row" style="cursor:pointer" onclick="abrirPerfilPublico('${a.user_id}')">
-      <span style="flex:1">${a.avatar_emoji} ${a.username} • Nv.${a.nivel_pvp}</span>
+      <span style="flex:1;display:flex;align-items:center">${avatarHtml(a.avatar_emoji, a.avatar_image_url)}<span style="color:${a.name_color||'#fff'}">${a.username}</span>&nbsp;• Nv.${a.nivel_pvp}</span>
       <button class="small-btn primary" onclick="event.stopPropagation();desafiarAmigo('${a.user_id}')">Desafiar</button>
       <button class="small-btn" onclick="event.stopPropagation();removerAmizade('${a.user_id}')">Remover</button>
     </div>`).join('') || '<div class="item-sub">Você ainda não tem amigos.</div>';
 
   const hist = (historico||[]).map(h => `
     <div class="ranking-row">
-      <span style="flex:1;cursor:pointer" onclick="abrirPerfilPublico('${h.oponente_id}')">${h.venceu?'✅':'❌'} vs ${h.oponente_avatar} ${h.oponente_nome}</span>
+      <span style="flex:1;cursor:pointer;display:flex;align-items:center" onclick="abrirPerfilPublico('${h.oponente_id}')">${h.venceu?'✅':'❌'} vs ${avatarHtml(h.oponente_avatar, h.oponente_avatar_url)}<span style="color:${h.oponente_name_color||'#fff'}">${h.oponente_nome}</span></span>
     </div>`).join('') || '<div class="item-sub">Nenhuma partida ainda.</div>';
+
+  const btnExcluir = (historico||[]).length
+    ? `<button class="small-btn" style="width:100%;margin-top:8px;color:#ff6b6b" onclick="excluirHistoricoPvp()">🗑️ EXCLUIR TODO O HISTÓRICO</button>`
+    : '';
 
   el.innerHTML = `
     <div style="font-weight:800;margin-bottom:6px">📩 PEDIDOS DE AMIZADE</div>${pedidos}
     <div style="font-weight:800;margin:14px 0 6px">👥 AMIGOS</div>${amigos}
-    <div style="font-weight:800;margin:14px 0 6px">📜 HISTÓRICO DE PARTIDAS</div>${hist}
+    <div style="font-weight:800;margin:14px 0 6px">📜 HISTÓRICO DE PARTIDAS</div>${hist}${btnExcluir}
   `;
 }
 window.carregarAmigos = carregarAmigos;
+
+async function excluirHistoricoPvp() {
+  if (!confirm('Tem certeza que quer excluir TODO o seu histórico de partidas? Essa ação não pode ser desfeita.')) return;
+  const { data, error } = await sb.rpc('pvp_excluir_historico');
+  if (error) { alert('Erro ao excluir: ' + error.message); return; }
+  await carregarAmigos();
+  alert('Histórico excluído.');
+}
+window.excluirHistoricoPvp = excluirHistoricoPvp;
 
 async function responderPedido(solicitante, aceitar) {
   const { error } = await sb.rpc('pvp_responder_pedido_amizade', { p_solicitante: solicitante, p_aceitar: aceitar });
@@ -1993,7 +2012,14 @@ function mostrarVideoUltimatePvp(ultimateId) {
   if (finalizarVideoUltimateAtual) finalizarVideoUltimateAtual(true);
 
   const numero = String(ultimateId || '').replace('Ultimate', '') || '7';
-  const arquivo = 'Ultimate' + numero + '.mp4';
+  // O arquivo real (conferido no repositório) é Boss{N}.mp4 — igual ao usado na
+  // batalha de boss (dispararCutsceneUltimate em batalha.js). "Ultimate{N}.mp4"
+  // nunca existiu; era isso que fazia o vídeo falhar sempre (onerror imediato).
+  const arquivo = 'Boss' + numero + '.mp4';
+
+  // Áudio da voz da Ultimate — existe e funciona na batalha de boss (features.js
+  // playUltimateVoice), mas nunca era chamado aqui no PvP.
+  if (typeof window.playUltimateVoice === 'function') window.playUltimateVoice(ultimateId);
 
   let terminou = false;
   const finalizar = (semAvisar) => {

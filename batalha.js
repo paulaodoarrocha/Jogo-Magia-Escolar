@@ -698,8 +698,8 @@ function desenharBatalha() {
     6: 'Davi.jpg',
     7: 'Arthur.jpg',
     8: 'Vinicius.jpg',
-    9: 'GuilermeChucro.jpg',
-    10: 'PaulaoDoPneu.jpg'
+    9: 'GuilermeChucro.png',
+    10: 'PaulaoDoPneu.png'
   };
   const imagemBoss = imagensBoss[Number(bossAtual?.id)] || (bossAtual?.nome ? bossAtual.nome + '.jpg' : 'Arlan.jpg');
   // Tamanho individual por boss (presença maior nos avançados). Não altera posição/lógica,
@@ -710,13 +710,14 @@ function desenharBatalha() {
   if (bossSprite && bossSprite.tagName === "IMG") {
     bossSprite.onerror = function () {
       this.onerror = null;
-      this.src = imagemBoss;
-      this.dataset.src = imagemBoss;
+      const alternativa = imagemBoss.toLowerCase().endsWith('.png') ? imagemBoss.replace(/\.png$/i, '.jpg') : imagemBoss.replace(/\.jpg$/i, '.png');
+      this.src = alternativa;
+      this.dataset.src = alternativa;
     };
   }
 
   if (guilhermeAtivo) {
-    const spriteGuilherme = posicionarSprite("guilherme", "GuilermeChucro.jpg", guilhermeX, guilhermeY, 200, 200, "sprite-boss", x < guilhermeX);
+    const spriteGuilherme = posicionarSprite("guilherme", "GuilermeChucro.png", guilhermeX, guilhermeY, 200, 200, "sprite-boss", x < guilhermeX);
     if (spriteGuilherme) idsUsados.add("guilherme");
   }
 
