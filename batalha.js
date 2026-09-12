@@ -410,7 +410,7 @@ function prepararFundoSemPreto() {
 
 let x, y, inimigoX, inimigoY;
 let velX = 0, velY = 0;
-const velMax = 1.45;
+const velMax = 2.9; // dobrado a pedido (era 1.45)
 const aceleracao = 0.24;
 
 let inimigoVelX = 0, inimigoVelY = 0;
@@ -664,8 +664,9 @@ function desenharBatalha() {
 
   const idsUsados = new Set(["personagem", "inimigo"]);
   const personagemEquipado = inventarioAtual.equipados && inventarioAtual.equipados.imagem;
+  const PETS_VIDEO = { JuliaBanner: 'JuliaBanner.mp4', KauanBanner: 'KauanBanner.mp4', PeidaLeiteBanner: 'PeidaLeiteBanner.mp4' };
   const spritePersonagem = personagemEquipado
-    ? (personagemEquipado === "PaulaoDoPneuBanner" ? "PaulaoDoPneuBanner.jpg" : personagemEquipado === "CarlosBanner" ? "CarlosBanner.webp" : personagemEquipado + ".webp")
+    ? (personagemEquipado === "PaulaoDoPneuBanner" ? "PaulaoDoPneuBanner.jpg" : personagemEquipado === "CarlosBanner" ? "CarlosBanner.webp" : (PETS_VIDEO[personagemEquipado] || personagemEquipado + ".webp"))
     : "ArlanBanner.webp";
 
   const spritePlayer = posicionarSprite(

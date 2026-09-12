@@ -42,9 +42,9 @@ const personagens = [
 {id:'JapaBanner',nome:'Japa',tier:'Secret',raridade:'secreto',arquivo:'JapaBanner.webp',peso:3.5,buff:'+35% dano • +14% resistência • +14% recarga • +12% Ultimate • +3% crítico'},
 {id:'ArlanBanner',nome:'Arlan',tier:'Secret',raridade:'secreto',arquivo:'ArlanBanner.webp',peso:3,buff:'+40% dano • +16% resistência • +15% recarga • +15% Ultimate • +4% crítico'},
 {id:'ViniciusBanner',nome:'Vinicius',tier:'Divino',raridade:'divino',arquivo:'ViniciusBanner.webp',peso:2.5,buff:'+52% dano • +20% resistência • +18% recarga • +20% Ultimate • +6% crítico'},
-{id:'JuliaBanner',nome:'Julia',tier:'Celestial',raridade:'celestial',arquivo:'JuliaBanner.webp',bannerImagem:'JuliaBanner.jpg',peso:1.8,buff:'+68% dano • +24% resistência • +21% recarga • +24% Ultimate • +8% crítico'},
-{id:'PeidaLeiteBanner',nome:'PeidaLeite',tier:'Supremo',raridade:'supremo',arquivo:'PeidaLeiteBanner.webp',peso:1.4,buff:'+85% dano • +28% resistência • +24% recarga • +28% Ultimate • +10% crítico'},
-{id:'KauanBanner',nome:'Kauan',tier:'Exclusivo',raridade:'exclusivo',arquivo:'KauanBanner.webp',peso:1,buff:'+105% dano • +32% resistência • +27% recarga • +34% Ultimate • +12% crítico'},
+{id:'JuliaBanner',nome:'Julia',tier:'Celestial',raridade:'celestial',arquivo:'JuliaBanner.mp4',bannerImagem:'JuliaBanner.jpg',peso:1.8,buff:'+68% dano • +24% resistência • +21% recarga • +24% Ultimate • +8% crítico'},
+{id:'PeidaLeiteBanner',nome:'PeidaLeite',tier:'Supremo',raridade:'supremo',arquivo:'PeidaLeiteBanner.mp4',peso:1.4,buff:'+85% dano • +28% resistência • +24% recarga • +28% Ultimate • +10% crítico'},
+{id:'KauanBanner',nome:'Kauan',tier:'Exclusivo',raridade:'exclusivo',arquivo:'KauanBanner.mp4',peso:1,buff:'+105% dano • +32% resistência • +27% recarga • +34% Ultimate • +12% crítico'},
 {id:'PaulaoDoPneuBanner',nome:'PaulaoDoPneu',tier:'Transcendente',raridade:'transcendente',arquivo:'PaulaoDoPneuBanner.jpg',imagem:'PaulaoDoPneuBanner.jpg',peso:.3,buff:'+125% dano • +36% resistência • +30% recarga • +40% Ultimate • +14% crítico'},
 {id:'PetHunge',nome:'Beijo',tier:'Hunge',raridade:'hunge',arquivo:'Beijo.mp4',imagem:'Beijo.png',bannerImagem:'Beijo.png',peso:0,buff:'DANO = melhor personagem equipado +10% • +5% defesa • +5% recarga de Ultimate • +20% moedas • +5% diamantes'},
 {id:'ChucroHunge',nome:'Chucro',tier:'Hunge',raridade:'hunge',arquivo:'Chucro.mp4',imagem:'Chucro.png',bannerImagem:'Chucro.png',peso:0,buff:'DANO = melhor personagem equipado +15% • +5% defesa • +10% recarga de Ultimate • +10% moedas • +10% diamantes'}

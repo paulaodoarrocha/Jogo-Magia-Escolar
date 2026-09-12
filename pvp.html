@@ -946,14 +946,14 @@ const POCOES_AVANCADAS = [
 const RECOMPENSAS = [
   {id:'PvpMoedas5000', nome:'5.000 moedas', custo:200, rankMin:2},
   {id:'PvpDiamantes50', nome:'50 diamantes', custo:150, rankMin:2},
-  {id:'PvpPetJulia', nome:'Pet Julia', custo:300, rankMin:2, img:'JuliaBanner.mp4'},
-  {id:'PvpPetPeidaLeite', nome:'Pet PeidaLeite', custo:1000, rankMin:3, img:'PeidaLeiteBanner.mp4'},
+  {id:'PvpPetJulia', nome:'Pet Julia', custo:300, rankMin:2, img:'JuliaBanner_static.webp'},
+  {id:'PvpPetPeidaLeite', nome:'Pet PeidaLeite', custo:1000, rankMin:3, img:'PeidaLeiteBanner_static.webp'},
   {id:'PvpMoedas10000', nome:'10.000 moedas', custo:800, rankMin:4},
   {id:'PvpDiamantes150', nome:'150 diamantes', custo:450, rankMin:4},
-  {id:'PvpPetKauan', nome:'Pet Kauan', custo:2500, rankMin:4, img:'KauanBanner.mp4'},
+  {id:'PvpPetKauan', nome:'Pet Kauan', custo:2500, rankMin:4, img:'KauanBanner_static.webp'},
   {id:'PvpMoedas50000', nome:'50.000 moedas', custo:3000, rankMin:5},
   {id:'PvpDiamantes300', nome:'300 diamantes', custo:900, rankMin:5},
-  {id:'PvpPetPaulaoDoPneu', nome:'Pet PaulaoDoPneu', custo:10000, rankMin:5, img:'PauloBanner.jpg'},
+  {id:'PvpPetPaulaoDoPneu', nome:'Pet PaulaoDoPneu', custo:10000, rankMin:5, img:'PaulaoDoPneu.jpg'},
 ];
 
 function renderLoja() {
@@ -1544,9 +1544,8 @@ function sincronizarPosServidor() {
 }
 
 // Velocidade de movimento (NÃO mexe na velocidade das skills/projéteis).
-// Era 10px a cada 60ms; reduzida ~25% pra ficar mais lenta e natural, mas
-// continua respondendo no mesmo intervalo (sem lag perceptível no toque).
-const PASSO_MOVIMENTO = 7.5;
+// Reduzida pela metade a pedido (era 7.5).
+const PASSO_MOVIMENTO = 3.75;
 
 function iniciarMover(dirX, dirY) {
   clearInterval(moverLoopTimer);
