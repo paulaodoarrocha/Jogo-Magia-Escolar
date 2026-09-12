@@ -139,18 +139,18 @@
   .move-btn{width:46px;height:46px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,.08);
     color:#fff;font-size:18px;font-weight:900;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}
   .move-btn:active{background:rgba(255,255,255,.2);transform:scale(.92)}
-  .fighter-portrait{width:64px;height:64px;border-radius:16px;background:rgba(255,255,255,.06);
-    border:2px solid var(--rank-color,var(--grad2));display:flex;align-items:center;justify-content:center;
-    font-size:30px;overflow:hidden;animation:fighterIdle 2.6s ease-in-out infinite;
-    box-shadow:0 0 18px rgba(123,92,255,.35)}
-  .fighter-portrait img{width:100%;height:100%;object-fit:cover}
-  .fighter-foe .fighter-portrait{border-color:var(--danger);box-shadow:0 0 18px rgba(255,45,45,.35);animation-delay:.3s}
+  .fighter-portrait{width:94px;height:94px;border-radius:0;background:transparent;
+    border:none;display:flex;align-items:center;justify-content:center;
+    font-size:40px;overflow:visible;animation:fighterIdle 2.6s ease-in-out infinite;
+    filter:drop-shadow(0 0 14px rgba(123,92,255,.45))}
+  .fighter-portrait img{width:100%;height:100%;object-fit:contain}
+  .fighter-foe .fighter-portrait{filter:drop-shadow(0 0 14px rgba(255,45,45,.45));animation-delay:.3s}
   .fighter-shadow{width:38px;height:8px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(2px);margin-top:4px}
   @keyframes fighterIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
   .battle-vs-spark{font-size:20px;color:#ffd166;text-shadow:0 0 14px #ffd166;animation:sparkPulse 1.1s ease-in-out infinite;z-index:2}
   @keyframes sparkPulse{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
   .fighter.hit .fighter-portrait{animation:fighterHit .35s ease}
-  @keyframes fighterHit{0%{filter:brightness(1)}30%{filter:brightness(2.2) drop-shadow(0 0 10px #ff2d2d);transform:translateX(-6px)}60%{transform:translateX(4px)}100%{filter:brightness(1);transform:translateX(0)}}
+  @keyframes fighterHit{0%{filter:brightness(1) drop-shadow(0 0 14px rgba(123,92,255,.45))}30%{filter:brightness(2.2) drop-shadow(0 0 14px #ff2d2d);transform:translateX(-6px)}60%{transform:translateX(4px)}100%{filter:brightness(1) drop-shadow(0 0 14px rgba(123,92,255,.45));transform:translateX(0)}}
   .fighter.ko .fighter-portrait{filter:grayscale(1) brightness(.5);animation:none}
   .dmg-pop-zone{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:1px;height:1px;pointer-events:none}
   .dmg-pop{position:absolute;left:50%;top:0;transform:translateX(-50%);font-weight:900;font-size:15px;color:#ff5050;
@@ -176,12 +176,19 @@
   .skill-btn:disabled{opacity:.35}
   .skill-btn.usando{animation:skillPop .35s ease}
   @keyframes skillPop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
-  .btn-escudo{position:absolute;right:14px;bottom:86px;background:rgba(255,255,255,.08);border:1px solid var(--border);
-    color:#fff;border-radius:14px;padding:10px 14px;font-size:12px;font-weight:700;z-index:5;
-    box-shadow:0 4px 14px rgba(0,0,0,.35)}
-  .btn-escudo:disabled{opacity:.4}
-  .btn-escudo.ativo{background:linear-gradient(135deg,#42efff,#7b5cff);border-color:transparent;box-shadow:0 0 16px rgba(66,239,255,.6)}
-  .fighter.escudo-ativo .fighter-portrait{box-shadow:0 0 22px 6px rgba(66,239,255,.7)!important}
+  /* Escudo agora mora na mesma fileira dos botões de skill (era um botão solto
+     flutuando por cima do palco, brigando de espaço com o joystick — ficava feio
+     e difícil de mirar no dedo). Reaproveita a classe .skill-btn como base. */
+  .skill-btn.esc{background:linear-gradient(135deg,#1a2a4a,#0e1c33)}
+  .skill-btn.esc .skill-icon-emoji{font-size:26px;line-height:1}
+  .skill-btn.esc.ativo{background:linear-gradient(135deg,#42efff,#7b5cff);border-color:transparent;box-shadow:0 0 16px rgba(66,239,255,.6)}
+  .skill-btn:disabled{cursor:not-allowed}
+  .fighter.escudo-ativo .fighter-portrait{filter:drop-shadow(0 0 16px rgba(66,239,255,.85)) drop-shadow(0 0 26px rgba(66,239,255,.5))!important}
+  /* Gif da skill/ultimate aparecendo por cima do lutador quando ele é usado */
+  .skill-fx-img{position:absolute;left:50%;top:50%;width:150%;max-width:220px;height:auto;
+    transform:translate(-50%,-50%);pointer-events:none;z-index:6;
+    filter:drop-shadow(0 0 14px rgba(123,92,255,.6));animation:skillFxPop .75s ease-out forwards}
+  @keyframes skillFxPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.15)}}
 
   /* ===== PROMOÇÃO DE RANK ===== */
   .promo-overlay{position:fixed;inset:0;background:rgba(4,5,11,.92);z-index:60;display:flex;flex-direction:column;
@@ -410,7 +417,6 @@
       </div>
     </div>
   </div>
-  <button class="btn-escudo" id="btn-escudo" onclick="usarEscudo()">🛡 Escudo</button>
   <div class="joystick-base" id="joystick-base">
     <div class="joystick-knob" id="joystick-knob"></div>
   </div>
@@ -442,6 +448,10 @@
       <img class="skill-icon" id="icon-skill2" src="RaioSkill2.gif" alt="" onerror="this.style.display='none'">
       <span class="skill-cd" id="cd-skill2"></span>
       SKILL 2
+    </button>
+    <button class="skill-btn esc" id="btn-escudo" onclick="usarEscudo()">
+      <span class="skill-icon-emoji">🛡</span>
+      ESCUDO
     </button>
     <button class="skill-btn ult" id="btn-ultimate" onclick="usarUltimate()">
       <img class="skill-icon" id="icon-ultimate" src="Arlan.png" alt="" onerror="this.style.display='none'">
@@ -965,6 +975,14 @@ const BOSSES_EQUIP = [
   {id:'Lucas', rank:'A'}, {id:'Davi', rank:'AA+'}, {id:'Arthur', rank:'S'}, {id:'Vinicius', rank:'SS'},
   {id:'GuilermeChucro', rank:'SSS+'}, {id:'PaulaoDoPneu', rank:'Z+'}
 ];
+// Antes a imagem do personagem na arena/loja usava o nome literal do boss (Arlan.jpg,
+// Marcos.jpg...), o que exigia ter um arquivo com esse nome exato pra cada um. Agora
+// segue sempre a ordem fixa acima -> Boss1Img.png, Boss2Img.png ... Boss10Img.png
+// (mesmo padrão de nome já usado nos cenários de fundo, CENARIOS_PVP).
+function bossImgFile(bossId) {
+  const idx = BOSSES_EQUIP.findIndex(b => b.id === bossId);
+  return 'Boss' + (idx >= 0 ? idx + 1 : 1) + 'Img.png';
+}
 
 async function renderInventarioPvp() {
   const el = document.getElementById('painel-inv');
@@ -977,7 +995,7 @@ async function renderInventarioPvp() {
     <div class="loja-grid">
       ${BOSSES_EQUIP.map(b => `
         <div class="loja-card ${b.id === bossAtual ? 'equipado' : ''}" style="--lc-cor:#7b5cff;cursor:pointer" onclick="equiparBossPvp('${b.id}')">
-          <img src="${b.id}.jpg" alt="${b.id}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">
+          <img src="${bossImgFile(b.id)}" alt="${b.id}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">
           <div class="lc-nome">${b.id}</div>
           <div class="lc-sub">${b.rank}</div>
           <button class="lc-btn" ${b.id === bossAtual ? 'disabled' : ''} onclick="event.stopPropagation();equiparBossPvp('${b.id}')">${b.id === bossAtual ? '✔ EQUIPADO' : 'EQUIPAR'}</button>
@@ -1355,82 +1373,119 @@ let hpMe = 1000, hpFoe = 1000, hpMeMax = 1000, hpFoeMax = 1000, souJogador1 = fa
 let ultimoSkill2Me = null, ultimoSkill2Foe = null, matchChannel = null;
 
 // ===== MOVIMENTO LATERAL =====
-let posMe = 0, posFoe = 0, moverLoopTimer = null;
+let posMe = { x: 0, y: 0 }, posFoe = { x: 0, y: 0 }, moverLoopTimer = null;
 const ESCUDO_COOLDOWN_MS = 6000; // precisa bater com o cooldown definido em pvp_usar_escudo
 
-// Limite de movimento agora é calculado com base no tamanho real da tela/palco,
-// então o jogador pode andar até a borda visível em qualquer aparelho (antes era
-// um valor fixo de 70px, curto demais em telas grandes e não usava o espaço todo).
-function calcularLimiteMovimento() {
+// Movimento livre em 2D (antes só dava pra ir pros lados). O jogador pode andar
+// pra qualquer direção dentro do palco, mas nunca passa da "parede" nem some da
+// tela — os limites em X e Y são recalculados com base no tamanho real do palco.
+// posMe agora é {x, y} igual posFoe. O eixo X continua sendo o único sincronizado
+// de verdade com o servidor (pvp_atualizar_pos), porque é o que a coluna j1_pos/j2_pos
+// guarda e o que o pvp_usar_skill usa pra calcular o desvio — o Y é só visual/liberdade
+// de movimento, não entra no cálculo de acerto (a mesma lógica do sistema de bosses,
+// que também só considera o eixo lateral pra desviar).
+function calcularLimitesMovimento() {
   const stage = document.getElementById('battle-stage');
   const fighter = document.getElementById('fighter-me');
-  if (!stage || !fighter) return 70;
+  if (!stage || !fighter) return { x: 70, yTopo: 20, yBase: 20 };
   const larguraPalco = stage.clientWidth;
-  const larguraLutador = fighter.offsetWidth || 64;
-  // metade do palco menos meia largura do lutador menos uma margem de segurança,
-  // pra ele poder ir até quase a borda sem sair da tela
-  const limite = (larguraPalco / 2) - (larguraLutador / 2) - 12;
-  return Math.max(40, limite);
+  const alturaPalco = stage.clientHeight;
+  const larguraLutador = fighter.offsetWidth || 90;
+  const alturaLutador = fighter.offsetHeight || 90;
+  const limiteX = Math.max(40, (larguraPalco / 2) - (larguraLutador / 2) - 12);
+  // Verticalmente o palco não é simétrico (tem a barra de HP em cima e os botões
+  // embaixo por fora do palco), então damos uma margem de segurança maior pra não
+  // deixar o personagem colado nessas bordas.
+  const margemVertical = Math.max(30, alturaLutador / 2 + 16);
+  const limiteY = Math.max(24, (alturaPalco / 2) - margemVertical);
+  return { x: limiteX, y: limiteY };
 }
-let MOVE_LIMITE = 70;
-window.addEventListener('resize', () => { MOVE_LIMITE = calcularLimiteMovimento(); });
+let MOVE_LIMITE = calcularLimitesMovimento();
+window.addEventListener('resize', () => { MOVE_LIMITE = calcularLimitesMovimento(); });
 
 function aplicarPosicoes() {
   const meEl = document.getElementById('fighter-me');
   const foeEl = document.getElementById('fighter-foe');
-  if (meEl) meEl.style.transform = `translateX(${posMe}px)`;
-  // o oponente vê o próprio lado espelhado, então aplicamos com sinal invertido no meu lado
-  if (foeEl) foeEl.style.transform = `translateX(${-posFoe}px)`;
+  if (meEl) meEl.style.transform = `translate(${posMe.x}px, ${posMe.y}px)`;
+  // o oponente vê o próprio lado espelhado, então aplicamos com sinal invertido no eixo X do meu lado
+  if (foeEl) foeEl.style.transform = `translate(${-posFoe.x}px, ${posFoe.y}px)`;
 }
 
-function iniciarMover(direcao) {
+// Sincroniza a posição real (só eixo X) com o servidor de tempos em tempos —
+// é o valor que o pvp_usar_skill usa pra decidir se o golpe desviou ou não.
+// Sem throttle isso spamaria a RPC a cada frame de movimento.
+let ultimoEnvioPosServidor = 0;
+let posServidorPendente = null;
+function sincronizarPosServidor() {
+  posServidorPendente = Math.round(posMe.x);
+  const agora = Date.now();
+  if (agora - ultimoEnvioPosServidor < 180) return;
+  ultimoEnvioPosServidor = agora;
+  const valor = posServidorPendente;
+  posServidorPendente = null;
+  sb.rpc('pvp_atualizar_pos', { p_match: matchAtual, p_pos: valor }).then(undefined, () => {});
+}
+
+function iniciarMover(dirX, dirY) {
   clearInterval(moverLoopTimer);
-  moverPasso(direcao);
-  moverLoopTimer = setInterval(() => moverPasso(direcao), 90);
+  moverPasso(dirX, dirY);
+  moverLoopTimer = setInterval(() => moverPasso(dirX, dirY), 60);
 }
 
-function moverPasso(direcao) {
-  posMe = Math.max(-MOVE_LIMITE, Math.min(MOVE_LIMITE, posMe + direcao * 14));
+function moverPasso(dirX, dirY) {
+  posMe.x = Math.max(-MOVE_LIMITE.x, Math.min(MOVE_LIMITE.x, posMe.x + dirX * 10));
+  posMe.y = Math.max(-MOVE_LIMITE.y, Math.min(MOVE_LIMITE.y, posMe.y + dirY * 10));
   aplicarPosicoes();
-  if (matchChannel) matchChannel.send({ type: 'broadcast', event: 'mover', payload: { pos: posMe } });
+  if (matchChannel) matchChannel.send({ type: 'broadcast', event: 'mover', payload: { x: posMe.x, y: posMe.y } });
+  sincronizarPosServidor();
 }
 
 function pararMover() {
   clearInterval(moverLoopTimer);
   moverLoopTimer = null;
+  // garante que a última posição sempre chega no servidor, mesmo que o throttle
+  // tenha segurado o último envio.
+  if (posServidorPendente !== null && matchAtual) {
+    const valor = posServidorPendente;
+    posServidorPendente = null;
+    ultimoEnvioPosServidor = Date.now();
+    sb.rpc('pvp_atualizar_pos', { p_match: matchAtual, p_pos: valor }).then(undefined, () => {});
+  }
 }
 window.iniciarMover = iniciarMover;
 window.pararMover = pararMover;
 
-// Joystick de arrastar (substitui os botões ◀▶ a pedido dos jogadores).
-// Reaproveita iniciarMover/pararMover — só muda a forma de disparar, sem mexer na física do movimento.
+// Joystick de arrastar em 2D — antes só media o eixo X (só dava pra ir pros lados).
 (function configurarJoystick() {
   const base = document.getElementById('joystick-base');
   const knob = document.getElementById('joystick-knob');
   if (!base || !knob) return;
 
-  const RAIO = 30;
+  const RAIO = 32;
   const ZONA_MORTA = 8;
   let arrastando = false;
-  let direcaoAtual = 0;
+  let dirXAtual = 0, dirYAtual = 0;
   let pointerId = null;
 
-  function definirDirecao(nova) {
-    if (nova === direcaoAtual) return;
-    direcaoAtual = nova;
+  function definirDirecao(novoX, novoY) {
+    if (novoX === dirXAtual && novoY === dirYAtual) return;
+    dirXAtual = novoX; dirYAtual = novoY;
     pararMover();
-    if (nova !== 0) iniciarMover(nova);
+    if (novoX !== 0 || novoY !== 0) iniciarMover(novoX, novoY);
   }
 
-  function mover(clientX) {
+  function mover(clientX, clientY) {
     const rect = base.getBoundingClientRect();
     const centroX = rect.left + rect.width / 2;
+    const centroY = rect.top + rect.height / 2;
     let dx = clientX - centroX;
-    dx = Math.max(-RAIO, Math.min(RAIO, dx));
-    knob.style.transform = `translate(calc(-50% + ${dx}px), -50%)`;
-    if (dx < -ZONA_MORTA) definirDirecao(-1);
-    else if (dx > ZONA_MORTA) definirDirecao(1);
-    else definirDirecao(0);
+    let dy = clientY - centroY;
+    const dist = Math.hypot(dx, dy);
+    if (dist > RAIO) { dx = (dx / dist) * RAIO; dy = (dy / dist) * RAIO; }
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    const nx = Math.abs(dx) > ZONA_MORTA ? Math.sign(dx) : 0;
+    const ny = Math.abs(dy) > ZONA_MORTA ? Math.sign(dy) : 0;
+    definirDirecao(nx, ny);
   }
 
   function soltar() {
@@ -1439,7 +1494,7 @@ window.pararMover = pararMover;
     pointerId = null;
     knob.classList.remove('arrastando');
     knob.style.transform = 'translate(-50%, -50%)';
-    definirDirecao(0);
+    definirDirecao(0, 0);
   }
 
   base.addEventListener('pointerdown', (e) => {
@@ -1448,11 +1503,11 @@ window.pararMover = pararMover;
     pointerId = e.pointerId;
     knob.classList.add('arrastando');
     try { base.setPointerCapture(pointerId); } catch (_) {}
-    mover(e.clientX);
+    mover(e.clientX, e.clientY);
   });
   base.addEventListener('pointermove', (e) => {
     if (!arrastando || e.pointerId !== pointerId) return;
-    mover(e.clientX);
+    mover(e.clientX, e.clientY);
   });
   base.addEventListener('pointerup', soltar);
   base.addEventListener('pointercancel', soltar);
@@ -1469,9 +1524,9 @@ function entrarArena() {
   const lblCd2 = document.getElementById('cd-skill2'); if (lblCd2) lblCd2.textContent = '';
   document.getElementById('btn-skill1')?.classList.remove('em-cooldown');
   document.getElementById('btn-skill2')?.classList.remove('em-cooldown');
-  posMe = 0; posFoe = 0;
+  posMe = { x: 0, y: 0 }; posFoe = { x: 0, y: 0 };
   document.getElementById('arena').classList.remove('hidden');
-  requestAnimationFrame(() => { MOVE_LIMITE = calcularLimiteMovimento(); });
+  requestAnimationFrame(() => { MOVE_LIMITE = calcularLimitesMovimento(); });
   const cenarioImg = cenarioFinal || CENARIOS_PVP[0];
   document.getElementById('arena').style.backgroundImage =
     `linear-gradient(180deg, rgba(6,7,15,.55), rgba(6,7,15,.88)), url('${cenarioImg}.png')`;
@@ -1489,8 +1544,8 @@ function entrarArena() {
   colocarAvatarNoElemento(document.getElementById('arena-avatar-me'), meuPlayerArena?.avatar_image_url, meuPlayerArena?.avatar_emoji || '🧙');
   colocarAvatarNoElemento(document.getElementById('arena-avatar-foe'), oponentePlayerArena?.avatar_image_url, oponentePlayerArena?.avatar_emoji || '🧙');
   // Portraits da luta usam o boss/skin equipado no PvP (só visual, não afeta dano) — Arlan é o padrão.
-  const bossMeImg = (perfilAtual?.boss_equipado || 'Arlan') + '.jpg';
-  const bossFoeImg = (oponentePerfilArena?.boss_equipado || 'Arlan') + '.jpg';
+  const bossMeImg = bossImgFile(perfilAtual?.boss_equipado || 'Arlan');
+  const bossFoeImg = bossImgFile(oponentePerfilArena?.boss_equipado || 'Arlan');
   colocarAvatarNoElemento(document.getElementById('fighter-portrait-me'), bossMeImg, '🧙');
   colocarAvatarNoElemento(document.getElementById('fighter-portrait-foe'), bossFoeImg, '🧙');
   document.getElementById('fighter-me').classList.remove('hit','ko','escudo-ativo');
@@ -1517,7 +1572,8 @@ function entrarArena() {
 
   matchChannel = sb.channel('pvp_match_'+matchAtual, { config: { presence: { key: userId } } })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pvp_matches', filter: `id=eq.${matchAtual}` }, (payload) => processarEstadoPartida(payload.new))
-    .on('broadcast', { event: 'mover' }, ({ payload }) => { posFoe = payload.pos; aplicarPosicoes(); })
+    .on('broadcast', { event: 'mover' }, ({ payload }) => { posFoe = { x: payload.x, y: payload.y }; aplicarPosicoes(); })
+    .on('broadcast', { event: 'skillfx' }, ({ payload }) => mostrarEfeitoSkill(document.getElementById('fighter-foe'), payload.gif))
     .on('presence', { event: 'leave' }, ({ key }) => { if (key === oponenteIdArena) agendarChecagemAbandono(); })
     .on('presence', { event: 'join' }, ({ key }) => { if (key === oponenteIdArena) cancelarChecagemAbandono(); })
     .subscribe(async (status) => {
@@ -1656,12 +1712,31 @@ function iniciarCooldownVisual(n, duracaoMs) {
   tick();
 }
 
+// Mostra o próprio gif da skill em cima do lutador quando ela é usada (reaproveita
+// os arquivos que já existem — RelampagoSkill1.gif, RaioSkill2.gif, Ultimate7.gif etc).
+// ladoEl é o elemento .fighter (fighter-me ou fighter-foe); some sozinho depois de um tempo.
+function mostrarEfeitoSkill(ladoEl, gifFile) {
+  if (!ladoEl || !gifFile) return;
+  const fx = document.createElement('img');
+  fx.src = gifFile;
+  fx.className = 'skill-fx-img';
+  fx.alt = '';
+  fx.onerror = () => fx.remove();
+  ladoEl.appendChild(fx);
+  setTimeout(() => fx.remove(), 750);
+}
+
 async function usarSkill(n) {
   // já em cooldown no cliente? nem tenta chamar o servidor
   const cdAtivoAte = n === 1 ? cdSkill1At : cdSkill2At;
   if (Date.now() < cdAtivoAte) return;
 
-  const { data, error } = await sb.rpc('pvp_usar_skill', { p_match: matchAtual, p_tipo: 'skill'+n });
+  // Mira na última posição conhecida do oponente (visto pelo realtime). Se ele já
+  // tiver se mexido bastante desde então, o servidor conta como desvio — mesma
+  // ideia do desvio de skills na luta contra bosses, só que agora os dois lados
+  // se mexem de verdade.
+  const posMirado = Math.round(posFoe.x);
+  const { data, error } = await sb.rpc('pvp_usar_skill', { p_match: matchAtual, p_tipo: 'skill'+n, p_pos_mirado: posMirado });
   if (error) {
     if (error.message === 'em_cooldown') {
       document.getElementById('arena-log').textContent = 'Skill em recarga...';
@@ -1674,6 +1749,9 @@ async function usarSkill(n) {
   iniciarCooldownVisual(n, n === 1 ? COOLDOWN_SKILL1_PVP_MS : COOLDOWN_SKILL2_PVP_MS);
   aplicarHp(souJogador1 ? data.hp1 : data.hp2, souJogador1 ? data.hp2 : data.hp1);
   if (n === 2 && typeof window.playSfx === 'function') window.playSfx('Impacto.mp3', 0.5);
+  const gif = (n === 1 ? perfilAtual?.skill1_pvp : perfilAtual?.skill2_pvp) + '.gif';
+  mostrarEfeitoSkill(document.getElementById('fighter-me'), gif);
+  if (matchChannel) matchChannel.send({ type: 'broadcast', event: 'skillfx', payload: { gif } });
   document.getElementById('arena-log').textContent = data.desviou ? 'Oponente desviou parte do golpe!' : `Você usou Skill ${n}!`;
   if (data.fim) { clearInterval(arenaPollTimer); await finalizarPartida(data.vencedor); }
 }
@@ -1695,12 +1773,16 @@ async function usarUltimate() {
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const { data, error: err2 } = await sb.rpc('pvp_usar_skill', { p_match: matchAtual, p_tipo: 'ultimate' });
+    const posMirado = Math.round(posFoe.x);
+    const { data, error: err2 } = await sb.rpc('pvp_usar_skill', { p_match: matchAtual, p_tipo: 'ultimate', p_pos_mirado: posMirado });
     if (err2) {
       document.getElementById('arena-log').textContent = 'Falha ao usar Ultimate. Tente de novo.';
       return;
     }
     aplicarHp(souJogador1 ? data.hp1 : data.hp2, souJogador1 ? data.hp2 : data.hp1);
+    const gifUlt = (perfilAtual?.ultimate_pvp || 'Ultimate7') + '.gif';
+    mostrarEfeitoSkill(document.getElementById('fighter-me'), gifUlt);
+    if (matchChannel) matchChannel.send({ type: 'broadcast', event: 'skillfx', payload: { gif: gifUlt } });
     document.getElementById('arena-log').textContent = data.desviou ? 'Oponente desviou parte do golpe!' : 'ULTIMATE ACERTOU!';
     if (data.fim) { clearInterval(arenaPollTimer); await finalizarPartida(data.vencedor); }
   } finally {
