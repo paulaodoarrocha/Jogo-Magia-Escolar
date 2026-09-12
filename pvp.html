@@ -236,6 +236,10 @@
   .recompensa-item{display:flex;justify-content:space-between;gap:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 14px;font-size:14px}
   .recompensa-item b{color:#ffd166}
   .btn-fechar-recompensa{background:linear-gradient(135deg,#7b5cff,#42efff);color:#0a0d1c;border:none;border-radius:10px;padding:10px 26px;font-weight:800;cursor:pointer}
+  .streak-pill{background:rgba(255,90,20,.16);border:1px solid rgba(255,140,40,.5);border-radius:20px;padding:2px 9px;font-weight:800;color:#ffb15c;font-size:12px}
+  .streak-pill.hidden{display:none}
+  .recompensa-item.streak-destaque{background:rgba(255,90,20,.14);border-color:rgba(255,140,40,.5)}
+  .recompensa-item.streak-destaque b{color:#ffb15c}
   @keyframes rise{from{transform:translateY(0);opacity:1}to{transform:translateY(-160px);opacity:0}}
 
   .locked-msg{text-align:center;padding:40px 20px;color:#9aa3c7}
@@ -379,6 +383,7 @@
         <span>🏆 <b id="pvp-trofeus">0</b></span>
         <span>Nível <b id="pvp-nivel">1</b></span>
         <span><b id="pvp-vitorias">0</b>V / <b id="pvp-derrotas">0</b>D</span>
+        <span id="pvp-streak-pill" class="streak-pill hidden">🔥 <b id="pvp-streak-valor">0</b></span>
       </div>
       <div class="xp-bar-wrap"><div class="xp-bar-fill" id="pvp-xp-fill" style="width:0%"></div></div>
       <div id="pocoes-pvp-ativas-header" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
@@ -807,6 +812,10 @@ async function refreshPerfil() {
   document.getElementById('pvp-vitorias').textContent = data.vitorias;
   document.getElementById('pvp-derrotas').textContent = data.derrotas;
   document.getElementById('pvp-xp-fill').style.width = ((data.xp_pvp % 500) / 500 * 100) + '%';
+  const streakPill = document.getElementById('pvp-streak-pill');
+  const streakAtual = data.sequencia_vitorias || 0;
+  document.getElementById('pvp-streak-valor').textContent = streakAtual;
+  streakPill.classList.toggle('hidden', streakAtual < 1);
 }
 
 function trocarAba(nome) {
@@ -2199,6 +2208,7 @@ function mostrarRecompensaPvp(resultado, rankAntes) {
   ];
   if (resultado.bonus_moedas > 0) linhas.push(`<div class="recompensa-item"><span>🪙 Moedas (Poção)</span><b>+${resultado.bonus_moedas}</b></div>`);
   if (resultado.bonus_diamantes > 0) linhas.push(`<div class="recompensa-item"><span>💎 Diamantes (Poção)</span><b>+${resultado.bonus_diamantes}</b></div>`);
+  if ((resultado.sequencia_vitorias || 0) >= 1) linhas.push(`<div class="recompensa-item streak-destaque"><span>🔥 Sequência</span><b>${resultado.sequencia_vitorias} vitória${resultado.sequencia_vitorias > 1 ? 's' : ''}</b></div>`);
   lista.innerHTML = linhas.join('');
 
   const overlay = document.getElementById('overlay-recompensa-pvp');

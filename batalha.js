@@ -20,19 +20,19 @@ const skill2Defs = {
   EstrelaSkill2:{tipo:"esfera",largura:261,altura:261,velocidade:7.11,dano:4100,gif:"EstrelaSkill2.gif"},
   BlackholeSkill2:{tipo:"feixe",comprimento:327,largura:162,dano:5900,gif:"BlackholeSkill2.gif"}
 };
-const COOLDOWN_SKILL1_PLAYER=450; // dobrado a pedido (era 900)
+const COOLDOWN_SKILL1_PLAYER=900; // dobrado a pedido (era 900)
 // Cooldown por skill1 do player: as 6 mais raras (maior dano) sobem pra 1s,
 // as 2 comuns (Relampago e Som) continuam com o valor padrão acima. Nada
 // mais muda (dano, velocidade, cooldown do inimigo/boss seguem iguais).
 const cooldownSkill1Player={
   RelampagoSkill1:COOLDOWN_SKILL1_PLAYER,
   SomSkill1:COOLDOWN_SKILL1_PLAYER,
-  CirculoSkill1:500,
-  VentoSkill1:500,
-  AguaSkill1:500,
-  VenenoSkill1:500,
-  SolSkill1:500,
-  MeteoroSkill1:500
+  CirculoSkill1:900,
+  VentoSkill1:900,
+  AguaSkill1:900,
+  VenenoSkill1:900,
+  SolSkill1:800,
+  MeteoroSkill1:800
 };
 function cooldownSkill1Atual(){
   const eq=inventarioAtual&&inventarioAtual.equipados?inventarioAtual.equipados.skill1:null;
@@ -411,7 +411,7 @@ function prepararFundoSemPreto() {
 
 let x, y, inimigoX, inimigoY;
 let velX = 0, velY = 0;
-const velMax = 1.885; // +30% a pedido (era 1.45 original; 2.9 doubled foi revertido)
+const velMax = 2.88; // +30% a pedido (era 1.45 original; 2.9 doubled foi revertido)
 const aceleracao = 0.24;
 
 let inimigoVelX = 0, inimigoVelY = 0;
@@ -665,7 +665,7 @@ function desenharBatalha() {
 
   const idsUsados = new Set(["personagem", "inimigo"]);
   const personagemEquipado = inventarioAtual.equipados && inventarioAtual.equipados.imagem;
-  const PETS_VIDEO = { JuliaBanner: 'JuliaBanner.mp4', KauanBanner: 'KauanBanner.mp4', PeidaLeiteBanner: 'PeidaLeiteBanner.mp4' };
+  const PETS_VIDEO = { KauanBanner: 'KauanBanner.mp4' };
   const spritePersonagem = personagemEquipado
     ? (personagemEquipado === "PaulaoDoPneuBanner" ? "PaulaoDoPneuBanner.jpg" : personagemEquipado === "CarlosBanner" ? "CarlosBanner.webp" : (PETS_VIDEO[personagemEquipado] || personagemEquipado + ".webp"))
     : "ArlanBanner.webp";
@@ -699,8 +699,8 @@ function desenharBatalha() {
     6: 'Davi.jpg',
     7: 'Arthur.jpg',
     8: 'Vinicius.jpg',
-    9: 'GuilermeChucro.png',
-    10: 'PaulaoDoPneu.png'
+    9: 'GuilermeChucro.jpg',
+    10: 'PaulaoDoPneu.jpg'
   };
   const imagemBoss = imagensBoss[Number(bossAtual?.id)] || (bossAtual?.nome ? bossAtual.nome + '.jpg' : 'Arlan.jpg');
   // Tamanho individual por boss (presença maior nos avançados). Não altera posição/lógica,
@@ -718,7 +718,7 @@ function desenharBatalha() {
   }
 
   if (guilhermeAtivo) {
-    const spriteGuilherme = posicionarSprite("guilherme", "GuilermeChucro.png", guilhermeX, guilhermeY, 200, 200, "sprite-boss", x < guilhermeX);
+    const spriteGuilherme = posicionarSprite("guilherme", "GuilermeChucro.jpg", guilhermeX, guilhermeY, 200, 200, "sprite-boss", x < guilhermeX);
     if (spriteGuilherme) idsUsados.add("guilherme");
   }
 

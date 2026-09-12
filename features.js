@@ -96,7 +96,18 @@
     };
 
     const file = files[String(ultimateId)];
-    if (file) play(file, 0.58);
+    if (!file) return;
+    // Alguns bosses tinham o áudio de voz silenciosamente falhando (ex: diferença de
+    // maiúscula/minúscula na primeira letra do nome do arquivo, tipo "lucasUltimate.mp3"
+    // vs "LucasUltimate.mp3"). Em vez de tentar só 1 nome exato (que falha calado se o
+    // case não bater), tenta as duas variantes de case, igual já é feito em playVictorySound/
+    // playDefeatSound/playCoinsSound (mesma função playFirstAvailable, nenhum sistema novo).
+    const primeiraLetra = file.charAt(0);
+    const alternada = primeiraLetra === primeiraLetra.toLowerCase()
+      ? primeiraLetra.toUpperCase() + file.slice(1)
+      : primeiraLetra.toLowerCase() + file.slice(1);
+    const candidatos = alternada !== file ? [file, alternada] : [file];
+    playFirstAvailable(candidatos, 0.58);
   };
 
   function playFirstAvailable(files, volume) {
