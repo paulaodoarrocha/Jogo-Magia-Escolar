@@ -146,6 +146,12 @@
   .fighter-portrait img{width:100%;height:100%;object-fit:contain}
   .fighter-foe .fighter-portrait{filter:drop-shadow(0 0 14px rgba(255,45,45,.45));animation-delay:.3s}
   .fighter-shadow{width:38px;height:8px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(2px);margin-top:4px}
+  /* Deixa claro qual dos dois é o seu personagem — importante porque os dois
+     lados podem escolher o mesmo lutador (mesmo boss_equipado). */
+  .fighter-voce-tag{position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,#42efff,#7b5cff);color:#04050b;font-size:9px;font-weight:900;
+    letter-spacing:1px;padding:2px 8px;border-radius:20px;white-space:nowrap;z-index:3;
+    box-shadow:0 0 8px rgba(66,239,255,.6)}
   @keyframes fighterIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
   /* Animação leve de caminhada/corrida — só troca o transform do retrato (filho),
      nunca conflita com o transform de posição aplicado no .fighter (pai) via JS.
@@ -203,15 +209,20 @@
     pointer-events:none;filter:drop-shadow(0 0 10px rgba(123,92,255,.55));will-change:transform}
   .skill-projectile img{width:100%;height:100%;object-fit:contain;display:block}
   /* Overlay do vídeo da Ultimate — reaproveita o mesmo padrão de arquivo usado na
-     batalha dos bosses (Ultimate{N}.mp4). Fica só por cima do palco (#battle-stage),
-     nunca esconde o HUD (HP, log, botões) que fica fora do #arena-vs-video-wrap
-     e continua visível/clicável embaixo. Some sozinho quando o vídeo termina. */
-  .ultimate-video-overlay{position:absolute;left:0;right:0;top:64px;bottom:150px;z-index:15;
-    display:flex;align-items:center;justify-content:center;background:rgba(4,5,11,.45);
+     batalha dos bosses (Ultimate{N}.mp4). Agora em TELA CHEIA (position:fixed
+     cobrindo a viewport toda), igual pedido, com botão de pular. Some sozinho
+     quando o vídeo termina, quando alguém pula, ou (trava de segurança) depois
+     de um tempo máximo — nunca fica travado nem impede ações depois. */
+  .ultimate-video-overlay{position:fixed;inset:0;z-index:70;
+    display:flex;align-items:center;justify-content:center;background:rgba(4,5,11,.92);
     pointer-events:none;opacity:0;transition:opacity .18s ease}
-  .ultimate-video-overlay.ativo{opacity:1}
-  .ultimate-video-overlay video{max-width:92%;max-height:100%;object-fit:contain;
-    filter:drop-shadow(0 0 22px rgba(123,92,255,.55));border-radius:10px}
+  .ultimate-video-overlay.ativo{opacity:1;pointer-events:auto}
+  .ultimate-video-overlay video{max-width:100%;max-height:100%;object-fit:contain;
+    filter:drop-shadow(0 0 22px rgba(123,92,255,.55))}
+  .ultimate-video-skip{position:absolute;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));
+    z-index:2;padding:9px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.35);
+    background:rgba(10,12,25,.75);color:#fff;font-weight:800;font-size:13px;cursor:pointer}
+  .ultimate-video-skip:active{background:rgba(255,255,255,.15)}
 
   /* ===== PROMOÇÃO DE RANK ===== */
   .promo-overlay{position:fixed;inset:0;background:rgba(4,5,11,.92);z-index:60;display:flex;flex-direction:column;
@@ -448,6 +459,7 @@
     <div class="battle-stage" id="battle-stage">
       <div class="battle-particles" id="battle-particles"></div>
       <div class="fighter fighter-me" id="fighter-me">
+        <div class="fighter-voce-tag">VOCÊ</div>
         <div class="dmg-pop-zone" id="dmg-pop-me"></div>
         <div class="fighter-portrait" id="fighter-portrait-me">🧙</div>
         <div class="fighter-shadow"></div>
@@ -463,6 +475,7 @@
   </div>
   <div class="ultimate-video-overlay hidden" id="ultimate-video-overlay">
     <video id="ultimate-video-pvp" playsinline muted></video>
+    <button class="ultimate-video-skip" id="btn-skip-video-ultimate" type="button">PULAR ⏭</button>
   </div>
   <div class="battle-controls">
     <button class="skill-btn" id="btn-skill1" onclick="usarSkill(1)">
@@ -1561,8 +1574,17 @@ window.pararMover = pararMover;
   base.addEventListener('lostpointercapture', soltar);
 })();
 
-function entrarArena() {
-  hpMeMax = 1000 + (perfilAtual?.dano_upgrade_nivel || 0) * 25;
+// Botão de pular o vídeo da Ultimate — clique local fecha aqui e avisa o
+// oponente via broadcast (feito dentro de finalizarVideoUltimateAtual).
+(function configurarSkipVideoUltimate() {
+  const btn = document.getElementById('btn-skip-video-ultimate');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    if (finalizarVideoUltimateAtual) finalizarVideoUltimateAtual(false);
+  });
+})();
+
+function entrarArena() {  hpMeMax = 1000 + (perfilAtual?.dano_upgrade_nivel || 0) * 25;
   hpFoeMax = 1000 + (oponentePerfilArena?.dano_upgrade_nivel || 0) * 25;
   hpMe = hpMeMax; hpFoe = hpFoeMax;
   ultimoSkill2Me = null; ultimoSkill2Foe = null;
@@ -1622,6 +1644,7 @@ function entrarArena() {
     .on('broadcast', { event: 'mover' }, ({ payload }) => { posFoe = { x: payload.x, y: payload.y }; aplicarPosicoes(); animarCaminhadaFoe(); })
     .on('broadcast', { event: 'skillfx' }, ({ payload }) => dispararProjetil(payload.gif, document.getElementById('fighter-foe'), document.getElementById('fighter-me'), () => mostrarEfeitoSkill(document.getElementById('fighter-me'), payload.gif)))
     .on('broadcast', { event: 'ultimatevideo' }, ({ payload }) => mostrarVideoUltimatePvp(payload.ultimateId))
+    .on('broadcast', { event: 'ultimateskip' }, () => receberSkipVideoUltimate())
     .on('presence', { event: 'leave' }, ({ key }) => { if (key === oponenteIdArena) agendarChecagemAbandono(); })
     .on('presence', { event: 'join' }, ({ key }) => { if (key === oponenteIdArena) cancelarChecagemAbandono(); })
     .subscribe(async (status) => {
@@ -1752,8 +1775,8 @@ function efeitoImpacto(lado, valor, tipo) {
 // (pvp_usar_skill): 1.2s pra skill1, 3s pra skill2. O servidor continua sendo quem
 // valida de fato (bloqueia com "em_cooldown" se tentar antes da hora); isso aqui é
 // só o botão mostrando quanto falta, que antes não existia nenhum feedback visual.
-const COOLDOWN_SKILL1_PVP_MS = 1200;
-const COOLDOWN_SKILL2_PVP_MS = 3000;
+const COOLDOWN_SKILL1_PVP_MS = 1100;
+const COOLDOWN_SKILL2_PVP_MS = 4000;
 let cdSkill1At = 0, cdSkill2At = 0;
 
 function iniciarCooldownVisual(n, duracaoMs) {
@@ -1792,15 +1815,16 @@ function mostrarEfeitoSkill(ladoEl, gifFile) {
 
 // Antes o gif da skill só piscava 1s em cima de quem atacou e o dano/servidor já
 // tinha sido aplicado ao mesmo tempo — parecia que a skill não "viajava" até o
-// alvo. Agora o gif vira um projétil de verdade: nasce em cima de quem usou,
-// viaja até o alvo (recalculando a posição dele a cada frame — "autoguiado"
-// leve) e só then a gente aplica o efeito de acerto/dano visual. O servidor
-// continua sendo a única autoridade sobre o dano/desvio: essa animação nunca
-// decide dano sozinha, ela só atrasa VISUALMENTE o "aplicarHp"/"efeitoImpacto"
-// que já veio pronto da resposta do RPC, pra sincronizar com a chegada do golpe.
-// NERF LEVE de velocidade: DURACAO_PROJETIL_MS controla isso (só a velocidade
-// do projétil visual — não mexe em cooldown nem em dano).
-const DURACAO_PROJETIL_MS = 460;
+// alvo, ou viajava rápido demais pra sequer conseguir desviar. Agora o gif vira
+// um projétil de verdade: nasce em cima de quem usou, faz uma curva até o alvo
+// (recalculando a posição dele a cada frame — "autoguiado" leve) e só então a
+// gente aplica o efeito de acerto/dano visual. O servidor continua sendo a
+// única autoridade sobre o dano/desvio: essa animação nunca decide dano
+// sozinha, ela só atrasa VISUALMENTE o "aplicarHp"/"efeitoImpacto" que já veio
+// pronto da resposta do RPC, pra sincronizar com a chegada do golpe.
+// NERF DE VELOCIDADE (pedido: "muito rápida, quase impossível desviar"):
+// era 460ms (quase instantâneo) -> agora 820ms. Ainda ágil, só dá tempo de reagir.
+const DURACAO_PROJETIL_MS = 820;
 function dispararProjetil(gifFile, atacanteEl, alvoEl, aoChegar) {
   const stage = document.getElementById('battle-stage');
   if (!stage || !atacanteEl || !alvoEl || !gifFile) { aoChegar && aoChegar(); return; }
@@ -1821,16 +1845,30 @@ function dispararProjetil(gifFile, atacanteEl, alvoEl, aoChegar) {
   }
 
   const origem = centroRelativoAoPalco(atacanteEl);
+  // Ponto de controle da curva: acima do meio do caminho (arco leve, tipo
+  // "lançamento em parábola"), não uma linha reta chapada.
+  const destinoInicial = centroRelativoAoPalco(alvoEl);
+  const ALTURA_CURVA = 70;
+  const meioX = (origem.x + destinoInicial.x) / 2;
+  const meioY = Math.min(origem.y, destinoInicial.y) - ALTURA_CURVA;
+
+  // Se o alvo está à esquerda de quem atacou, espelha o gif horizontalmente —
+  // sem isso a skill "olha" pro lado errado (o que estava saindo engraçado,
+  // como se o personagem usasse a skill ao contrário).
+  if (destinoInicial.x < origem.x) img.style.transform = 'scaleX(-1)';
+
   let terminou = false;
   const t0 = performance.now();
 
   function passo(agora) {
     if (terminou) return;
     const t = Math.min(1, (agora - t0) / DURACAO_PROJETIL_MS);
-    // recalcula o alvo a cada frame -> leve autoguiado (o alvo pode ter se mexido)
+    // recalcula o alvo a cada frame -> leve autoguiado (o alvo pode ter se mexido),
+    // mas mantém a curva (Bézier quadrática) em vez de ir reto.
     const destino = centroRelativoAoPalco(alvoEl);
-    const x = origem.x + (destino.x - origem.x) * t;
-    const y = origem.y + (destino.y - origem.y) * t;
+    const umMenosT = 1 - t;
+    const x = umMenosT * umMenosT * origem.x + 2 * umMenosT * t * meioX + t * t * destino.x;
+    const y = umMenosT * umMenosT * origem.y + 2 * umMenosT * t * meioY + t * t * destino.y;
     proj.style.transform = `translate(${x}px, ${y}px)`;
     if (t < 1) {
       requestAnimationFrame(passo);
@@ -1880,43 +1918,59 @@ async function usarSkill(n) {
 // Vídeo da Ultimate — reaproveita o mesmo padrão de arquivo já usado na batalha
 // dos bosses (Ultimate{N}.mp4, ver dispararCutsceneUltimate em batalha.js) em vez
 // de criar um sistema novo. Diferença proposital pro PvP: aqui NÃO pausamos o
-// jogo nem escondemos o HUD (os dois jogadores continuam jogando em tempo real),
-// é só uma camada visual por cima do palco que some sozinha quando o vídeo acaba
-// (ou depois de um tempo máximo, caso o vídeo falhe/não exista pra aquele id).
+// jogo (os dois jogadores continuam em tempo real por trás do vídeo) e tem
+// botão de pular — se qualquer um dos dois pular, fecha pros dois.
+let finalizarVideoUltimateAtual = null;
 function mostrarVideoUltimatePvp(ultimateId) {
   const overlay = document.getElementById('ultimate-video-overlay');
   const video = document.getElementById('ultimate-video-pvp');
   if (!overlay || !video) return;
+
+  // se já tinha um vídeo tocando (não deveria, mas por segurança), fecha antes
+  if (finalizarVideoUltimateAtual) finalizarVideoUltimateAtual(true);
+
   const numero = String(ultimateId || '').replace('Ultimate', '') || '7';
   const arquivo = 'Ultimate' + numero + '.mp4';
 
   let terminou = false;
-  const finalizar = () => {
+  const finalizar = (semAvisar) => {
     if (terminou) return;
     terminou = true;
+    finalizarVideoUltimateAtual = null;
     overlay.classList.remove('ativo');
-    setTimeout(() => overlay.classList.add('hidden'), 200);
+    setTimeout(() => overlay.classList.add('hidden'), 180);
     video.onended = null;
     video.onerror = null;
     video.pause();
     video.removeAttribute('src');
     if (typeof window.restoreBossMusic === 'function') window.restoreBossMusic();
+    // avisa o outro lado só quando EU fechei de verdade (clique no pular),
+    // não quando eu estou fechando por TER RECEBIDO o aviso do outro lado
+    if (!semAvisar && matchChannel) matchChannel.send({ type: 'broadcast', event: 'ultimateskip', payload: {} });
   };
+  finalizarVideoUltimateAtual = finalizar;
 
-  video.onerror = finalizar; // arquivo não existe pra essa ultimate -> some sem travar nada
-  video.onended = finalizar;
+  video.onerror = () => finalizar();
+  video.onended = () => finalizar();
   video.src = arquivo;
   overlay.classList.remove('hidden');
   requestAnimationFrame(() => overlay.classList.add('ativo'));
   if (typeof window.duckBossMusic === 'function') window.duckBossMusic();
   const promessa = video.play();
-  if (promessa && promessa.catch) promessa.catch(finalizar);
+  if (promessa && promessa.catch) promessa.catch(() => finalizar());
 
   // trava de segurança: nunca fica travado na tela nem impede outras ações —
-  // se o vídeo não terminar sozinho em 4s (arquivo corrompido, navegador estranho
-  // no celular etc.), força o fim.
-  setTimeout(finalizar, 4000);
+  // se o vídeo não terminar sozinho em 6s (arquivo grande/corrompido, navegador
+  // estranho no celular etc.), força o fim sem travar a partida.
+  setTimeout(() => finalizar(), 6000);
 }
+
+// Se o oponente (ou eu, em outra aba) pulou o vídeo, fecha aqui também sem
+// mandar um segundo aviso de volta (senão vira ping-pong de broadcast).
+function receberSkipVideoUltimate() {
+  if (finalizarVideoUltimateAtual) finalizarVideoUltimateAtual(true);
+}
+
 
 let ultimateEmUso = false;
 async function usarUltimate() {
