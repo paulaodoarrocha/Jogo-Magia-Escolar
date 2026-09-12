@@ -573,13 +573,13 @@ async function retomarPartidaAtiva(matchId, tentativa) {
     // A tabela "Player" só permite (via RLS) cada um ler a própria linha — buscar direto
     // aqui pra pegar o nome/avatar do OPONENTE sempre voltava vazio, e por isso ele
     // aparecia como "Oponente" sem foto. Por isso usamos a RPC pública abaixo pro oponente.
-    const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
+    const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).then(undefined, () => ({ data: null }));
     const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
     meuPlayerArena = meuPlayer || null;
     oponentePlayerArena = oponentePlayer || null;
     oponentePerfilArena = oponentePerfil || null;
 
-    const { data: resolvido } = await sb.rpc('pvp_resolver_imagens', { p_match: matchId }).catch(() => ({ data: null }));
+    const { data: resolvido } = await sb.rpc('pvp_resolver_imagens', { p_match: matchId }).then(undefined, () => ({ data: null }));
     cenarioFinal = resolvido?.imagem_final || match.imagem_final || CENARIOS_PVP[0];
 
     entrarArena();
@@ -636,10 +636,10 @@ function tratarNovaLinhaPvp(match) {
 }
 
 async function mostrarConvitePvp(match) {
-  const { data: desafiante } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: match.jogador1 }).catch(() => ({ data: null }));
+  const { data: desafiante } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: match.jogador1 }).then(undefined, () => ({ data: null }));
   const nome = desafiante?.username || 'Um jogador';
   const aceitou = confirm(`${nome} te desafiou para um combate!\n\nDeseja aceitar?`);
-  const { data, error } = await sb.rpc('pvp_responder_desafio', { p_match: match.id, p_aceitar: aceitou }).catch(e => ({ error: e }));
+  const { data, error } = await sb.rpc('pvp_responder_desafio', { p_match: match.id, p_aceitar: aceitou }).then(undefined, e => ({ error: e }));
   if (error) { console.error('Falha ao responder desafio:', error); return; }
   if (data?.aceito) {
     matchAtual = match.id;
@@ -682,7 +682,7 @@ async function carregarPerfilPvp() {
   // pvp_obter_perfil garante (cria se preciso) e devolve o pvp_profile do usuário,
   // sem nenhum efeito colateral de matchmaking (ao contrário de pvp_entrar_fila,
   // que exige boss5 derrotado e insere o jogador na fila de busca).
-  await sb.rpc('pvp_obter_perfil').catch(()=>{});
+  await sb.rpc('pvp_obter_perfil').then(undefined, ()=>{});
   await refreshPerfil();
 }
 
@@ -1249,7 +1249,7 @@ async function mostrarVs(matchId) {
     const { data: oponentePerfil } = await sb.from('pvp_profile').select('rank, nivel_pvp, dano_upgrade_nivel, boss_equipado').eq('user_id', oponenteId).maybeSingle();
     // Idem: "Player" só é legível pelo próprio dono via RLS, então o nome/foto do
     // oponente precisam vir por uma RPC pública (senão some e cai no fallback "Oponente").
-    const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).catch(() => ({ data: null }));
+    const { data: oponentePlayer } = await sb.rpc('pvp_dados_publicos_jogador', { p_user_id: oponenteId }).then(undefined, () => ({ data: null }));
     const { data: meuPlayer } = await sb.from('Player').select('username, avatar_emoji, avatar_image_url, name_color').eq('user_id', userId).maybeSingle();
 
     meuPlayerArena = meuPlayer || null;
@@ -1310,8 +1310,8 @@ let cenarioFinal = null;
 async function entrarNaArenaComCenarioAutomatico() {
   try {
     const cenarioSorteado = CENARIOS_PVP[Math.floor(Math.random() * CENARIOS_PVP.length)];
-    await sb.rpc('pvp_escolher_imagem', { p_match: matchAtual, p_imagem: cenarioSorteado }).catch(() => {});
-    const { data } = await sb.rpc('pvp_resolver_imagens', { p_match: matchAtual }).catch(() => ({ data: null }));
+    await sb.rpc('pvp_escolher_imagem', { p_match: matchAtual, p_imagem: cenarioSorteado }).then(undefined, () => {});
+    const { data } = await sb.rpc('pvp_resolver_imagens', { p_match: matchAtual }).then(undefined, () => ({ data: null }));
     cenarioFinal = data?.imagem_final || cenarioSorteado;
     entrarArena();
   } catch (e) {
@@ -1501,7 +1501,7 @@ function agendarChecagemAbandono() {
   clearTimeout(abandonoTimer);
   abandonoTimer = setTimeout(async () => {
     if (!matchAtual) return;
-    const { error } = await sb.rpc('pvp_declarar_abandono', { p_match: matchAtual }).catch(e => ({ error: e }));
+    const { error } = await sb.rpc('pvp_declarar_abandono', { p_match: matchAtual }).then(undefined, e => ({ error: e }));
     if (!error) {
       document.getElementById('arena-log').textContent = 'Oponente desconectou — vitória!';
     }
@@ -1658,7 +1658,7 @@ window.confirmarDesistencia = confirmarDesistencia;
 async function desistirPartida() {
   clearInterval(arenaPollTimer);
   const rankAntes = perfilAtual?.rank;
-  const { data, error } = await sb.rpc('pvp_desistir', { p_match: matchAtual }).catch(e => ({ error: e }));
+  const { data, error } = await sb.rpc('pvp_desistir', { p_match: matchAtual }).then(undefined, e => ({ error: e }));
   if (error) { alert('Erro: ' + (error.message || 'não foi possível desistir')); return; }
   sairDaArenaRealtime();
   if (typeof window.stopBossMusic === 'function') window.stopBossMusic();
@@ -1690,7 +1690,7 @@ async function finalizarPartida(vencedor) {
   if (euGanhei) { if (typeof window.playVictorySound === 'function') window.playVictorySound(); }
   else { if (typeof window.playDefeatSound === 'function') window.playDefeatSound(); }
   const rankAntes = perfilAtual?.rank;
-  await sb.rpc('pvp_registrar_resultado', { p_match: matchAtual, p_vencedor: vencedor }).catch(()=>({data:null}));
+  await sb.rpc('pvp_registrar_resultado', { p_match: matchAtual, p_vencedor: vencedor }).then(undefined, ()=>({data:null}));
   document.getElementById('arena').classList.add('hidden');
   tocarMusicaLobbyPvp();
   matchJaAceito = false;
