@@ -98,22 +98,29 @@
   /* ===== ARENA DE BATALHA ===== */
   .arena{position:fixed;inset:0;background:linear-gradient(180deg,#0e1230,#04050b);z-index:40;display:flex;
     flex-direction:column}
-  .hp-zone{padding:14px;display:flex;flex-direction:column;gap:10px}
-  .hp-line{display:flex;align-items:center;gap:8px}
+  .hp-zone{padding:14px;display:flex;flex-direction:row;gap:10px;align-items:center}
+  .hp-line{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+  .hp-line.foe{flex-direction:row-reverse}
   .hp-avatar{width:34px;height:34px;border-radius:50%;background:#12142a;border:2px solid var(--rank-color,var(--grad2));
     display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;overflow:hidden}
   .hp-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
   .hp-avatar.foe{border-color:var(--danger)}
-  .hp-info{flex:1}
-  .hp-name{font-size:12px;font-weight:700;display:flex;justify-content:space-between}
+  .hp-info{flex:1;min-width:0}
+  .hp-name{font-size:12px;font-weight:700;display:flex;justify-content:space-between;gap:4px}
+  .hp-line.foe .hp-name{flex-direction:row-reverse}
   .hp-bar-wrap{height:12px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:3px}
-  .hp-bar-fill{height:100%;border-radius:8px;transition:width .3s}
-  .hp-bar-fill.me{background:linear-gradient(90deg,#39ff8a,#1ad1c9)}
-  .hp-bar-fill.foe{background:linear-gradient(90deg,#ff5c6c,#ff2d2d)}
+  .hp-bar-fill{height:100%;border-radius:8px;transition:width .3s;position:relative}
+  .hp-bar-fill.me{background:linear-gradient(90deg,#39ff8a,#1ad1c9);box-shadow:0 0 10px rgba(57,255,138,.55)}
+  .hp-bar-fill.foe{background:linear-gradient(90deg,#ff5c6c,#ff2d2d);box-shadow:0 0 10px rgba(255,45,45,.55)}
+  .hp-bar-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+    width:40%;animation:hpShine 2.4s ease-in-out infinite}
+  @keyframes hpShine{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}
   .battle-mid{flex:1;display:flex;flex-direction:column;min-height:0}
   .battle-stage{position:relative;flex:1;display:flex;align-items:center;justify-content:space-between;
     padding:10px 22px;overflow:hidden;
-    background:radial-gradient(ellipse at 50% 60%, rgba(123,92,255,.16) 0%, rgba(6,7,15,0) 70%);}
+    background:radial-gradient(ellipse at 50% 60%, rgba(123,92,255,.16) 0%, rgba(6,7,15,0) 70%);
+    box-shadow:inset 0 0 60px rgba(66,239,255,.10);animation:vinhetaPulso 4s ease-in-out infinite}
+  @keyframes vinhetaPulso{0%,100%{box-shadow:inset 0 0 60px rgba(66,239,255,.10)}50%{box-shadow:inset 0 0 90px rgba(123,92,255,.18)}}
   .battle-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.55}
   .battle-particles::before,.battle-particles::after{content:"";position:absolute;width:160%;height:160%;left:-30%;top:-30%;
     background:repeating-radial-gradient(circle at 20% 30%, rgba(123,92,255,.10) 0 2px, transparent 2px 60px),
@@ -163,11 +170,15 @@
     border:1px solid rgba(255,255,255,.25)}
   .skill-btn.ult{background:linear-gradient(135deg,#ff9d1a,#ff2d2d)}
   .skill-btn.ult .skill-icon{border-color:rgba(255,255,255,.5)}
+  .skill-btn.em-cooldown{opacity:.55;filter:grayscale(.4)}
+  .skill-cd{position:absolute;top:6px;right:8px;font-size:11px;font-weight:900;color:#42efff;
+    text-shadow:0 0 6px rgba(66,239,255,.8);pointer-events:none}
   .skill-btn:disabled{opacity:.35}
   .skill-btn.usando{animation:skillPop .35s ease}
   @keyframes skillPop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
-  .btn-escudo{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.08);border:1px solid var(--border);
-    color:#fff;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:700}
+  .btn-escudo{position:absolute;right:14px;bottom:86px;background:rgba(255,255,255,.08);border:1px solid var(--border);
+    color:#fff;border-radius:14px;padding:10px 14px;font-size:12px;font-weight:700;z-index:5;
+    box-shadow:0 4px 14px rgba(0,0,0,.35)}
   .btn-escudo:disabled{opacity:.4}
   .btn-escudo.ativo{background:linear-gradient(135deg,#42efff,#7b5cff);border-color:transparent;box-shadow:0 0 16px rgba(66,239,255,.6)}
   .fighter.escudo-ativo .fighter-portrait{box-shadow:0 0 22px 6px rgba(66,239,255,.7)!important}
@@ -391,7 +402,7 @@
         <div class="hp-bar-wrap"><div class="hp-bar-fill me" id="arena-hp-me" style="width:100%"></div></div>
       </div>
     </div>
-    <div class="hp-line">
+    <div class="hp-line foe">
       <div class="hp-avatar" id="arena-avatar-foe">🧙</div>
       <div class="hp-info">
         <div class="hp-name"><span id="arena-nome-foe">Oponente</span><span id="arena-hp-foe-txt">1000/1000</span></div>
@@ -425,9 +436,11 @@
     <button class="skill-btn" id="btn-skill1" onclick="usarSkill(1)">
       <img class="skill-icon" id="icon-skill1" src="RelampagoSkill1.gif" alt="" onerror="this.style.display='none'">
       SKILL 1
+      <span class="skill-cd" id="cd-skill1"></span>
     </button>
     <button class="skill-btn" id="btn-skill2" onclick="usarSkill(2)">
       <img class="skill-icon" id="icon-skill2" src="RaioSkill2.gif" alt="" onerror="this.style.display='none'">
+      <span class="skill-cd" id="cd-skill2"></span>
       SKILL 2
     </button>
     <button class="skill-btn ult" id="btn-ultimate" onclick="usarUltimate()">
@@ -1304,7 +1317,7 @@ function mostrarApresentacao() {
   }, 1500);
 }
 
-const CENARIOS_PVP = ['Arlan','Marcos','Miguel','Carlos','Lucas','Davi','Arthur','Vinicius','GuilermeChucro','PaulaoDoPneu'];
+const CENARIOS_PVP = ['Boss1Img','Boss2Img','Boss3Img','Boss4Img','Boss5Img','Boss6Img','Boss7Img','Boss8Img','Boss9Img','Boss10Img'];
 let cenarioFinal = null;
 
 async function entrarNaArenaComCenarioAutomatico() {
@@ -1343,8 +1356,24 @@ let ultimoSkill2Me = null, ultimoSkill2Foe = null, matchChannel = null;
 
 // ===== MOVIMENTO LATERAL =====
 let posMe = 0, posFoe = 0, moverLoopTimer = null;
-const MOVE_LIMITE = 70; // px máximo pra cada lado
 const ESCUDO_COOLDOWN_MS = 6000; // precisa bater com o cooldown definido em pvp_usar_escudo
+
+// Limite de movimento agora é calculado com base no tamanho real da tela/palco,
+// então o jogador pode andar até a borda visível em qualquer aparelho (antes era
+// um valor fixo de 70px, curto demais em telas grandes e não usava o espaço todo).
+function calcularLimiteMovimento() {
+  const stage = document.getElementById('battle-stage');
+  const fighter = document.getElementById('fighter-me');
+  if (!stage || !fighter) return 70;
+  const larguraPalco = stage.clientWidth;
+  const larguraLutador = fighter.offsetWidth || 64;
+  // metade do palco menos meia largura do lutador menos uma margem de segurança,
+  // pra ele poder ir até quase a borda sem sair da tela
+  const limite = (larguraPalco / 2) - (larguraLutador / 2) - 12;
+  return Math.max(40, limite);
+}
+let MOVE_LIMITE = 70;
+window.addEventListener('resize', () => { MOVE_LIMITE = calcularLimiteMovimento(); });
 
 function aplicarPosicoes() {
   const meEl = document.getElementById('fighter-me');
@@ -1435,8 +1464,14 @@ function entrarArena() {
   hpFoeMax = 1000 + (oponentePerfilArena?.dano_upgrade_nivel || 0) * 25;
   hpMe = hpMeMax; hpFoe = hpFoeMax;
   ultimoSkill2Me = null; ultimoSkill2Foe = null;
+  cdSkill1At = 0; cdSkill2At = 0;
+  const lblCd1 = document.getElementById('cd-skill1'); if (lblCd1) lblCd1.textContent = '';
+  const lblCd2 = document.getElementById('cd-skill2'); if (lblCd2) lblCd2.textContent = '';
+  document.getElementById('btn-skill1')?.classList.remove('em-cooldown');
+  document.getElementById('btn-skill2')?.classList.remove('em-cooldown');
   posMe = 0; posFoe = 0;
   document.getElementById('arena').classList.remove('hidden');
+  requestAnimationFrame(() => { MOVE_LIMITE = calcularLimiteMovimento(); });
   const cenarioImg = cenarioFinal || CENARIOS_PVP[0];
   document.getElementById('arena').style.backgroundImage =
     `linear-gradient(180deg, rgba(6,7,15,.55), rgba(6,7,15,.88)), url('${cenarioImg}.png')`;
@@ -1593,9 +1628,50 @@ function efeitoImpacto(lado, valor, tipo) {
   setTimeout(() => pop.remove(), 850);
 }
 
+// Cooldowns visuais das skills — os mesmos tempos usados de verdade no servidor
+// (pvp_usar_skill): 1.2s pra skill1, 3s pra skill2. O servidor continua sendo quem
+// valida de fato (bloqueia com "em_cooldown" se tentar antes da hora); isso aqui é
+// só o botão mostrando quanto falta, que antes não existia nenhum feedback visual.
+const COOLDOWN_SKILL1_PVP_MS = 1200;
+const COOLDOWN_SKILL2_PVP_MS = 3000;
+let cdSkill1At = 0, cdSkill2At = 0;
+
+function iniciarCooldownVisual(n, duracaoMs) {
+  const btn = document.getElementById(n === 1 ? 'btn-skill1' : 'btn-skill2');
+  const label = document.getElementById(n === 1 ? 'cd-skill1' : 'cd-skill2');
+  if (!btn || !label) return;
+  const fim = Date.now() + duracaoMs;
+  if (n === 1) cdSkill1At = fim; else cdSkill2At = fim;
+  btn.classList.add('em-cooldown');
+  const tick = () => {
+    const restante = fim - Date.now();
+    if (restante <= 0) {
+      btn.classList.remove('em-cooldown');
+      label.textContent = '';
+      return;
+    }
+    label.textContent = (restante / 1000).toFixed(1) + 's';
+    requestAnimationFrame(tick);
+  };
+  tick();
+}
+
 async function usarSkill(n) {
+  // já em cooldown no cliente? nem tenta chamar o servidor
+  const cdAtivoAte = n === 1 ? cdSkill1At : cdSkill2At;
+  if (Date.now() < cdAtivoAte) return;
+
   const { data, error } = await sb.rpc('pvp_usar_skill', { p_match: matchAtual, p_tipo: 'skill'+n });
-  if (error) { document.getElementById('arena-log').textContent = error.message === 'em_cooldown' ? 'Skill em recarga...' : 'Ação inválida'; return; }
+  if (error) {
+    if (error.message === 'em_cooldown') {
+      document.getElementById('arena-log').textContent = 'Skill em recarga...';
+      iniciarCooldownVisual(n, n === 1 ? COOLDOWN_SKILL1_PVP_MS : COOLDOWN_SKILL2_PVP_MS);
+    } else {
+      document.getElementById('arena-log').textContent = 'Ação inválida';
+    }
+    return;
+  }
+  iniciarCooldownVisual(n, n === 1 ? COOLDOWN_SKILL1_PVP_MS : COOLDOWN_SKILL2_PVP_MS);
   aplicarHp(souJogador1 ? data.hp1 : data.hp2, souJogador1 ? data.hp2 : data.hp1);
   if (n === 2 && typeof window.playSfx === 'function') window.playSfx('Impacto.mp3', 0.5);
   document.getElementById('arena-log').textContent = data.desviou ? 'Oponente desviou parte do golpe!' : `Você usou Skill ${n}!`;
