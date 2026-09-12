@@ -87,12 +87,12 @@
       Ultimate2: 'MarcosUltimate.mp3',
       Ultimate3: 'MiguelUltimate.mp3',
       Ultimate4: 'CarlosUltimate.mp3',
-      Ultimate5: 'LucasUltimate.mp3',
+      Ultimate5: 'lucasUltimate.mp3',
       Ultimate6: 'DaviUltimate.mp3',
       Ultimate7: 'ArthurUltimate.mp3',
       Ultimate8: 'ViniciusUltimate.mp3',
       Ultimate9: 'GuilermeUltimate.mp3',
-      Ultimate10: 'PauloUltimate.mp3'
+      Ultimate10: 'pauloUltimate.mp3'
     };
 
     const file = files[String(ultimateId)];
