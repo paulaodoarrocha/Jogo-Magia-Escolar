@@ -20,26 +20,27 @@ const skill2Defs = {
   EstrelaSkill2:{tipo:"esfera",largura:261,altura:261,velocidade:7.11,dano:4100,gif:"EstrelaSkill2.gif"},
   BlackholeSkill2:{tipo:"feixe",comprimento:327,largura:162,dano:5900,gif:"BlackholeSkill2.gif"}
 };
-const COOLDOWN_SKILL1_PLAYER=900;
+const COOLDOWN_SKILL1_PLAYER=450; // dobrado a pedido (era 900)
 // Cooldown por skill1 do player: as 6 mais raras (maior dano) sobem pra 1s,
 // as 2 comuns (Relampago e Som) continuam com o valor padrão acima. Nada
 // mais muda (dano, velocidade, cooldown do inimigo/boss seguem iguais).
 const cooldownSkill1Player={
   RelampagoSkill1:COOLDOWN_SKILL1_PLAYER,
   SomSkill1:COOLDOWN_SKILL1_PLAYER,
-  CirculoSkill1:1000,
-  VentoSkill1:1000,
-  AguaSkill1:1000,
-  VenenoSkill1:1000,
-  SolSkill1:1000,
-  MeteoroSkill1:1000
+  CirculoSkill1:500,
+  VentoSkill1:500,
+  AguaSkill1:500,
+  VenenoSkill1:500,
+  SolSkill1:500,
+  MeteoroSkill1:500
 };
 function cooldownSkill1Atual(){
   const eq=inventarioAtual&&inventarioAtual.equipados?inventarioAtual.equipados.skill1:null;
   return (eq&&cooldownSkill1Player[eq])?cooldownSkill1Player[eq]:COOLDOWN_SKILL1_PLAYER;
 }
 const COOLDOWN_SKILL1_INIMIGO=1650;
-const cooldownSkill2Player={RaioSkill2:4200,GeloSkill2:4600,FuracaoSkill2:4800,MetalSkill2:5200,MagmaSkill2:5600,AbismoSkill2:6000,MeteoroSkill2:6600,SolSkill2:7100,EstrelaSkill2:7700,BlackholeSkill2:8300};
+// Cooldown do skill2 do player também dobrado (metade do valor original) — só o do player, inimigo/boss não muda.
+const cooldownSkill2Player={RaioSkill2:2100,GeloSkill2:2300,FuracaoSkill2:2400,MetalSkill2:2600,MagmaSkill2:2800,AbismoSkill2:3000,MeteoroSkill2:3300,SolSkill2:3550,EstrelaSkill2:3850,BlackholeSkill2:4150};
 const cooldownSkill2Inimigo={RaioSkill2:6100,GeloSkill2:6500,FuracaoSkill2:6900,MetalSkill2:7300,MagmaSkill2:7800,AbismoSkill2:8000,MeteoroSkill2:8700,SolSkill2:8900,EstrelaSkill2:9300,BlackholeSkill2:10000};
 // ===== BALANCEAMENTO (revisão) =====
 // 1) VIDA dos bosses 6-10 crescia ~1,77-1,88x por tier, acumulando valores extremos
@@ -410,7 +411,7 @@ function prepararFundoSemPreto() {
 
 let x, y, inimigoX, inimigoY;
 let velX = 0, velY = 0;
-const velMax = 2.9; // dobrado a pedido (era 1.45)
+const velMax = 1.885; // +30% a pedido (era 1.45 original; 2.9 doubled foi revertido)
 const aceleracao = 0.24;
 
 let inimigoVelX = 0, inimigoVelY = 0;
@@ -704,7 +705,7 @@ function desenharBatalha() {
   const imagemBoss = imagensBoss[Number(bossAtual?.id)] || (bossAtual?.nome ? bossAtual.nome + '.jpg' : 'Arlan.jpg');
   // Tamanho individual por boss (presença maior nos avançados). Não altera posição/lógica,
   // só o width/height passado pro posicionarSprite — fallback pro tamanho padrão se faltar.
-  const bossTamanhos = { 1:150, 2:158, 3:165, 4:172, 5:180, 6:190, 7:200, 8:215, 9:235, 10:260 };
+  const bossTamanhos = { 1:150, 2:158, 3:165, 4:172, 5:180, 6:190, 7:200, 8:430, 9:235, 10:260 };
   const tamanhoBossAtual = bossTamanhos[Number(bossAtual?.id)] || TAMANHO_BOSS;
   const bossSprite = posicionarSprite("inimigo", imagemBoss, inimigoX, inimigoY, tamanhoBossAtual, tamanhoBossAtual, "sprite-boss", x < inimigoX);
   if (bossSprite && bossSprite.tagName === "IMG") {
@@ -800,7 +801,7 @@ function atualizarMovimentoInimigo(deltaSegundos) {
 
   const dx = alvoX - inimigoX, dy = alvoY - inimigoY;
   const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-  const velInimigoMax = 1.225;
+  const velInimigoMax = 1.5925; // +30% a pedido (era 1.225)
 
   let alvoVelX = 0, alvoVelY = 0;
   if (dist > tolerancia) { alvoVelX = (dx / dist) * velInimigoMax; alvoVelY = (dy / dist) * velInimigoMax; }
@@ -842,8 +843,8 @@ function recalcularCargasUltimate() {
 
 function moverProjetil(poder, dt60) {
   const fator = Number.isFinite(dt60) ? dt60 : 1;
-  poder.x += poder.dirX * poder.velocidade * 0.5 * fator;
-  poder.y += poder.dirY * poder.velocidade * 0.5 * fator;
+  poder.x += poder.dirX * poder.velocidade * 1.0 * fator; // dobrado a pedido (era 0.5)
+  poder.y += poder.dirY * poder.velocidade * 1.0 * fator;
 }
 
 function aplicarAutoguiado(poder, alvoX, alvoY, forca, dt60) {
@@ -1016,7 +1017,7 @@ function atualizarBatalha(timestamp) {
   poderes.forEach(function (p) { aplicarAutoguiado(p, inimigoX, inimigoY, p.autoguiado, dt60); moverProjetil(p, dt60); });
   poderesInimigo.forEach(function (p) { aplicarAutoguiado(p, x, y, p.autoguiado, dt60); moverProjetil(p, dt60); });
 
-  feixesAtivos.forEach(function (f) { if (f.comprimentoAtual < f.comprimentoMax) f.comprimentoAtual += 23.4 * dt60; });
+  feixesAtivos.forEach(function (f) { if (f.comprimentoAtual < f.comprimentoMax) f.comprimentoAtual += 46.8 * dt60; }); // dobrado a pedido
 
   poderes = poderes.filter(function (p) {
     if (distanciaEntre(p.x, p.y, inimigoX, inimigoY) < 60) {
