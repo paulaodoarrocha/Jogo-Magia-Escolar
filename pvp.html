@@ -1170,9 +1170,11 @@ async function retomarPartidaExistente() {
       matchAtual = partidaAtiva.id;
       await retomarPartidaAtiva(matchAtual);
     } else {
-      // Servidor disse que havia partida ativa mas ela já não existe mais (corrida entre abas/telas) — só nesse caso recarrega.
-      alert('Você já tem uma partida em andamento!');
-      location.reload();
+      // Servidor disse que havia partida ativa, mas ela já foi resolvida (cancelada
+      // por inatividade ou finalizada) entre a checagem dele e essa consulta — não é
+      // um erro real, é uma corrida inofensiva. Em vez de assustar com alerta e
+      // recarregar a página à toa, tenta entrar na fila de novo direto.
+      await iniciarBusca();
     }
   } catch (e) {
     // Nunca falhar em silêncio aqui — sem isso o clique em BATALHA não fazia nada visível.
