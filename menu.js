@@ -14,7 +14,7 @@ const bosses = [
 const bossStats={
   1:{vida:1900,moedas:350,diamantes:2},2:{vida:4700,moedas:490,diamantes:4},3:{vida:9800,moedas:890,diamantes:8},
   4:{vida:19000,moedas:2050,diamantes:14},5:{vida:35000,moedas:4500,diamantes:24},6:{vida:57750,moedas:9600,diamantes:40},
-  7:{vida:93500,moedas:19500,diamantes:65},8:{vida:147500,moedas:39000,diamantes:100},9:{vida:220000,moedas:89000,diamantes:180},10:{vida:312000,moedas:255000,diamantes:350}
+  7:{vida:93500,moedas:19500,diamantes:65},8:{vida:147500,moedas:39000,diamantes:100},9:{vida:185000,moedas:89000,diamantes:180},10:{vida:205000,moedas:255000,diamantes:350}
 };
 // Rótulos com identidade de "inimigo perigoso" (boss não é item). cls/color mantidos
 // intocados — são o que o CSS usa pra colorir os cards de boss, então nada visual quebra.
@@ -46,24 +46,40 @@ const personagens = [
 {id:'PeidaLeiteBanner',nome:'PeidaLeite',tier:'Supremo',raridade:'supremo',arquivo:'PeidaLeiteBanner.webp',peso:1.4,buff:'+85% dano • +28% resistência • +24% recarga • +28% Ultimate • +10% crítico'},
 {id:'KauanBanner',nome:'Kauan',tier:'Exclusivo',raridade:'exclusivo',arquivo:'KauanBanner.mp4',peso:1,buff:'+105% dano • +32% resistência • +27% recarga • +34% Ultimate • +12% crítico'},
 {id:'PaulaoDoPneuBanner',nome:'PaulaoDoPneu',tier:'Transcendente',raridade:'transcendente',arquivo:'PaulaoDoPneuBanner.jpg',imagem:'PaulaoDoPneuBanner.jpg',peso:.3,buff:'+125% dano • +36% resistência • +30% recarga • +40% Ultimate • +14% crítico'},
+// Versões vendidas na loja de troféus do PvP: mesmo visual/raridade do personagem real,
+// mas com buff de UM TIER ABAIXO (nunca igual ao personagem de verdade) — pra não virar
+// um jeito garantido e mais barato de conseguir o mesmo poder que sair no banner.
+// ID próprio (sufixo "Pvp") pra nunca se misturar/fundir com as cópias tiradas de verdade.
+{id:'JuliaBannerPvp',nome:'Julia',tier:'Celestial',raridade:'celestial',arquivo:'JuliaBanner.webp',bannerImagem:'JuliaBanner.jpg',peso:0,buff:'+52% dano • +20% resistência • +18% recarga • +20% Ultimate • +6% crítico'},
+{id:'PeidaLeiteBannerPvp',nome:'PeidaLeite',tier:'Supremo',raridade:'supremo',arquivo:'PeidaLeiteBanner.webp',peso:0,buff:'+68% dano • +24% resistência • +21% recarga • +24% Ultimate • +8% crítico'},
+{id:'KauanBannerPvp',nome:'Kauan',tier:'Exclusivo',raridade:'exclusivo',arquivo:'KauanBanner.mp4',peso:0,buff:'+85% dano • +28% resistência • +24% recarga • +28% Ultimate • +10% crítico'},
+{id:'PaulaoDoPneuBannerPvp',nome:'PaulaoDoPneu',tier:'Transcendente',raridade:'transcendente',arquivo:'PaulaoDoPneuBanner.jpg',imagem:'PaulaoDoPneuBanner.jpg',peso:0,buff:'+105% dano • +32% resistência • +27% recarga • +34% Ultimate • +12% crítico'},
 {id:'PetHunge',nome:'Beijo',tier:'Hunge',raridade:'hunge',arquivo:'Beijo.mp4',imagem:'Beijo.png',bannerImagem:'Beijo.png',peso:0,buff:'DANO = melhor personagem equipado +10% • +5% defesa • +5% recarga de Ultimate • +20% moedas • +5% diamantes'},
 {id:'ChucroHunge',nome:'Chucro',tier:'Hunge',raridade:'hunge',arquivo:'Chucro.mp4',imagem:'Chucro.png',bannerImagem:'Chucro.png',peso:0,buff:'DANO = melhor personagem equipado +15% • +5% defesa • +10% recarga de Ultimate • +10% moedas • +10% diamantes'}
 ];
 const pesoTotalBanner = personagens.reduce((total, p) => total + p.peso, 0);
 personagens.forEach((p) => { p.chance = p.peso / pesoTotalBanner; });
+// Personagens comprados na loja de troféus do PvP (sufixo "Pvp" no id) continuam existindo
+// aqui só pra loja do PvP conseguir validar/equipar/exibir buffs deles. Mas eles nunca devem
+// aparecer nas telas do jogo principal (Info do Banner / Personagens Obtidos): não têm imagem
+// própria mapeada em bannerStaticSrc(), então caíam no fallback 'BannerFoto.png' (a arte
+// genérica de divulgação com "GIRAR" e 4 rostos) — esse era o bug do card quebrado.
+// Este filtro NÃO mexe em weightedPick/fusão/equipar — só no que é LISTADO nessas 2 telas.
+const personagensPrincipais = personagens.filter((p) => !p.id.endsWith('Pvp'));
 const skills={
   skill1:[
     ['RelampagoSkill1','Relâmpago','iniciante',900,42],['SomSkill1','Som','aprendiz',2200,75],['CirculoSkill1','Círculo','adepto',6500,125],['VentoSkill1','Vento','especialista',17000,210],
     ['AguaSkill1','Água','mestre',45000,340],['VenenoSkill1','Veneno','graomestre',115000,520],['SolSkill1','Sol','arcano',320000,820],['MeteoroSkill1','Meteoro','primordial',800000,1250]
   ].map(x=>({id:x[0],nome:x[1],raridade:x[2],preco:x[3],dano:x[4],gif:x[0]+'.gif'})),
   skill2:[
-    // Preços recalculados (12/09) pra crescer numa proporção parecida com a do Skill1
-    // (~2.2x-2.5x por tier, igual skill1 cresce ~2.5x-2.9x), em vez da curva antiga que
-    // disparava nos 2 últimos itens (Sol e Estrela custavam 7x e 14x uma vitória do boss10).
-    // Dano (5º valor de cada linha) NÃO foi alterado, só o preço (4º valor).
-    ['RaioSkill2','Raio','bruto',1500,145],['GeloSkill2','Gelo','carregado',3800,290],['FuracaoSkill2','Furacão','explosivo',9000,480],['MetalSkill2','Metal','devastador',21000,760],
-    ['MagmaSkill2','Magma','cataclismico',48000,1100],['AbismoSkill2','Abismo','apocaliptico',110000,1650],['MeteoroSkill2','Meteoro','dimensional',250000,2250],['SolSkill2','Sol','estelar',550000,3000],
-    ['EstrelaSkill2','Estrela Astral','cosmico',950000,4000],['BlackholeSkill2','Blackhole','singularidade',0,5200]
+    // Preços renivelados (13/09) — usando as moedas que os bosses dão como régua.
+    // Cada tier custa ~7-9 vitórias do boss de tier equivalente (antes variava de
+    // ~5 até 20 vitórias dependendo do tier). Teto ficou igual ao teto da Skill1
+    // (~780k-800k) em vez de 2,8M — client (aqui) e servidor (RPC comprar_equipamento
+    // no Supabase) foram atualizados juntos, senão a loja mostra um preço e cobra outro.
+    ['RaioSkill2','Raio','bruto',1500,145],['GeloSkill2','Gelo','carregado',3300,290],['FuracaoSkill2','Furacão','explosivo',7200,480],['MetalSkill2','Metal','devastador',15500,790],
+    ['MagmaSkill2','Magma','cataclismico',34000,1200],['AbismoSkill2','Abismo','apocaliptico',74000,1750],['MeteoroSkill2','Meteoro','dimensional',162000,2350],['SolSkill2','Sol','estelar',355000,3100],
+    ['EstrelaSkill2','Estrela Astral','cosmico',780000,4500],['BlackholeSkill2','Blackhole','singularidade',0,6200]
   ].map(x=>({id:x[0],nome:x[1],raridade:x[2],preco:x[3],dano:x[4],gif:x[0]+'.gif'}))
 };
 const ultimateAudio = [
@@ -1010,7 +1026,7 @@ function renderBannerInfo(){
     </div>
 
     <div class="characters-grid banner-info-grid">
-      ${personagens.map(p => {
+      ${personagensPrincipais.map(p => {
         const peso = pesoEfetivo(p);
         const chance = totalPeso > 0 ? (peso / totalPeso) * 100 : 0;
         const temSorteAumentada = peso > Number(p.peso || 0);
@@ -1055,9 +1071,9 @@ function renderBannerInfo(){
 const dailyWheelRewards=[
 {id:'lucky',label:'🧪 Poção Lucky x1',chance:10,type:'potion',rarity:'raro',give:1},
 {id:'damage',label:'⚔️ Poção Damage x1',chance:5,type:'potion',rarity:'epico',give:1},
-{id:'coins500',label:'🪙 500 Moedas',chance:50,type:'coins',rarity:'comum',give:500},
-{id:'coins1000',label:'🪙 1000 Moedas',chance:20,type:'coins',rarity:'incomum',give:1000},
-{id:'coins2000',label:'🪙 2K Moedas',chance:10,type:'coins',rarity:'raro',give:2000},
+{id:'coins100',label:'🪙 100 Moedas',chance:50,type:'coins',rarity:'comum',give:100},
+{id:'coins500',label:'🪙 500 Moedas',chance:20,type:'coins',rarity:'incomum',give:500},
+{id:'coins1k',label:'🪙 1.000 Moedas',chance:10,type:'coins',rarity:'raro',give:1000},
 {id:'pet',label:'🐾 BEIJO',chance:1,type:'pet',rarity:'secreto',give:1},
 {id:'doubleCoins',label:'🪙 2x Moedas',chance:2,type:'coinsMultiplier',rarity:'epico',give:1},
 {id:'bonusSpin',label:'🎁 +1 Giro',chance:2,type:'bonusSpin',rarity:'raro',give:1}
@@ -1401,7 +1417,7 @@ function renderCharacters() {
   const total = contarPersonagensNoInventario();
   const ownedIds = [...new Set(
     inventario.possuidos.filter((id) =>
-      personagens.some((p) => p.id === id)
+      personagensPrincipais.some((p) => p.id === id)
     )
   )];
 
@@ -1454,7 +1470,7 @@ function renderCharacters() {
 
   c.innerHTML = `
     <div class="collection-head">
-      <div><b>PERSONAGENS OBTIDOS</b><span>${total}/${getInventoryMax()} cópias • ${ownedIds.length}/${personagens.length} tipos</span></div>
+      <div><b>PERSONAGENS OBTIDOS</b><span>${total}/${getInventoryMax()} cópias • ${ownedIds.length}/${personagensPrincipais.length} tipos</span></div>
       <div class="collection-toolbar-actions"><button class="small-btn best-equip-btn" onclick="equiparMelhores()">⭐ EQUIPAR MELHORES</button><button class="small-btn primary" onclick="show('tela-banner')">🎴 IR PARA O BANNER</button></div>
       <div class="fusion-toolbar">${fusionControls}</div>
     </div>
@@ -1825,7 +1841,14 @@ setInterval(renderPocoesAtivasHUD, 1000);
 window.renderPocoesAtivasHUD = renderPocoesAtivasHUD;
 
 function getEquippedCharacter() {
-  return personagens.find((personagem) => personagem.id === inventario.equipados.imagem) || null;
+  const idEquipado = inventario.equipados.imagem;
+  // Guarda de segurança: o campo de "equipado" é compartilhado com a loja do PvP
+  // (mesma coluna no servidor). Se o jogador equipou um pet ali (id termina em "Pvp"),
+  // isso NUNCA deve valer dano/resistência/recarga no jogo principal — tratamos como
+  // "nenhum personagem equipado" aqui, que é um estado que todo o resto do código já
+  // sabe lidar normalmente (personagem null). Não muda a lógica de equipar em si.
+  if (idEquipado && idEquipado.endsWith('Pvp')) return null;
+  return personagens.find((personagem) => personagem.id === idEquipado) || null;
 }
 function getBestBaseCharacter(){
   return [...new Set(inventario.possuidos)]
@@ -2279,7 +2302,7 @@ function renderInventory(tab = inventoryActiveTab) {
   const container = document.getElementById('inventario-conteudo');
   if (!container) return;
   const equipados = inventario.equipados || {};
-  const ownedCharacterIds = [...new Set(inventario.possuidos.filter((id) => personagens.some((p) => p.id === id)))];
+  const ownedCharacterIds = [...new Set(inventario.possuidos.filter((id) => personagensPrincipais.some((p) => p.id === id)))];
   const ownedSkills1 = skills.skill1.filter((item) => inventario.possuidos.includes(item.id));
   const ownedSkills2 = skills.skill2.filter((item) => inventario.possuidos.includes(item.id));
   const ownedUltimates = ultimates.filter((item) => inventario.possuidos.includes(item.id));
@@ -2330,7 +2353,7 @@ function renderInventory(tab = inventoryActiveTab) {
   const potionsHTML=`<section class="inventory-section potion-section"><div class="section-ribbon">🧪 POÇÕES</div><div class="potion-grid">${potionCard('lucky','🍀','Poção de Lucky','1,5x sorte • afeta somente personagens Épico ou melhores.')}${potionCard('damage','⚔️','Poção de Damage','1,5x dano durante 5 minutos.')}${potionCard('coins','🪙','Poção de Moedas','1,5x moedas recebidas durante 5 minutos.')}${potionCard('diamond','💎','Poção de Diamond','1,5x diamantes recebidos durante 5 minutos.')}</div></section>`;
   const skillCount = ownedSkills1.length + ownedSkills2.length;
   container.innerHTML = `
-    <section class="inventory-hero bright-hero"><div class="inventory-title-wrap"><div class="inventory-logo">🎒</div><div><small>ARSENAL VIVO</small><h3>MINHA COLEÇÃO</h3><p>${ownedCharacterIds.length} personagens • ${skillCount} skills • ${ownedUltimates.length} ultimates</p></div></div><div class="inventory-hero-actions"><button class="small-btn best-equip-btn" onclick="equiparMelhores()">⭐ EQUIPAR MELHORES</button><div class="inventory-capacity"><strong>${contarPersonagensNoInventario()}/${getInventoryMax()}</strong><span>CÓPIAS</span><small>${ownedCharacterIds.length}/${personagens.length} personagens</small></div></div></section>
+    <section class="inventory-hero bright-hero"><div class="inventory-title-wrap"><div class="inventory-logo">🎒</div><div><small>ARSENAL VIVO</small><h3>MINHA COLEÇÃO</h3><p>${ownedCharacterIds.length} personagens • ${skillCount} skills • ${ownedUltimates.length} ultimates</p></div></div><div class="inventory-hero-actions"><button class="small-btn best-equip-btn" onclick="equiparMelhores()">⭐ EQUIPAR MELHORES</button><div class="inventory-capacity"><strong>${contarPersonagensNoInventario()}/${getInventoryMax()}</strong><span>CÓPIAS</span><small>${ownedCharacterIds.length}/${personagensPrincipais.length} personagens</small></div></div></section>
     <div class="inventory-tabs"><button class="inventory-tab ${tab==='all'?'active':''}" onclick="renderInventory('all')">🎒 TUDO</button><button class="inventory-tab ${tab==='characters'?'active':''}" onclick="renderInventory('characters')">👤 PERSONAGENS</button><button class="inventory-tab ${tab==='skills'?'active':''}" onclick="renderInventory('skills')">⚡ SKILLS</button><button class="inventory-tab ${tab==='potions'?'active':''}" onclick="renderInventory('potions')">🧪 POÇÕES</button></div>
     ${tab==='potions'?potionsHTML:`<section class="inventory-loadout-grid">${loadout('PERSONAGEM', equippedCharacter, '♟')}${loadout('SKILL 1', equippedS1, '⚡')}${loadout('SKILL 2', equippedS2, '✦')}${loadout('ULTIMATE', equippedUlt, '☄')}</section>
     ${tab==='all'||tab==='characters'?`<section class="inventory-section alive-section"><div class="section-ribbon">👤 PERSONAGENS • ${contarPersonagensNoInventario()} CÓPIAS</div><div class="inventory-pet-grid">${characterUnits || '<div class="empty-state">Gire o Banner para obter personagens.</div>'}</div></section>`:''}
@@ -2835,7 +2858,7 @@ async function aoVencerBatalha(bossId, moedas, diamantes) {
     if (Number(bossId) === 1 && typeof avancarTutorialVisual === 'function') avancarTutorialVisual(3);
 
     mostrarToast(
-      `🏆 Vitória! +${fmt(Number(data?.reward ?? moedas ?? 0))} moedas${Number(data?.diamantes_ganhos ?? diamantes ?? 0) ? ' e +' + Number(data?.diamantes_ganhos ?? diamantes ?? 0) + ' diamantes' : ''}`,
+      `🏆 Vitória #${Number(data?.boss_kills?.[String(bossId)] ?? bossKills[bossId] ?? 1)}! +${fmt(Number(data?.reward ?? moedas ?? 0))} moedas${Number(data?.diamantes_ganhos ?? diamantes ?? 0) ? ' e +' + Number(data?.diamantes_ganhos ?? diamantes ?? 0) + ' diamantes' : ''}`,
       'victory'
     );
 

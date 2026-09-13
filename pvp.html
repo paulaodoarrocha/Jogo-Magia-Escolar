@@ -549,6 +549,22 @@ const SUPABASE_URL = 'https://nwithfitohtygvxrysgv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_-JX98qu3_yPXqGp--R-aMw_nSHDBCOR';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Trava anti-clique-duplo nos botões da loja/equipar. Antes, um clique rápido
+// (ou o próprio delay da rede antes do refreshPerfil/render terminar) deixava o
+// botão clicável de novo, e um segundo clique disparava a mesma RPC + os mesmos
+// 3 selects outra vez em cima do primeiro — isso é o que fazia o clique "travar"
+// por um instante em telas mais lentas. Aqui a gente desabilita o botão assim
+// que ele é clicado e libera de novo só quando o innerHTML do painel é recriado
+// (o que já acontece em todo fluxo de compra/equipar via renderLoja/renderInventarioPvp).
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.lc-btn, .btn-buy');
+  if (!btn || btn.disabled) return;
+  if (btn.dataset.travado === '1') { e.stopImmediatePropagation(); e.preventDefault(); return; }
+  btn.dataset.travado = '1';
+  const destravar = () => { btn.dataset.travado = '0'; };
+  setTimeout(destravar, 1500);
+}, true);
+
 const RANK_COLORS = {bronze:'#c07a3e',prata:'#c7d0da',ouro:'#ffd166',diamante:'#7ee8ff',desafiante:'#ff5cf1'};
 const RANK_LABEL = {bronze:'BRONZE',prata:'PRATA',ouro:'OURO',diamante:'DIAMANTE',desafiante:'DESAFIANTE'};
 
@@ -825,13 +841,20 @@ async function carregarPerfilPvp() {
 }
 
 async function refreshPerfil() {
-  const { data } = await sb.from('pvp_profile').select('*').eq('user_id', userId).maybeSingle();
+  // Antes: 3 queries feitas uma após a outra (await sequencial), cada uma pagando
+  // o round-trip completo até o Supabase. Isso empilhava ~3 idas-e-voltas de rede
+  // toda vez que o jogador clicava em equipar/comprar/girar, e era uma das causas
+  // do "trava um pouco" reportado nesses botões. Rodando em paralelo com
+  // Promise.all, o tempo total vira o da query mais lenta, não a soma das três.
+  const [{ data }, { data: pl }, { data: pocoesAtivas }] = await Promise.all([
+    sb.from('pvp_profile').select('*').eq('user_id', userId).maybeSingle(),
+    sb.from('Player').select('bio').eq('user_id', userId).maybeSingle(),
+    sb.from('pvp_pocoes').select('pocao_id, ativa_ate').eq('user_id', userId).gt('ativa_ate', new Date().toISOString())
+  ]);
   if (!data) return;
   perfilAtual = data;
-  const { data: pl } = await sb.from('Player').select('bio').eq('user_id', userId).maybeSingle();
   minhaBio = pl?.bio || '';
 
-  const { data: pocoesAtivas } = await sb.from('pvp_pocoes').select('pocao_id, ativa_ate').eq('user_id', userId).gt('ativa_ate', new Date().toISOString());
   pocoesPvpAtivas = {};
   (pocoesAtivas || []).forEach((p) => { pocoesPvpAtivas[p.pocao_id] = new Date(p.ativa_ate).getTime(); });
   renderPocoesPvpAtivasHeader();
@@ -985,14 +1008,14 @@ const POCOES_AVANCADAS = [
 const RECOMPENSAS = [
   {id:'PvpMoedas5000', nome:'5.000 moedas', custo:200, rankMin:2},
   {id:'PvpDiamantes50', nome:'50 diamantes', custo:150, rankMin:2},
-  {id:'PvpPetJulia', nome:'Pet Julia', custo:300, rankMin:2, img:'JuliaBanner_static.webp'},
-  {id:'PvpPetPeidaLeite', nome:'Pet PeidaLeite', custo:1000, rankMin:3, img:'PeidaLeiteBanner_static.webp'},
+  {id:'PvpPetJulia', nome:'Pet Julia', custo:300, rankMin:2, img:'JuliaBanner_static.webp', raridade:'celestial', tier:'Celestial', buff:'+52% dano • +20% resistência • +18% recarga • +20% Ultimate • +6% crítico', bannerId:'JuliaBannerPvp'},
+  {id:'PvpPetPeidaLeite', nome:'Pet PeidaLeite', custo:1000, rankMin:3, img:'PeidaLeiteBanner_static.webp', raridade:'supremo', tier:'Supremo', buff:'+68% dano • +24% resistência • +21% recarga • +24% Ultimate • +8% crítico', bannerId:'PeidaLeiteBannerPvp'},
   {id:'PvpMoedas10000', nome:'10.000 moedas', custo:800, rankMin:4},
   {id:'PvpDiamantes150', nome:'150 diamantes', custo:450, rankMin:4},
-  {id:'PvpPetKauan', nome:'Pet Kauan', custo:2500, rankMin:4, img:'KauanBanner_static.webp'},
+  {id:'PvpPetKauan', nome:'Pet Kauan', custo:2500, rankMin:4, img:'KauanBanner_static.webp', raridade:'exclusivo', tier:'Exclusivo', buff:'+85% dano • +28% resistência • +24% recarga • +28% Ultimate • +10% crítico', bannerId:'KauanBannerPvp'},
   {id:'PvpMoedas50000', nome:'50.000 moedas', custo:3000, rankMin:5},
   {id:'PvpDiamantes300', nome:'300 diamantes', custo:900, rankMin:5},
-  {id:'PvpPetPaulaoDoPneu', nome:'Pet PaulaoDoPneuBanner', custo:10000, rankMin:5, img:'PaulaoDoPneuBanner.jpg'},
+  {id:'PvpPetPaulaoDoPneu', nome:'Pet PaulaoDoPneuBanner', custo:10000, rankMin:5, img:'PaulaoDoPneuBanner.jpg', raridade:'transcendente', tier:'Transcendente', buff:'+105% dano • +32% resistência • +27% recarga • +34% Ultimate • +12% crítico', bannerId:'PaulaoDoPneuBannerPvp'},
 ];
 
 function renderLoja() {
@@ -1116,6 +1139,13 @@ async function comprarRecompensa(id) {
   renderLoja();
 }
 
+async function equiparPetPvp(bannerId) {
+  const { error } = await sb.rpc('pvp_equipar_pet', { p_banner_id: bannerId });
+  if (error) { alert('Erro ao equipar: ' + error.message); return; }
+  await refreshPerfil();
+  await renderInventarioPvp();
+}
+
 async function melhorarDano() {
   const { error } = await sb.rpc('pvp_melhorar_dano');
   if (error) { alert('Erro: ' + error.message); return; }
@@ -1144,8 +1174,14 @@ function bossImgFile(bossId) {
 
 async function renderInventarioPvp() {
   const el = document.getElementById('painel-inv');
-  const { data } = await sb.from('pvp_inventory').select('item_id, obtido_em').eq('user_id', userId);
-  const { data: pocoesInv } = await sb.from('pvp_pocoes').select('pocao_id, quantidade, ativa_ate').eq('user_id', userId).gt('quantidade', 0);
+  // Mesma correção do refreshPerfil: queries independentes rodando em paralelo
+  // em vez de uma atrás da outra. O pet equipado do PvP vem de perfilAtual
+  // (pvp_profile.pet_equipado_pvp) — não lê mais Player.equipped, que é do jogo principal.
+  const [{ data }, { data: pocoesInv }] = await Promise.all([
+    sb.from('pvp_inventory').select('item_id, obtido_em').eq('user_id', userId),
+    sb.from('pvp_pocoes').select('pocao_id, quantidade, ativa_ate').eq('user_id', userId).gt('quantidade', 0)
+  ]);
+  const imagemEquipada = perfilAtual?.pet_equipado_pvp || '';
   const aviso = '<div class="item-sub" style="margin-bottom:10px">Suas skills equipadas (Skill 1, Skill 2 e Ultimate) e a melhoria de vida ficam na aba <b>Skills</b>. Aqui embaixo ficam os personagens/pets exclusivos do PvP.</div>';
 
   const NOME_POCAO = { PocaoDiamantesPvp:'Diamantes', PocaoMoedasPvp:'Moedas', PocaoDamagePvp:'Dano', PocaoLuckyPvp:'Sorte', PocaoEscudoPvp:'Escudo', PocaoRegeneracaoPvp:'Regeneração', PocaoVelocidadePvp:'Velocidade', PocaoFuriaPvp:'Fúria' };
@@ -1173,9 +1209,22 @@ async function renderInventarioPvp() {
         </div>`).join('')}
     </div>`;
 
+  const CORES_RARIDADE_PET = {celestial:'#5a7bff', supremo:'#ff17d4', exclusivo:'#ffd200', transcendente:'#17ffd0'};
   const petsHtml = (!data || !data.length)
     ? '<div class="item-sub">Nenhum personagem exclusivo do PvP ainda.</div>'
-    : data.map(i => `<div class="item-card"><div class="item-name">${i.item_id}</div></div>`).join('');
+    : `<div class="loja-grid">${data.map(i => {
+        const rec = RECOMPENSAS.find(r => r.id === i.item_id);
+        const nome = rec ? rec.nome : i.item_id;
+        const cor = rec?.raridade ? CORES_RARIDADE_PET[rec.raridade] : '#7b5cff';
+        const equipado = rec?.bannerId && rec.bannerId === imagemEquipada;
+        return `<div class="loja-card ${equipado ? 'equipado' : ''}" style="--lc-cor:${cor};box-shadow:0 0 16px ${cor}55">
+          ${rec?.img ? `<img src="${rec.img}" alt="${nome}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">` : ''}
+          <div class="lc-nome">${nome}</div>
+          ${rec?.tier ? `<div class="lc-sub" style="color:${cor};font-weight:700">${rec.tier}</div>` : ''}
+          ${rec?.buff ? `<div class="item-sub" style="margin-top:4px">${rec.buff}</div>` : ''}
+          ${rec?.bannerId ? `<button class="lc-btn" ${equipado ? 'disabled' : ''} onclick="equiparPetPvp('${rec.bannerId}')">${equipado ? '✔ EQUIPADO' : 'EQUIPAR'}</button>` : ''}
+        </div>`;
+      }).join('')}</div>`;
 
   el.innerHTML = aviso + '<div class="item-sub" style="margin:14px 0 8px"><b>🧪 POÇÕES</b></div>' + pocoesHtml + gradeBosses + '<div class="item-sub" style="margin:14px 0 8px"><b>🐾 Pets/itens exclusivos</b></div>' + petsHtml;
 }

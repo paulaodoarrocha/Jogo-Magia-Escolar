@@ -1879,15 +1879,12 @@ button, .nav-card, .feature-card, .battle-cta, .shop-card, .character-card, .pet
 }
 
 
-body:has(#modal-ultimate:not(.hidden)) #tela-jogo .pause-btn,
-body:has(#modal-ultimate:not(.hidden)) #tela-jogo .battle-controls,
-body:has(#modal-ultimate:not(.hidden)) #tela-jogo .battle-hud,
-body:has(#modal-ultimate:not(.hidden)) #tela-jogo .battle-timer,
-body:has(#modal-ultimate:not(.hidden)) #tela-jogo .battle-message {
-  visibility:hidden !important;
-  opacity:0 !important;
-  pointer-events:none !important;
-}
+/* Removido o seletor :has() que existia aqui (body:has(#modal-ultimate:not(.hidden)) ...) —
+   não funciona em navegadores mais antigos (Safari <15.4, Chrome/WebView <105), e a regra
+   já era 100% redundante: o JS (batalha.js) já bota a classe .ultimate-open em #tela-jogo e
+   .ultimate-playing no body exatamente nos mesmos momentos, e essas classes já escondem os
+   mesmos elementos em outras partes deste arquivo (.battle-screen.ultimate-open .battle-controls
+   etc, mais abaixo). Nada foi perdido, só o jeito frágil de fazer a mesma coisa. */
 
 
 .ultimate-modal:not(.hidden) {
@@ -2361,8 +2358,7 @@ body.ultimate-playing #tela-jogo .pause-btn {
 
 body.ultimate-playing #tela-jogo #btn-pause,
 body.ultimate-playing #tela-jogo .pause-btn,
-#modal-ultimate:not(.hidden) ~ #btn-pause,
-#tela-jogo:has(#modal-ultimate:not(.hidden)) #btn-pause{
+#modal-ultimate:not(.hidden) ~ #btn-pause{
   display:none !important;
   visibility:hidden !important;
   opacity:0 !important;
@@ -2549,7 +2545,7 @@ body.ultimate-playing #tela-jogo .pause-btn {
 }
 
 
-.rarity-hunge,.pet-rarity{color:#65f6ff !important}
+.rarity-hunge .pet-rarity{color:#65f6ff !important}
 
 .daily-login-overlay{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,5,12,.82);backdrop-filter:blur(12px)}
 .daily-login-modal{width:min(900px,100%);max-height:92dvh;overflow:auto;padding:20px;border:1px solid rgba(101,232,255,.2);border-radius:22px;background:linear-gradient(145deg,#101c31,#090e1b);box-shadow:0 25px 90px rgba(0,0,0,.55)}

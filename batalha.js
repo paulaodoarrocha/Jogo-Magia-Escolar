@@ -17,8 +17,15 @@ const skill2Defs = {
   AbismoSkill2:{tipo:"esfera",largura:214,altura:214,velocidade:6.84,dano:1750,gif:"AbismoSkill2.gif"},
   MeteoroSkill2:{tipo:"esfera",largura:202,altura:202,velocidade:6.93,dano:2350,gif:"MeteoroSkill2.gif"},
   SolSkill2:{tipo:"esfera",largura:251,altura:251,velocidade:7.02,dano:3100,gif:"SolSkill2.gif"},
-  EstrelaSkill2:{tipo:"esfera",largura:261,altura:261,velocidade:7.11,dano:4100,gif:"EstrelaSkill2.gif"},
-  BlackholeSkill2:{tipo:"feixe",comprimento:327,largura:162,dano:5900,gif:"BlackholeSkill2.gif"}
+  // Balanceamento (12/09): Skill1 para de evoluir no tier 8 (MeteoroSkill1), então nos
+  // bosses 9 e 10 quase todo ganho de dano do jogador vinha só do Skill2 — e o Blackhole
+  // (tier10) é item de DROP raro (5%), então na prática a maioria chega no boss10 ainda
+  // usando Estrela (tier9). Resultado: o tempo pra matar os bosses 9/10 dava um salto
+  // brusco (~91s e ~127s) comparado com a subida suave até o boss 8 (~65s). Subi o dano
+  // de Estrela e Blackhole pra suavizar essa curva (ver também vida dos bosses 9/10 logo
+  // abaixo, em statsPorTier, que foi reduzida pelo mesmo motivo).
+  EstrelaSkill2:{tipo:"esfera",largura:261,altura:261,velocidade:7.11,dano:4500,gif:"EstrelaSkill2.gif"},
+  BlackholeSkill2:{tipo:"feixe",comprimento:327,largura:162,dano:6200,gif:"BlackholeSkill2.gif"}
 };
 const COOLDOWN_SKILL1_PLAYER=900;
 // Cooldown por skill1 do player: as 6 mais raras (maior dano) sobem pra 900ms,
@@ -68,8 +75,12 @@ const statsPorTier={
   6:{vida:57750,recompensaMoedas:7600,recompensaDiamantes:40,chanceDiamante:.55,danoUltimateFixo:1790,overridesDano:{VenenoSkill1:{dano:125,velocidade:5.76},FuracaoSkill2:{dano:210,velocidade:5.76}}},
   7:{vida:93500,recompensaMoedas:16500,recompensaDiamantes:65,chanceDiamante:.52,danoUltimateFixo:2600,overridesDano:{SolSkill1:{dano:165,velocidade:5.85},MetalSkill2:{dano:285,velocidade:5.85}}},
   8:{vida:147500,recompensaMoedas:36000,recompensaDiamantes:100,chanceDiamante:.49,danoUltimateFixo:3800,overridesDano:{MeteoroSkill1:{dano:220,velocidade:5.94},MagmaSkill2:{dano:380,velocidade:5.94}}},
-  9:{vida:220000,recompensaMoedas:82000,recompensaDiamantes:180,chanceDiamante:.46,danoUltimateFixo:5450,overridesDano:{SolSkill1:{dano:285,velocidade:6.03},MeteoroSkill1:{dano:285,velocidade:6.03},AbismoSkill2:{dano:500,velocidade:6.03}}},
-  10:{vida:312000,recompensaMoedas:195000,recompensaDiamantes:350,chanceDiamante:.43,danoUltimateFixo:7600,overridesDano:{VenenoSkill1:{dano:360,velocidade:6.12},EstrelaSkill2:{dano:620,velocidade:6.12},SolSkill2:{dano:580,velocidade:6.12}}}
+  // Vida do 9/10 reduzida de novo (220k→185k / 312k→205k) junto com o buff de
+  // Estrela/Blackhole acima — a redução de vida sozinha (feita antes) não bastava
+  // porque o problema é a curva de DANO do jogador parar, não só a vida do boss.
+  // Moedas/diamantes/chanceDiamante/danoUltimateFixo NÃO alterados.
+  9:{vida:185000,recompensaMoedas:82000,recompensaDiamantes:180,chanceDiamante:.46,danoUltimateFixo:5450,overridesDano:{SolSkill1:{dano:285,velocidade:6.03},MeteoroSkill1:{dano:285,velocidade:6.03},AbismoSkill2:{dano:500,velocidade:6.03}}},
+  10:{vida:205000,recompensaMoedas:195000,recompensaDiamantes:350,chanceDiamante:.43,danoUltimateFixo:7600,overridesDano:{VenenoSkill1:{dano:360,velocidade:6.12},EstrelaSkill2:{dano:620,velocidade:6.12},SolSkill2:{dano:580,velocidade:6.12}}}
 };
 const bossKits={1:{skill1:["RelampagoSkill1"],skill2:[]},2:{skill1:["SomSkill1"],skill2:[]},3:{skill1:["CirculoSkill1"],skill2:[]},4:{skill1:["VentoSkill1"],skill2:["RaioSkill2"]},5:{skill1:["AguaSkill1"],skill2:["GeloSkill2"]},6:{skill1:["VenenoSkill1"],skill2:["FuracaoSkill2"]},7:{skill1:["SolSkill1"],skill2:["MetalSkill2"]},8:{skill1:["MeteoroSkill1"],skill2:["MagmaSkill2"]},9:{skill1:["SolSkill1","MeteoroSkill1"],skill2:["AbismoSkill2"]},10:{skill1:["VenenoSkill1"],skill2:["EstrelaSkill2","SolSkill2"]}};
 function escolherAleatorio(lista){return lista[Math.floor(Math.random()*lista.length)]}
@@ -672,7 +683,12 @@ function desenharBatalha() {
   }
 
   const idsUsados = new Set(["personagem", "inimigo"]);
-  const personagemEquipado = inventarioAtual.equipados && inventarioAtual.equipados.imagem;
+  let personagemEquipado = inventarioAtual.equipados && inventarioAtual.equipados.imagem;
+  // Mesma guarda de menu.js: id equipado pela loja do PvP (sufixo "Pvp") não tem arquivo
+  // de sprite próprio aqui (ex: "JuliaBannerPvp.webp" não existe), o que quebrava o
+  // personagem na tela de batalha do jogo principal. Tratamos como "nada equipado",
+  // que já cai no fallback normal de "ArlanBanner.webp" logo abaixo.
+  if (personagemEquipado && personagemEquipado.endsWith("Pvp")) personagemEquipado = null;
   const PETS_VIDEO = { KauanBanner: 'KauanBanner.mp4' };
   const spritePersonagem = personagemEquipado
     ? (personagemEquipado === "PaulaoDoPneuBanner" ? "PaulaoDoPneuBanner.jpg" : personagemEquipado === "CarlosBanner" ? "CarlosBanner.webp" : (PETS_VIDEO[personagemEquipado] || personagemEquipado + ".webp"))
@@ -1573,7 +1589,14 @@ function aplicarDanoUltimate(dono) {
     const item = itensLoja.ultimate.find(function (u) { return u.id === inventarioAtual.equipados.ultimate; });
     const tierUltimate = item ? Number(String(item.id).replace('Ultimate', '')) : 5;
     const pct = PCT_ULTIMATE_JOGADOR[tierUltimate] || 0.15;
-    danoUltimate = (vidaEnemyMax * pct) * (typeof getPlayerDamageMultiplier==='function' ? getPlayerDamageMultiplier() : 1) * (typeof getPlayerCritChance==='function' && Math.random() < getPlayerCritChance() ? 1.5 : 1);
+    // Correção: a Ultimate já é balanceada como % da vida do boss (10%-20%, ver comentário
+    // acima) — mas o multiplicador geral de "+dano" do personagem/pet equipado (que chega
+    // a 2,25x com os pets mais fortes) estava sendo aplicado em cima dessa porcentagem,
+    // fazendo uma Ultimate "de 20%" virar 45% (ou mais de 60% com crítico) na prática.
+    // Removido: a Ultimate não usa mais getPlayerDamageMultiplier — só a % de tabela e,
+    // opcionalmente, o crítico (que já é um bônus modesto e proporcional, não um multiplicador
+    // de personagem que dobra tudo).
+    danoUltimate = (vidaEnemyMax * pct) * (typeof getPlayerCritChance==='function' && Math.random() < getPlayerCritChance() ? 1.5 : 1);
     usosUltimatePlayerRestantes--;
     cargaUltimatePlayer = 0;
     golpesCausadosPlayer = 0; golpesRecebidosPlayer = 0;
