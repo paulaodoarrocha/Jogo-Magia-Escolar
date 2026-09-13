@@ -1008,14 +1008,14 @@ const POCOES_AVANCADAS = [
 const RECOMPENSAS = [
   {id:'PvpMoedas5000', nome:'5.000 moedas', custo:200, rankMin:2},
   {id:'PvpDiamantes50', nome:'50 diamantes', custo:150, rankMin:2},
-  {id:'PvpPetJulia', nome:'Pet Julia', custo:300, rankMin:2, img:'JuliaBanner_static.webp', raridade:'celestial', tier:'Celestial', buff:'+52% dano • +20% resistência • +18% recarga • +20% Ultimate • +6% crítico', bannerId:'JuliaBannerPvp'},
-  {id:'PvpPetPeidaLeite', nome:'Pet PeidaLeite', custo:1000, rankMin:3, img:'PeidaLeiteBanner_static.webp', raridade:'supremo', tier:'Supremo', buff:'+68% dano • +24% resistência • +21% recarga • +24% Ultimate • +8% crítico', bannerId:'PeidaLeiteBannerPvp'},
+  {id:'PvpPetJulia', nome:'Pet Julia', custo:300, rankMin:2, img:'JuliaBanner_static.webp', raridade:'celestial', tier:'Celestial', buff:'+20% dano • +25% resistência', bannerId:'JuliaBannerPvp'},
+  {id:'PvpPetPeidaLeite', nome:'Pet PeidaLeite', custo:1000, rankMin:3, img:'PeidaLeiteBanner_static.webp', raridade:'supremo', tier:'Supremo', buff:'+29% dano • +30% resistência • +20% dano de Ultimate', bannerId:'PeidaLeiteBannerPvp'},
   {id:'PvpMoedas10000', nome:'10.000 moedas', custo:800, rankMin:4},
   {id:'PvpDiamantes150', nome:'150 diamantes', custo:450, rankMin:4},
-  {id:'PvpPetKauan', nome:'Pet Kauan', custo:2500, rankMin:4, img:'KauanBanner_static.webp', raridade:'exclusivo', tier:'Exclusivo', buff:'+85% dano • +28% resistência • +24% recarga • +28% Ultimate • +10% crítico', bannerId:'KauanBannerPvp'},
+  {id:'PvpPetKauan', nome:'Pet Kauan', custo:2500, rankMin:4, img:'KauanBanner_static.webp', raridade:'exclusivo', tier:'Exclusivo', buff:'+40% dano • +35% resistência • +25% dano de Ultimate • +10% crítico', bannerId:'KauanBannerPvp'},
   {id:'PvpMoedas50000', nome:'50.000 moedas', custo:3000, rankMin:5},
   {id:'PvpDiamantes300', nome:'300 diamantes', custo:900, rankMin:5},
-  {id:'PvpPetPaulaoDoPneu', nome:'Pet PaulaoDoPneuBanner', custo:10000, rankMin:5, img:'PaulaoDoPneuBanner.jpg', raridade:'transcendente', tier:'Transcendente', buff:'+105% dano • +32% resistência • +27% recarga • +34% Ultimate • +12% crítico', bannerId:'PaulaoDoPneuBannerPvp'},
+  {id:'PvpPetPaulaoDoPneu', nome:'Pet PaulaoDoPneuBanner', custo:10000, rankMin:5, img:'PaulaoDoPneuBanner.jpg', raridade:'transcendente', tier:'Transcendente', buff:'+50% dano • +46% resistência • +30% dano de Ultimate • +14% crítico • +15% recarga de Ultimate', bannerId:'PaulaoDoPneuBannerPvp'},
 ];
 
 function renderLoja() {
@@ -1198,10 +1198,11 @@ async function renderInventarioPvp() {
 
   const bossAtual = perfilAtual?.boss_equipado || 'Arlan';
   const gradeBosses = `
-    <div class="item-sub" style="margin:14px 0 8px"><b>🎭 Personagem da arena (visual)</b> — só muda a aparência na luta, não dá buff.</div>
+    <div class="item-sub" style="margin:14px 0 8px"><b>🎭 Skins da arena</b> — troca só a aparência do seu lutador na luta. Não altera dano, resistência nem nenhum status.</div>
     <div class="loja-grid">
       ${BOSSES_EQUIP.map(b => `
-        <div class="loja-card ${b.id === bossAtual ? 'equipado' : ''}" style="--lc-cor:#7b5cff;cursor:pointer" onclick="equiparBossPvp('${b.id}')">
+        <div class="loja-card ${b.id === bossAtual ? 'equipado' : ''}" style="--lc-cor:#7b5cff;cursor:pointer;position:relative" onclick="equiparBossPvp('${b.id}')">
+          <span style="position:absolute;top:6px;left:6px;background:rgba(123,92,255,.9);color:#fff;font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:6px;z-index:1">SKIN</span>
           <img src="${bossImgFile(b.id)}" alt="${b.id}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">
           <div class="lc-nome">${b.id}</div>
           <div class="lc-sub">${b.rank}</div>
@@ -1217,7 +1218,8 @@ async function renderInventarioPvp() {
         const nome = rec ? rec.nome : i.item_id;
         const cor = rec?.raridade ? CORES_RARIDADE_PET[rec.raridade] : '#7b5cff';
         const equipado = rec?.bannerId && rec.bannerId === imagemEquipada;
-        return `<div class="loja-card ${equipado ? 'equipado' : ''}" style="--lc-cor:${cor};box-shadow:0 0 16px ${cor}55">
+        return `<div class="loja-card ${equipado ? 'equipado' : ''}" style="--lc-cor:${cor};box-shadow:0 0 16px ${cor}55;position:relative">
+          <span style="position:absolute;top:6px;left:6px;background:rgba(23,255,208,.9);color:#08221c;font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:6px;z-index:1">SÓ BUFF</span>
           ${rec?.img ? `<img src="${rec.img}" alt="${nome}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">` : ''}
           <div class="lc-nome">${nome}</div>
           ${rec?.tier ? `<div class="lc-sub" style="color:${cor};font-weight:700">${rec.tier}</div>` : ''}
@@ -1226,7 +1228,7 @@ async function renderInventarioPvp() {
         </div>`;
       }).join('')}</div>`;
 
-  el.innerHTML = aviso + '<div class="item-sub" style="margin:14px 0 8px"><b>🧪 POÇÕES</b></div>' + pocoesHtml + gradeBosses + '<div class="item-sub" style="margin:14px 0 8px"><b>🐾 Pets/itens exclusivos</b></div>' + petsHtml;
+  el.innerHTML = aviso + '<div class="item-sub" style="margin:14px 0 8px"><b>🧪 POÇÕES</b></div>' + pocoesHtml + gradeBosses + '<div class="item-sub" style="margin:14px 0 8px"><b>🐾 Pets de combate</b> — não mudam a aparência da luta, só aplicam o buff de status (o visual continua sendo a skin escolhida acima).</div>' + petsHtml;
 }
 
 async function ativarPocaoInventario(pocaoId) {
