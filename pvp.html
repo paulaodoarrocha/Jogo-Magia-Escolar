@@ -29,6 +29,12 @@
   .avatar-ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     font-size:30px;background:#12142a;border:3px solid var(--rank-color,#c07a3e);flex-shrink:0;overflow:hidden}
   .avatar-ring img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+  /* Efeito sutil de rank elite (ouro pra cima): brilho pulsante na cor do rank, só CSS
+     (sem JS em loop, sem custo de performance). Pedido: "sem exagero". */
+  .avatar-ring.elite-glow{animation:eliteGlowPulso 2.6s ease-in-out infinite}
+  @keyframes eliteGlowPulso{0%,100%{box-shadow:0 0 0 0 var(--rank-color,#ffd166)}50%{box-shadow:0 0 14px 2px var(--rank-color,#ffd166)}}
+  .avatar-ring.elite-top{animation-name:eliteGlowPulsoForte;animation-duration:2s}
+  @keyframes eliteGlowPulsoForte{0%,100%{box-shadow:0 0 0 0 var(--rank-color,#ff5cf1)}50%{box-shadow:0 0 20px 3px var(--rank-color,#ff5cf1)}}
   .profile-info{flex:1;min-width:0}
   .profile-name{font-weight:800;font-size:16px}
   .rank-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.5px;
@@ -222,13 +228,26 @@
   /* ===== PROMOÇÃO DE RANK ===== */
   .promo-overlay{position:fixed;inset:0;background:rgba(4,5,11,.92);z-index:60;display:flex;flex-direction:column;
     align-items:center;justify-content:center;text-align:center}
-  .promo-rank-old{font-size:16px;color:#9aa3c7;letter-spacing:2px}
-  .promo-arrow{font-size:30px;margin:6px 0;color:var(--grad2)}
-  .promo-overlay.rebaixamento .promo-arrow{color:#ff5050}
   .promo-overlay.rebaixamento{background:radial-gradient(circle at 50% 55%, rgba(255,40,40,.18), rgba(5,6,15,.92))}
-  .promo-rank-new{font-size:40px;font-weight:900;letter-spacing:2px;text-shadow:0 0 30px currentColor;
-    animation:pop .5s ease}
+  .promo-emblema-wrap{position:relative;width:150px;height:150px;margin-bottom:6px}
+  .promo-emblema-old,.promo-emblema-new{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .promo-emblema-old svg,.promo-emblema-new svg{width:100%;height:100%}
+  .promo-emblema-old{animation:emblemaSaiSubindo .9s ease forwards}
+  .promo-emblema-new{opacity:0;animation:emblemaEntraSubindo .9s .35s ease forwards}
+  .promo-overlay.rebaixamento .promo-emblema-old{animation:emblemaSaiDescendo .9s ease forwards}
+  .promo-overlay.rebaixamento .promo-emblema-new{animation:emblemaEntraDescendo .9s .35s ease forwards}
+  @keyframes emblemaSaiSubindo{0%{transform:scale(1) rotate(0);opacity:1}60%{transform:scale(1.3) rotate(180deg);opacity:.6}100%{transform:scale(.2) rotate(360deg);opacity:0}}
+  @keyframes emblemaEntraSubindo{0%{transform:scale(.2) rotate(-30deg);opacity:0}60%{transform:scale(1.25) rotate(10deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+  @keyframes emblemaSaiDescendo{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(70px) scale(.5);opacity:0}}
+  @keyframes emblemaEntraDescendo{0%{transform:translateY(-40px) scale(.6);opacity:0}60%{transform:translateY(6px) scale(1.05)}100%{transform:translateY(0) scale(1);opacity:1}}
+  .promo-tag{font-size:13px;letter-spacing:4px;color:var(--gold);font-weight:800;margin-bottom:2px;opacity:0;animation:fadeInTag .5s .5s ease forwards}
+  .promo-overlay.rebaixamento .promo-tag{color:#ff5050}
+  @keyframes fadeInTag{to{opacity:1}}
+  .promo-rank-new{font-size:38px;font-weight:900;letter-spacing:2px;text-shadow:0 0 30px currentColor;
+    animation:pop .5s .4s ease backwards}
+  .promo-overlay.rebaixamento .promo-rank-new{color:#ff5050}
   @keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  .promo-rank-old{font-size:13px;color:#9aa3c7;letter-spacing:1px;margin-top:8px;opacity:0;animation:fadeInTag .5s .8s ease forwards}
   .promo-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
   .p-dot{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--gold);animation:rise 1.4s ease-out forwards}
   .recompensa-titulo{font-size:22px;font-weight:900;letter-spacing:2px;color:#3dffa0;text-shadow:0 0 24px rgba(61,255,160,.6);margin-bottom:14px}
@@ -514,9 +533,13 @@
 
 <div id="overlay-promocao" class="promo-overlay hidden">
   <div class="promo-particles" id="promo-particles"></div>
-  <div class="promo-rank-old" id="promo-rank-old">PRATA</div>
-  <div class="promo-arrow" id="promo-arrow">↑</div>
+  <div class="promo-emblema-wrap">
+    <div class="promo-emblema-old" id="promo-emblema-old"></div>
+    <div class="promo-emblema-new" id="promo-emblema-new"></div>
+  </div>
+  <div class="promo-tag" id="promo-tag">NOVO RANK</div>
   <div class="promo-rank-new" id="promo-rank-new">OURO</div>
+  <div class="promo-rank-old" id="promo-rank-old">vindo de PRATA</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -551,6 +574,13 @@ function pocaoPvpRestanteMs(id) {
   const ate = pocoesPvpAtivas[id];
   if (!ate) return 0;
   return Math.max(0, ate - Date.now());
+}
+// Mesmo multiplicador que o servidor aplica (pvp_usar_skill / pvp_usar_escudo) quando
+// a Poção de Velocidade tá ativa. Sem isso o cliente travava os botões pelo tempo cheio
+// mesmo quando o servidor já liberava a ação mais cedo — a poção não fazia diferença
+// nenhuma pras skills/escudo, só no deslocamento.
+function multiplicadorVelocidadePvp() {
+  return pocaoPvpRestanteMs('PocaoVelocidadePvp') > 0 ? 0.65 : 1;
 }
 function formatarRestantePocao(ms) {
   const s = Math.ceil(ms / 1000);
@@ -807,6 +837,12 @@ async function refreshPerfil() {
   renderPocoesPvpAtivasHeader();
   document.getElementById('profile-card').style.setProperty('--rank-color', RANK_COLORS[data.rank]);
   document.getElementById('pvp-rank-pill').innerHTML = emblemaPatente(data.rank) + RANK_LABEL[data.rank];
+  const nivelRankAtual = RANK_NIVEL[data.rank] || 1;
+  const avatarPvp = document.getElementById('pvp-avatar');
+  if (avatarPvp) {
+    avatarPvp.classList.toggle('elite-glow', nivelRankAtual >= 3);
+    avatarPvp.classList.toggle('elite-top', nivelRankAtual >= 4);
+  }
   document.getElementById('pvp-trofeus').textContent = data.trofeus_atuais;
   document.getElementById('pvp-nivel').textContent = data.nivel_pvp;
   document.getElementById('pvp-vitorias').textContent = data.vitorias;
@@ -1965,16 +2001,23 @@ function dispararProjetil(gifFile, atacanteEl, alvoEl, aoChegar) {
 
   let terminou = false;
   const t0 = performance.now();
+  // Autoguiado FRACO (mesmo princípio do aplicarAutoguiado() em batalha.js contra
+  // bosses): o destino só "escorrega" um pouco por frame na direção da posição
+  // real do alvo, em vez de ser recalculado 100% a cada frame. Isso faz a skill
+  // seguir uma curva de verdade — se o jogador se mexer bastante, a trajetória
+  // não persegue perfeitamente, dá pra desviar de olho treinado.
+  const FORCA_AUTOGUIADO_PVP = 0.045;
+  let destinoAtualX = destinoInicial.x, destinoAtualY = destinoInicial.y;
 
   function passo(agora) {
     if (terminou) return;
     const t = Math.min(1, (agora - t0) / DURACAO_PROJETIL_MS);
-    // recalcula o alvo a cada frame -> leve autoguiado (o alvo pode ter se mexido),
-    // mas mantém a curva (Bézier quadrática) em vez de ir reto.
-    const destino = centroRelativoAoPalco(alvoEl);
+    const destinoReal = centroRelativoAoPalco(alvoEl);
+    destinoAtualX += (destinoReal.x - destinoAtualX) * FORCA_AUTOGUIADO_PVP;
+    destinoAtualY += (destinoReal.y - destinoAtualY) * FORCA_AUTOGUIADO_PVP;
     const umMenosT = 1 - t;
-    const x = umMenosT * umMenosT * origem.x + 2 * umMenosT * t * meioX + t * t * destino.x;
-    const y = umMenosT * umMenosT * origem.y + 2 * umMenosT * t * meioY + t * t * destino.y;
+    const x = umMenosT * umMenosT * origem.x + 2 * umMenosT * t * meioX + t * t * destinoAtualX;
+    const y = umMenosT * umMenosT * origem.y + 2 * umMenosT * t * meioY + t * t * destinoAtualY;
     proj.style.transform = `translate(${x}px, ${y}px)`;
     if (t < 1) {
       requestAnimationFrame(passo);
@@ -1992,6 +2035,9 @@ async function usarSkill(n) {
   const cdAtivoAte = n === 1 ? cdSkill1At : cdSkill2At;
   if (Date.now() < cdAtivoAte) return;
 
+  const cdBase = n === 1 ? COOLDOWN_SKILL1_PVP_MS : COOLDOWN_SKILL2_PVP_MS;
+  const cdAtual = Math.round(cdBase * multiplicadorVelocidadePvp());
+
   // Mira na última posição conhecida do oponente (visto pelo realtime). Se ele já
   // tiver se mexido bastante desde então, o servidor conta como desvio — mesma
   // ideia do desvio de skills na luta contra bosses, só que agora os dois lados
@@ -2001,13 +2047,13 @@ async function usarSkill(n) {
   if (error) {
     if (error.message === 'em_cooldown') {
       document.getElementById('arena-log').textContent = 'Skill em recarga...';
-      iniciarCooldownVisual(n, n === 1 ? COOLDOWN_SKILL1_PVP_MS : COOLDOWN_SKILL2_PVP_MS);
+      iniciarCooldownVisual(n, cdAtual);
     } else {
       document.getElementById('arena-log').textContent = 'Ação inválida';
     }
     return;
   }
-  iniciarCooldownVisual(n, n === 1 ? COOLDOWN_SKILL1_PVP_MS : COOLDOWN_SKILL2_PVP_MS);
+  iniciarCooldownVisual(n, cdAtual);
   if (n === 2 && typeof window.playSfx === 'function') window.playSfx('Impacto.mp3', 0.5);
   const gif = (n === 1 ? perfilAtual?.skill1_pvp : perfilAtual?.skill2_pvp) + '.gif';
   if (matchChannel) matchChannel.send({ type: 'broadcast', event: 'skillfx', payload: { gif } });
@@ -2142,7 +2188,7 @@ async function usarEscudo() {
   btn.disabled = true;
   fighterEl?.classList.add('escudo-ativo');
   setTimeout(() => fighterEl?.classList.remove('escudo-ativo'), 1500);
-  setTimeout(() => { btn.classList.remove('ativo'); btn.disabled = false; }, ESCUDO_COOLDOWN_MS);
+  setTimeout(() => { btn.classList.remove('ativo'); btn.disabled = false; }, Math.round(ESCUDO_COOLDOWN_MS * multiplicadorVelocidadePvp()));
 }
 
 async function confirmarDesistencia() {
@@ -2237,10 +2283,12 @@ function compararRankEMostrarOverlay(rankAntes) {
 
 function mostrarPromocao(rankAntigo, novoRank, desceu) {
   const overlay = document.getElementById('overlay-promocao');
-  document.getElementById('promo-rank-old').textContent = RANK_LABEL[rankAntigo] || '';
+  document.getElementById('promo-emblema-old').innerHTML = emblemaPatente(rankAntigo, 150);
+  document.getElementById('promo-emblema-new').innerHTML = emblemaPatente(novoRank, 150);
+  document.getElementById('promo-tag').textContent = desceu ? 'RANK REBAIXADO' : 'NOVO RANK';
   document.getElementById('promo-rank-new').textContent = RANK_LABEL[novoRank];
   document.getElementById('promo-rank-new').style.color = desceu ? '#ff5050' : RANK_COLORS[novoRank];
-  document.getElementById('promo-arrow').textContent = desceu ? '↓' : '↑';
+  document.getElementById('promo-rank-old').textContent = 'vindo de ' + (RANK_LABEL[rankAntigo] || '');
   overlay.classList.toggle('rebaixamento', desceu);
   const particles = document.getElementById('promo-particles');
   particles.innerHTML = '';

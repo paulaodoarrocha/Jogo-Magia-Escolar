@@ -20,10 +20,9 @@ const skill2Defs = {
   EstrelaSkill2:{tipo:"esfera",largura:261,altura:261,velocidade:7.11,dano:4100,gif:"EstrelaSkill2.gif"},
   BlackholeSkill2:{tipo:"feixe",comprimento:327,largura:162,dano:5900,gif:"BlackholeSkill2.gif"}
 };
-const COOLDOWN_SKILL1_PLAYER=900; // dobrado a pedido (era 900)
-// Cooldown por skill1 do player: as 6 mais raras (maior dano) sobem pra 1s,
-// as 2 comuns (Relampago e Som) continuam com o valor padrão acima. Nada
-// mais muda (dano, velocidade, cooldown do inimigo/boss seguem iguais).
+const COOLDOWN_SKILL1_PLAYER=900;
+// Cooldown por skill1 do player: as 6 mais raras (maior dano) sobem pra 900ms,
+// Sol/Meteoro ficam em 800ms, Relampago e Som continuam no valor padrão acima.
 const cooldownSkill1Player={
   RelampagoSkill1:COOLDOWN_SKILL1_PLAYER,
   SomSkill1:COOLDOWN_SKILL1_PLAYER,
@@ -39,6 +38,11 @@ function cooldownSkill1Atual(){
   return (eq&&cooldownSkill1Player[eq])?cooldownSkill1Player[eq]:COOLDOWN_SKILL1_PLAYER;
 }
 const COOLDOWN_SKILL1_INIMIGO=1650;
+// Balanceamento das Ultimates a pedido do usuário (ver aplicarDanoUltimate mais abaixo):
+// jogador tira uma % da vida do boss por Ultimate (varia por tier/raridade da Ultimate,
+// de 10% até 20%, média 15%) e pode usar 2x; boss tira 35% da vida do jogador, só 1x.
+const PCT_ULTIMATE_JOGADOR = {1:.10,2:.1111,3:.1222,4:.1333,5:.1444,6:.1556,7:.1667,8:.1778,9:.1889,10:.20};
+const PCT_ULTIMATE_BOSS = 0.35;
 // Cooldown do skill2 do player também dobrado (metade do valor original) — só o do player, inimigo/boss não muda.
 const cooldownSkill2Player={RaioSkill2:2100,GeloSkill2:2300,FuracaoSkill2:2400,MetalSkill2:2600,MagmaSkill2:2800,AbismoSkill2:3000,MeteoroSkill2:3300,SolSkill2:3550,EstrelaSkill2:3850,BlackholeSkill2:4150};
 const cooldownSkill2Inimigo={RaioSkill2:6100,GeloSkill2:6500,FuracaoSkill2:6900,MetalSkill2:7300,MagmaSkill2:7800,AbismoSkill2:8000,MeteoroSkill2:8700,SolSkill2:8900,EstrelaSkill2:9300,BlackholeSkill2:10000};
@@ -411,8 +415,8 @@ function prepararFundoSemPreto() {
 
 let x, y, inimigoX, inimigoY;
 let velX = 0, velY = 0;
-const velMax = 2.88; // +30% a pedido (era 1.45 original; 2.9 doubled foi revertido)
-const aceleracao = 0.24;
+const velMax = 2.9; // ajustado a pedido do usuário (era 1.885)
+const aceleracao = 0.60; // ajustado a pedido do usuário (era 0.24)
 
 let inimigoVelX = 0, inimigoVelY = 0;
 let anguloOrbitaInimigo = Math.random() * Math.PI * 2;
@@ -433,6 +437,10 @@ let ultimoSkill1Inimigo = 0, ultimoSkill2Inimigo = 0;
 // Guilherme só ataca (25% do dano do PaulaoDoPneu), nunca usa ultimate, e não tem
 // vida própria — derrotar o PaulaoDoPneu já vence a luta (Guilherme "perde" junto).
 let guilhermeAtivo = false;
+let guilhermeVelX = 0, guilhermeVelY = 0;
+let anguloOrbitaGuilherme = Math.random() * Math.PI * 2;
+const distanciaIdealGuilherme = 220;
+const toleranciaGuilherme = 25;
 let videoMeioBossMostrado = false;
 let guilhermeX = 0, guilhermeY = 0;
 let ultimoSkill1Guilherme = 0, ultimoSkill2Guilherme = 0;
@@ -705,7 +713,7 @@ function desenharBatalha() {
   const imagemBoss = imagensBoss[Number(bossAtual?.id)] || (bossAtual?.nome ? bossAtual.nome + '.jpg' : 'Arlan.jpg');
   // Tamanho individual por boss (presença maior nos avançados). Não altera posição/lógica,
   // só o width/height passado pro posicionarSprite — fallback pro tamanho padrão se faltar.
-  const bossTamanhos = { 1:150, 2:158, 3:165, 4:172, 5:180, 6:190, 7:200, 8:430, 9:235, 10:260 };
+  const bossTamanhos = { 1:150, 2:158, 3:165, 4:172, 5:180, 6:190, 7:200, 8:350, 9:235, 10:260 };
   const tamanhoBossAtual = bossTamanhos[Number(bossAtual?.id)] || TAMANHO_BOSS;
   const bossSprite = posicionarSprite("inimigo", imagemBoss, inimigoX, inimigoY, tamanhoBossAtual, tamanhoBossAtual, "sprite-boss", x < inimigoX);
   if (bossSprite && bossSprite.tagName === "IMG") {
@@ -819,6 +827,32 @@ function atualizarMovimentoInimigo(deltaSegundos) {
   }
 }
 
+function atualizarMovimentoGuilherme(deltaSegundos) {
+  anguloOrbitaGuilherme += (Math.random() - 0.5) * 0.9 * deltaSegundos;
+
+  const alvoX = x + Math.cos(anguloOrbitaGuilherme) * distanciaIdealGuilherme;
+  const alvoY = y + Math.sin(anguloOrbitaGuilherme) * distanciaIdealGuilherme;
+
+  const dx = alvoX - guilhermeX, dy = alvoY - guilhermeY;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const velGuilhermeMax = 1.5925;
+
+  let alvoVelX = 0, alvoVelY = 0;
+  if (dist > toleranciaGuilherme) { alvoVelX = (dx / dist) * velGuilhermeMax; alvoVelY = (dy / dist) * velGuilhermeMax; }
+
+  const dt60 = Math.min(3, Math.max(0, deltaSegundos * 60));
+  const alpha = 1 - Math.pow(1 - 0.08, dt60);
+  guilhermeVelX += (alvoVelX - guilhermeVelX) * alpha;
+  guilhermeVelY += (alvoVelY - guilhermeVelY) * alpha;
+  guilhermeX += guilhermeVelX * dt60;
+  guilhermeY += guilhermeVelY * dt60;
+
+  if (limitesMundo) {
+    guilhermeX = clamp(guilhermeX, limitesMundo.minX, limitesMundo.maxX);
+    guilhermeY = clamp(guilhermeY, limitesMundo.minY, limitesMundo.maxY);
+  }
+}
+
 function distanciaEntre(ax, ay, bx, by) { return Math.sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by)); }
 
 function registrarGolpe(quemCausou) {
@@ -863,7 +897,9 @@ function atirarSkill1(origemX, origemY, dono) {
   const equipadoSkill1 = inventarioAtual.equipados.skill1;
   const idSkill = dono === "player"
     ? (equipadoSkill1 && skill1Defs[equipadoSkill1] ? equipadoSkill1 : "RelampagoSkill1")
-    : escolherAleatorio(bossKits[bossAtual.tier || bossAtual.id].skill1);
+    : dono === "guilherme"
+      ? escolherAleatorio(bossKits[9].skill1)
+      : escolherAleatorio(bossKits[bossAtual.tier || bossAtual.id].skill1);
   const base = skill1Defs[idSkill];
   const stats = dono === "player" ? base : statsDaSkillParaBoss(idSkill, base);
   const alvoX = dono === "player" ? inimigoX : x;
@@ -885,8 +921,8 @@ function atirarSkill2(dono) {
   if (!idSkill || !skill2Defs[idSkill]) return;
   if (dono === "player" && window.playSfx) playSfx('Carregar.mp3', 0.2);
   const def = skill2Defs[idSkill];
-  const origemX = dono === "player" ? x : inimigoX;
-  const origemY = dono === "player" ? y : inimigoY;
+  const origemX = dono === "player" ? x : (dono === "guilherme" ? guilhermeX : inimigoX);
+  const origemY = dono === "player" ? y : (dono === "guilherme" ? guilhermeY : inimigoY);
   const alvoX = dono === "player" ? inimigoX : x;
   const alvoY = dono === "player" ? inimigoY : y;
 
@@ -986,15 +1022,14 @@ function atualizarBatalha(timestamp) {
   }
 
   if (guilhermeAtivo) {
-    guilhermeX = inimigoX - 100;
-    guilhermeY = inimigoY + 40;
+    atualizarMovimentoGuilherme(deltaSegundos);
     if (agora - ultimoSkill1Guilherme >= COOLDOWN_SKILL1_INIMIGO) {
       atirarSkill1(guilhermeX, guilhermeY, "guilherme");
       ultimoSkill1Guilherme = agora;
     }
-    const kitSkill2Paulao = bossKits[bossAtual.tier || bossAtual.id].skill2;
-    if (kitSkill2Paulao.length > 0) {
-      const menorCooldownGuilherme = Math.min.apply(null, kitSkill2Paulao.map(function (id) { return cooldownSkill2Inimigo[id]; }));
+    const kitSkill2Guilherme = bossKits[9].skill2;
+    if (kitSkill2Guilherme.length > 0) {
+      const menorCooldownGuilherme = Math.min.apply(null, kitSkill2Guilherme.map(function (id) { return cooldownSkill2Inimigo[id]; }));
       if (agora - ultimoSkill2Guilherme >= menorCooldownGuilherme) { atirarSkill2("guilherme"); ultimoSkill2Guilherme = agora; }
     }
   }
@@ -1255,7 +1290,8 @@ function dispararCutsceneMeioBoss() {
   legenda.style.textAlign = 'center';
   legenda.style.zIndex = '1000001';
 
-  video.muted = true;
+  video.muted = false;
+  video.volume = 1;
   video.playsInline = true;
   video.preload = 'auto';
   video.src = 'PauloMetadeVida.mp4';
@@ -1274,6 +1310,9 @@ function ativarGuilherme() {
   ultimoSkill2Guilherme = agoraGuilherme;
   guilhermeX = inimigoX - 100;
   guilhermeY = inimigoY + 40;
+  guilhermeVelX = 0;
+  guilhermeVelY = 0;
+  anguloOrbitaGuilherme = Math.random() * Math.PI * 2;
 }
 
 function dispararCutsceneUltimate(dono) {
@@ -1525,8 +1564,16 @@ function dispararCutsceneUltimate(dono) {
 function aplicarDanoUltimate(dono) {
   let danoUltimate;
   if (dono === "player") {
+    // Balanceamento a pedido: a Ultimate do jogador não tem mais um dano fixo — ela
+    // causa uma % da vida MÁXIMA do boss atual (assim escala certo pra qualquer boss).
+    // Ultimates mais caras/raras (tier do boss dono da skin) causam uma % um pouco maior,
+    // variando de 10% (mais barata) a 20% (mais cara), com média de 15% — o jogador pode
+    // usar a Ultimate 2x por batalha (ver MAX_USOS_ULTIMATE_PLAYER), então dá pra tirar
+    // entre ~20% e ~40% da vida do boss só de Ultimate ao longo da luta.
     const item = itensLoja.ultimate.find(function (u) { return u.id === inventarioAtual.equipados.ultimate; });
-    danoUltimate = (item ? item.dano : 320) * (typeof getPlayerDamageMultiplier==='function' ? getPlayerDamageMultiplier() : 1) * (typeof getPlayerCritChance==='function' && Math.random() < getPlayerCritChance() ? 1.5 : 1);
+    const tierUltimate = item ? Number(String(item.id).replace('Ultimate', '')) : 5;
+    const pct = PCT_ULTIMATE_JOGADOR[tierUltimate] || 0.15;
+    danoUltimate = (vidaEnemyMax * pct) * (typeof getPlayerDamageMultiplier==='function' ? getPlayerDamageMultiplier() : 1) * (typeof getPlayerCritChance==='function' && Math.random() < getPlayerCritChance() ? 1.5 : 1);
     usosUltimatePlayerRestantes--;
     cargaUltimatePlayer = 0;
     golpesCausadosPlayer = 0; golpesRecebidosPlayer = 0;
@@ -1537,8 +1584,11 @@ function aplicarDanoUltimate(dono) {
     piscarDano("inimigo");
     criarNumeroDano(danoUltimate, inimigoX, inimigoY - 90, "#ab8406");
   } else {
-    const stats = statsPorTier[bossAtual.tier || bossAtual.id];
-    danoUltimate = stats.danoUltimateFixo || (200 * bossAtual.tier);
+    // Balanceamento a pedido: a Ultimate do boss causa 35% da vida MÁXIMA atual do
+    // jogador (não um valor fixo de tabela) — já que o boss só usa 1x por batalha,
+    // isso deixa o "quase matar num golpe só" proporcional de verdade, mesmo que o
+    // jogador tenha comprado upgrade de vida permanente.
+    danoUltimate = vidaMax * PCT_ULTIMATE_BOSS;
     usosUltimateInimigoRestantes--;
     cargaUltimateInimigo = 0;
     golpesCausadosInimigo = 0; golpesRecebidosInimigo = 0;

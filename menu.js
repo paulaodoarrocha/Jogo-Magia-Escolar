@@ -57,9 +57,13 @@ const skills={
     ['AguaSkill1','Água','mestre',45000,340],['VenenoSkill1','Veneno','graomestre',115000,520],['SolSkill1','Sol','arcano',320000,820],['MeteoroSkill1','Meteoro','primordial',800000,1250]
   ].map(x=>({id:x[0],nome:x[1],raridade:x[2],preco:x[3],dano:x[4],gif:x[0]+'.gif'})),
   skill2:[
-    ['RaioSkill2','Raio','bruto',1500,145],['GeloSkill2','Gelo','carregado',7000,290],['FuracaoSkill2','Furacão','explosivo',20000,480],['MetalSkill2','Metal','devastador',55000,760],
-    ['MagmaSkill2','Magma','cataclismico',135000,1100],['AbismoSkill2','Abismo','apocaliptico',360000,1650],['MeteoroSkill2','Meteoro','dimensional',780000,2250],['SolSkill2','Sol','estelar',1400000,3000],
-    ['EstrelaSkill2','Estrela Astral','cosmico',2800000,4000],['BlackholeSkill2','Blackhole','singularidade',0,5200]
+    // Preços recalculados (12/09) pra crescer numa proporção parecida com a do Skill1
+    // (~2.2x-2.5x por tier, igual skill1 cresce ~2.5x-2.9x), em vez da curva antiga que
+    // disparava nos 2 últimos itens (Sol e Estrela custavam 7x e 14x uma vitória do boss10).
+    // Dano (5º valor de cada linha) NÃO foi alterado, só o preço (4º valor).
+    ['RaioSkill2','Raio','bruto',1500,145],['GeloSkill2','Gelo','carregado',3800,290],['FuracaoSkill2','Furacão','explosivo',9000,480],['MetalSkill2','Metal','devastador',21000,760],
+    ['MagmaSkill2','Magma','cataclismico',48000,1100],['AbismoSkill2','Abismo','apocaliptico',110000,1650],['MeteoroSkill2','Meteoro','dimensional',250000,2250],['SolSkill2','Sol','estelar',550000,3000],
+    ['EstrelaSkill2','Estrela Astral','cosmico',950000,4000],['BlackholeSkill2','Blackhole','singularidade',0,5200]
   ].map(x=>({id:x[0],nome:x[1],raridade:x[2],preco:x[3],dano:x[4],gif:x[0]+'.gif'}))
 };
 const ultimateAudio = [
