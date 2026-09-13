@@ -1191,6 +1191,15 @@ async function spinDailyWheel(source='daily'){
       'Não foi possível girar a roleta.'
     );
 
+    // Se o bloqueio foi por recompensa pendente não coletada, mostra o card de
+    // "RECEBER" na hora — sem isso o giro grátis só ficava escondido atrás do
+    // prêmio parado, parecendo pro jogador que o giro tinha sumido/sido gasto à toa.
+    if (String(erro?.message || '').toLowerCase().includes('recompensa anterior') && dailyPendingReward) {
+      const premioId = typeof dailyPendingReward === 'string' ? dailyPendingReward : (dailyPendingReward.premio || dailyPendingReward.id);
+      const pendente = dailyWheelRewards.find(r => r.id === premioId);
+      if (pendente) showDailyWheelReward(pendente);
+    }
+
     renderDailyWheel();
   }
 }

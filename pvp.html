@@ -1038,13 +1038,18 @@ function renderLoja() {
   const cardRoleta = (r) => {
     const bloqueado = meuRank < r.rankMin;
     const cor = CORES_RANK[r.rankMin] || '#7b5cff';
-    return `<div class="loja-card ${bloqueado?'locked':''}" style="--lc-cor:${cor}">
+    const titleOdds = ROLETA_PVP_ODDS.map(o => `${o.label} ${o.chance}%`).join(' • ');
+    return `<div class="loja-card ${bloqueado?'locked':''}" style="--lc-cor:${cor}" title="${titleOdds}">
       <span class="lc-icone">🎡</span>
       <div class="lc-nome">${nomeRank(r.rankMin)}</div>
       <div class="lc-sub">${bloqueado ? 'Bloqueado' : 'Giro'}</div>
       <button class="lc-btn" ${bloqueado?'disabled':''} onclick="girarRoletaPvp('${r.id}')">${r.custo} 🏆</button>
     </div>`;
   };
+  const legendaOddsRoleta = `<div class="loja-secao-titulo" style="color:#7b5cff">🎡 Roleta PvP</div>` +
+    `<div class="loja-card" style="--lc-cor:#7b5cff;width:100%;max-width:100%;display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:10px 14px">` +
+    ROLETA_PVP_ODDS.map(o => `<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px"><span>${o.label} <span style="opacity:.6">— ${o.desc}</span></span><b style="color:#ffd166;white-space:nowrap">${o.chance}%</b></div>`).join('') +
+    `</div>`;
 
   el.innerHTML =
     '<div class="item-sub" style="margin-bottom:10px">Poções ativam por 5 minutos, controladas pelo servidor.</div>' +
@@ -1059,7 +1064,7 @@ function renderLoja() {
       <div class="lc-sub">${danoMax ? 'NÍVEL MÁXIMO (+500 HP)' : '+25 HP máximo, só no PvP, por nível'}</div>
       <button class="lc-btn" ${danoMax?'disabled':''} onclick="melhorarDano()">${danoMax?'MAX':custoDano+' 🏆'}</button>
     </div>` +
-    '<div class="loja-secao-titulo" style="color:#7b5cff">🎡 Roleta PvP</div>' +
+    legendaOddsRoleta +
     `<div class="loja-grid">${ROLETA_TIERS.map(cardRoleta).join('')}</div>`;
 }
 
@@ -1069,6 +1074,14 @@ const ROLETA_TIERS = [
   {id:'ouro', custo:200, rankMin:3},
   {id:'diamante', custo:450, rankMin:4},
   {id:'desafiante', custo:900, rankMin:5},
+];
+// Precisa bater exatamente com as faixas de v_sorteio em pvp_girar_roleta no Supabase.
+const ROLETA_PVP_ODDS = [
+  {label:'🪙 Moedas', desc:'15x o custo do giro', chance:44},
+  {label:'💎 Diamantes', desc:'custo/3 + 5', chance:30},
+  {label:'🏆 Troféus bônus', desc:'metade do custo', chance:20},
+  {label:'🔥 Poção de Fúria', desc:'vai pro inventário, não some se sair', chance:5},
+  {label:'✨ SECRETO', desc:'1 de TODAS as poções da roleta, pro inventário', chance:1},
 ];
 
 function mensagemErroCompra(msg) {
@@ -1082,8 +1095,8 @@ function mensagemErroCompra(msg) {
 async function girarRoletaPvp(tier) {
   const { data, error } = await sb.rpc('pvp_girar_roleta', { p_tier: tier });
   if (error) { alert('Erro no giro: ' + mensagemErroCompra(error.message)); return; }
-  const nomesPremio = {moedas:'Moedas', diamantes:'Diamantes', trofeus_bonus:'Troféus bônus', pocao_furia:'Poção de Fúria'};
-  alert(`🎉 Você ganhou: ${nomesPremio[data.premio] || data.premio}${data.valor?' x'+data.valor:''}`);
+  const nomesPremio = {moedas:'Moedas', diamantes:'Diamantes', trofeus_bonus:'Troféus bônus', pocao_furia:'Poção de Fúria (foi pro Inventário)', secreto_todas_pocoes:'✨ SECRETO: 1 de todas as poções (foram pro Inventário)'};
+  alert(`🎉 Você ganhou: ${nomesPremio[data.premio] || data.premio}${data.valor && data.premio !== 'pocao_furia' && data.premio !== 'secreto_todas_pocoes' ? ' x'+data.valor : ''}`);
   await refreshPerfil();
   renderLoja();
 }
@@ -1727,6 +1740,8 @@ window.pararMover = pararMover;
 })();
 
 function entrarArena() {  hpMeMax = 1000 + (perfilAtual?.dano_upgrade_nivel || 0) * 25;
+  partidaEncerrando = false;
+  clearTimeout(hpAplicarTimer); hpAplicarTimer = null;
   hpFoeMax = 1000 + (oponentePerfilArena?.dano_upgrade_nivel || 0) * 25;
   hpMe = hpMeMax; hpFoe = hpFoeMax;
   ultimoSkill2Me = null; ultimoSkill2Foe = null;
@@ -1831,15 +1846,29 @@ async function pollEstadoPartida() {
 let ultimateLockOponenteAtivoFlag = false;
 function ultimateLockOponenteAtivo() { return ultimateLockOponenteAtivoFlag; }
 
+let partidaEncerrando = false;
+let hpAplicarTimer = null;
+// Só existe pra sincronizar o número de dano/HP com a chegada visual do projétil —
+// o servidor continua sendo 100% quem decide o resultado (acerto/desvio/dano), isso
+// aqui só atrasa a REVELAÇÃO desse resultado já decidido, pra não aparecer instantâneo
+// no clique (antes disso, o realtime aplicava o HP na hora, antes do "tiro" chegar).
+function agendarAplicarHp(novoMe, novoFoe, aoAplicar) {
+  clearTimeout(hpAplicarTimer);
+  hpAplicarTimer = setTimeout(() => {
+    aplicarHp(novoMe, novoFoe);
+    aoAplicar && aoAplicar();
+  }, DURACAO_PROJETIL_MS);
+}
+
 async function processarEstadoPartida(m) {
-  if (!m) return;
+  if (!m || partidaEncerrando) return;
   // hp1/hp2 podem chegar nulos/indefinidos num update fora de hora (ex.: logo após a
   // escolha do cenário, antes do combate realmente começar no servidor). Nesse caso
   // ignoramos o valor em vez de tratar como HP zerado, senão a partida termina sozinha
   // e o jogador volta pro lobby com a partida ainda marcada como "ativa" no servidor.
-  const novoHpMe = souJogador1 ? m.hp1 : m.hp2;
-  const novoHpFoe = souJogador1 ? m.hp2 : m.hp1;
-  aplicarHp(Number.isFinite(novoHpMe) ? novoHpMe : hpMe, Number.isFinite(novoHpFoe) ? novoHpFoe : hpFoe);
+  const novoHpMe = Number.isFinite(souJogador1 ? m.hp1 : m.hp2) ? (souJogador1 ? m.hp1 : m.hp2) : hpMe;
+  const novoHpFoe = Number.isFinite(souJogador1 ? m.hp2 : m.hp1) ? (souJogador1 ? m.hp2 : m.hp1) : hpFoe;
+  agendarAplicarHp(novoHpMe, novoHpFoe);
   // Corrigido: a comparação de dono do lock precisa ser feita como texto (String +
   // trim), porque um espaço/tipo diferente entre o id salvo no banco e o userId
   // local fazia "meu próprio lock" ser lido como "lock do oponente" (o bug de às
@@ -1863,15 +1892,20 @@ async function processarEstadoPartida(m) {
     if (typeof window.playSfx === 'function') window.playSfx('Impacto.mp3', 0.5);
   }
 
-  if (m.status !== 'ativa' || hpMe <= 0 || hpFoe <= 0) {
+  if (m.status !== 'ativa' || novoHpMe <= 0 || novoHpFoe <= 0) {
+    if (partidaEncerrando) return;
+    partidaEncerrando = true;
     clearInterval(arenaPollTimer);
     let vencedorFinal = m.vencedor || null;
     if (!vencedorFinal) {
-      if (hpFoe <= 0 && hpMe > 0) vencedorFinal = userId;
-      else if (hpMe <= 0 && hpFoe > 0) vencedorFinal = oponenteIdArena;
-      else if (hpFoe <= 0 && hpMe <= 0) vencedorFinal = null; // os dois zeraram juntos: deixa o servidor decidir
+      if (novoHpFoe <= 0 && novoHpMe > 0) vencedorFinal = userId;
+      else if (novoHpMe <= 0 && novoHpFoe > 0) vencedorFinal = oponenteIdArena;
+      else if (novoHpFoe <= 0 && novoHpMe <= 0) vencedorFinal = null; // os dois zeraram juntos: deixa o servidor decidir
     }
-    await finalizarPartida(vencedorFinal);
+    // Espera o "golpe final" terminar de voar até o alvo antes de trocar de tela —
+    // senão a batalha encerrava com o projétil ainda no ar.
+    clearTimeout(hpAplicarTimer);
+    setTimeout(() => { aplicarHp(novoHpMe, novoHpFoe); finalizarPartida(vencedorFinal); }, DURACAO_PROJETIL_MS);
   }
 }
 
