@@ -177,6 +177,8 @@ function getInventoryMax(){ return 50 + Number(inventoryBonusCap || 0); }
 const missionReadyNotified = new Set();
 const jogador={nome:'',imagem:'Paulo.jpg'};
 const inventario={possuidos:[],equipados:{skill1:null,skill2:null,ultimate:null,imagem:null,tema:null}};
+let autoDescarte = {};
+const AUTO_DESCARTE_BLOQUEADOS = new Set(['PaulaoDoPneuBanner', 'KauanBanner', 'PeidaLeiteBanner']);
 const rarityBuff={comum:{dmg:.05,res:.03,cd:.00,ult:.00,crit:.00,move:.00},incomum:{dmg:.08,res:.04,cd:.05,ult:.00,crit:.00,move:.01},raro:{dmg:.11,res:.06,cd:.07,ult:.02,crit:.01,move:.03},epico:{dmg:.15,res:.08,cd:.07,ult:.06,crit:.02,move:.04},lendario:{dmg:.20,res:.10,cd:.10,ult:.09,crit:.03,move:.05},mitico:{dmg:.27,res:.12,cd:.12,ult:.12,crit:.03,move:.06},secreto:{dmg:.36,res:.16,cd:.15,ult:.16,crit:.04,move:.07},divino:{dmg:.48,res:.20,cd:.17,ult:.20,crit:.06,move:.08},celestial:{dmg:.62,res:.24,cd:.20,ult:.24,crit:.08,move:.09},supremo:{dmg:.78,res:.28,cd:.23,ult:.28,crit:.10,move:.10},ilimitado:{dmg:1.05,res:.34,cd:.27,ult:.36,crit:.13,move:.11},exclusivo:{dmg:1.25,res:.38,cd:.30,ult:.43,crit:.15,move:.12},indefinido:{dmg:1.55,res:.43,cd:.34,ult:.50,crit:.17,move:.13},transcendente:{dmg:1.70,res:.46,cd:.37,ult:.56,crit:.19,move:.14}};
 function save(){
   try{
@@ -993,6 +995,30 @@ document.addEventListener('click', (event) => {
   event.stopPropagation();
   renderBannerInfo();
 }, true);
+async function toggleAutoDescarte(id) {
+  if (AUTO_DESCARTE_BLOQUEADOS.has(id)) return;
+
+  const ativoAntes = !!autoDescarte[id];
+  const novoValor = !ativoAntes;
+
+  autoDescarte[id] = novoValor;
+  renderBannerInfo();
+
+  try {
+    const { error } = await window.supabaseClient.rpc(
+      'definir_auto_descarte',
+      { p_personagem_id: id, p_ativo: novoValor }
+    );
+    if (error) throw error;
+  } catch (erro) {
+    console.error('Erro ao salvar auto-descarte:', erro);
+    autoDescarte[id] = ativoAntes;
+    renderBannerInfo();
+    alert(erro.message || 'Não foi possível salvar essa preferência.');
+  }
+}
+window.toggleAutoDescarte = toggleAutoDescarte;
+
 function renderBannerInfo(){
   const s = document.getElementById('tela-banner-info');
 
@@ -1016,12 +1042,41 @@ function renderBannerInfo(){
   const totalPeso = personagens.reduce((total, p) => total + pesoEfetivo(p), 0);
 
   s.innerHTML = `
+    <style>
+      .character-card{position:relative;}
+      .auto-descarte-x{
+        position:absolute; top:8px; right:8px; z-index:5;
+        width:28px; height:28px; border-radius:50%;
+        border:2px solid rgba(255,255,255,.5);
+        background:rgba(0,0,0,.55); color:#fff;
+        font-weight:700; font-size:15px; line-height:1;
+        cursor:pointer; display:flex; align-items:center; justify-content:center;
+        transition:background .15s,border-color .15s,transform .15s;
+      }
+      .auto-descarte-x:hover{ transform:scale(1.1); }
+      .auto-descarte-x.ativo{
+        background:#e0263f; border-color:#ff8a97;
+        box-shadow:0 0 10px rgba(224,38,63,.7);
+      }
+      .character-card.auto-descarte-marcado{
+        outline:2px solid #e0263f;
+        box-shadow:0 0 14px rgba(224,38,63,.55);
+      }
+      .auto-descarte-badge{
+        position:absolute; left:0; right:0; bottom:0; z-index:4;
+        background:rgba(224,38,63,.88); color:#fff;
+        font-size:11px; font-weight:700; text-align:center;
+        padding:4px 6px; letter-spacing:.02em;
+      }
+    </style>
+
     <button class="back-btn" data-voltar="tela-banner">←</button>
 
     <div class="panel-head">
       <div>
         <small>PROBABILIDADES E BUFFS</small>
         <h2>INFO DO BANNER</h2>
+        <small class="muted">Clique no ✕ de um personagem pra excluí-lo automaticamente sempre que ganhar ele de novo. Clique de novo pra cancelar. Os 3 melhores personagens não podem ser marcados.</small>
       </div>
     </div>
 
@@ -1031,12 +1086,26 @@ function renderBannerInfo(){
         const chance = totalPeso > 0 ? (peso / totalPeso) * 100 : 0;
         const temSorteAumentada = peso > Number(p.peso || 0);
 
+        const bloqueado = AUTO_DESCARTE_BLOQUEADOS.has(p.id);
+        const marcado = !bloqueado && !!autoDescarte[p.id];
+
         return `
           <article
-            class="character-card ${rarityInfo[p.raridade]?.cls || ''} ${temSorteAumentada ? 'lucky-boosted' : ''}"
+            class="character-card ${rarityInfo[p.raridade]?.cls || ''} ${temSorteAumentada ? 'lucky-boosted' : ''} ${marcado ? 'auto-descarte-marcado' : ''}"
             style="--rarity:${rarityColor(p.raridade)}"
           >
             ${temSorteAumentada ? `<div class="lucky-boost-badge">🍀 Sorte aumentada</div>` : ''}
+
+            ${bloqueado ? '' : `
+              <button
+                type="button"
+                class="auto-descarte-x ${marcado ? 'ativo' : ''}"
+                title="${marcado ? 'Cancelar exclusão automática' : 'Excluir automaticamente ao ganhar'}"
+                onclick="toggleAutoDescarte('${p.id}')"
+              >✕</button>
+            `}
+
+            ${marcado ? `<div class="auto-descarte-badge">Será excluído ao ganhar</div>` : ''}
 
             <img
               src="${bannerStaticSrc(p)}"
@@ -2225,13 +2294,12 @@ async function buyEquip(cat,id){
     renderMissions();
     renderInventory();
 
-    // RelampagoSkill1 é a skill1 padrão/gratuita (já é o fallback quando equipados.skill1
-    // está vazio, não precisa RPC). Pra qualquer outro item já possuído, precisa persistir
-    // no servidor, senão a sincronização periódica (sincronizarEstadoDoServidor, a cada 20s)
-    // sobrescreve de volta pro último item comprado — era isso que causava "equipar skill
-    // fraca e o jogo trocar pra melhor sozinho".
-    if(id==='RelampagoSkill1') return;
-
+    // Qualquer item já possuído (incluindo RelampagoSkill1, a skill1 padrão/gratuita)
+    // precisa persistir no servidor, senão a sincronização periódica
+    // (sincronizarEstadoDoServidor, a cada 20s) sobrescreve de volta pro último item
+    // comprado — era isso que causava "equipar skill fraca e o jogo trocar pra melhor
+    // sozinho". O servidor (RPC equipar_item) já tem uma exceção especial que permite
+    // equipar RelampagoSkill1 mesmo sem estar na lista de possuídos.
     try{
       const {error}=await window.supabaseClient.rpc(
         'equipar_item',
@@ -2756,7 +2824,8 @@ async function sincronizarEstadoDoServidor() {
         musica_ligada,
         batalha_musica_ligada,
         gamepasses,
-        inventory_extra_slots
+        inventory_extra_slots,
+        auto_descarte
       `)
       .eq('user_id', window.currentUserId)
       .single();
@@ -2775,6 +2844,7 @@ async function sincronizarEstadoDoServidor() {
     claimed = data.claimed_missions || {};
     fused = data.fused || {};
     fusionBonuses = data.fusion_bonuses || {};
+    autoDescarte = data.auto_descarte || {};
 
     lifeUpgrades = Number(data.life_upgrades || 0);
 
@@ -2862,7 +2932,14 @@ window.sincronizarEstadoDoServidor = sincronizarEstadoDoServidor;
 // Alias: o login.html/supabaseClient.js chama por esse outro nome.
 window.sincronizarSaldoDoServidor = sincronizarEstadoDoServidor;
 // Verifica a cada 20s se o admin liberou alguma compra (game pass, poção, moedas, diamantes) via Supabase.
-setInterval(() => { sincronizarEstadoDoServidor(); }, 20000);
+setInterval(() => {
+  // Não sincronizar enquanto uma batalha de boss está rolando: a sincronização
+  // sobrescreve o mesmo objeto `inventario` usado ao vivo pela batalha
+  // (inventarioAtual = inventario, é a mesma referência), o que podia
+  // reverter skill1/skill2/ultimate pro valor salvo antes no meio da luta.
+  if (typeof jogoAtivo !== 'undefined' && jogoAtivo) return;
+  sincronizarEstadoDoServidor();
+}, 20000);
 
 async function aoVencerBatalha(bossId, moedas, diamantes) {
   if (window.arcaneVictoryInProgress) return;
