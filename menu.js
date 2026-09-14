@@ -2197,11 +2197,37 @@ async function buyEquip(cat,id){
   if(!item)return;
 
   if(id==='RelampagoSkill1' || inventario.possuidos.includes(id)){
+    const equipadoAntes = inventario.equipados[key];
     inventario.equipados[key]=id;
     save();
     renderShop(cat);
     renderMissions();
     renderInventory();
+
+    // RelampagoSkill1 é a skill1 padrão/gratuita (já é o fallback quando equipados.skill1
+    // está vazio, não precisa RPC). Pra qualquer outro item já possuído, precisa persistir
+    // no servidor, senão a sincronização periódica (sincronizarEstadoDoServidor, a cada 20s)
+    // sobrescreve de volta pro último item comprado — era isso que causava "equipar skill
+    // fraca e o jogo trocar pra melhor sozinho".
+    if(id==='RelampagoSkill1') return;
+
+    try{
+      const {error}=await window.supabaseClient.rpc(
+        'equipar_item',
+        { p_tipo:key, p_item_id:id }
+      );
+      if(error)throw error;
+    }catch(erro){
+      console.error('Erro ao salvar equipamento no servidor:',erro);
+      // Reverte localmente pra não deixar cliente e servidor dessincronizados
+      // (senão a próxima sincronização periódica troca de novo sem avisar o jogador).
+      inventario.equipados[key]=equipadoAntes;
+      save();
+      renderShop(cat);
+      renderMissions();
+      renderInventory();
+      alert('Não foi possível salvar esse equipamento no servidor. Tente novamente.');
+    }
     return;
   }
 
