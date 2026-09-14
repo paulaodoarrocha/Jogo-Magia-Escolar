@@ -689,7 +689,7 @@ function desenharBatalha() {
   // personagem na tela de batalha do jogo principal. Tratamos como "nada equipado",
   // que já cai no fallback normal de "ArlanBanner.webp" logo abaixo.
   if (personagemEquipado && personagemEquipado.endsWith("Pvp")) personagemEquipado = null;
-  const PETS_VIDEO = { KauanBanner: 'KauanBanner.mp4' };
+  const PETS_VIDEO = { KauanBanner: 'KauanBanner_static.webp' };
   const spritePersonagem = personagemEquipado
     ? (personagemEquipado === "PaulaoDoPneuBanner" ? "PaulaoDoPneuBanner.jpg" : personagemEquipado === "CarlosBanner" ? "CarlosBanner.webp" : (PETS_VIDEO[personagemEquipado] || personagemEquipado + ".webp"))
     : "ArlanBanner.webp";

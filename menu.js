@@ -178,7 +178,7 @@ const missionReadyNotified = new Set();
 const jogador={nome:'',imagem:'Paulo.jpg'};
 const inventario={possuidos:[],equipados:{skill1:null,skill2:null,ultimate:null,imagem:null,tema:null}};
 let autoDescarte = {};
-const AUTO_DESCARTE_BLOQUEADOS = new Set(['PaulaoDoPneuBanner', 'KauanBanner', 'PeidaLeiteBanner']);
+const AUTO_DESCARTE_BLOQUEADOS = new Set(['PaulaoDoPneuBanner', 'KauanBanner', 'PeidaLeiteBanner', 'PetHunge', 'ChucroHunge']);
 const rarityBuff={comum:{dmg:.05,res:.03,cd:.00,ult:.00,crit:.00,move:.00},incomum:{dmg:.08,res:.04,cd:.05,ult:.00,crit:.00,move:.01},raro:{dmg:.11,res:.06,cd:.07,ult:.02,crit:.01,move:.03},epico:{dmg:.15,res:.08,cd:.07,ult:.06,crit:.02,move:.04},lendario:{dmg:.20,res:.10,cd:.10,ult:.09,crit:.03,move:.05},mitico:{dmg:.27,res:.12,cd:.12,ult:.12,crit:.03,move:.06},secreto:{dmg:.36,res:.16,cd:.15,ult:.16,crit:.04,move:.07},divino:{dmg:.48,res:.20,cd:.17,ult:.20,crit:.06,move:.08},celestial:{dmg:.62,res:.24,cd:.20,ult:.24,crit:.08,move:.09},supremo:{dmg:.78,res:.28,cd:.23,ult:.28,crit:.10,move:.10},ilimitado:{dmg:1.05,res:.34,cd:.27,ult:.36,crit:.13,move:.11},exclusivo:{dmg:1.25,res:.38,cd:.30,ult:.43,crit:.15,move:.12},indefinido:{dmg:1.55,res:.43,cd:.34,ult:.50,crit:.17,move:.13},transcendente:{dmg:1.70,res:.46,cd:.37,ult:.56,crit:.19,move:.14}};
 function save(){
   try{
@@ -904,9 +904,77 @@ async function pull(count){
   }
 }
 
+function mostrarCelebracaoRaro(personagem) {
+  if (!personagem) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'rare-pull-celebration';
+  overlay.innerHTML = `
+    <style>
+      .rare-pull-celebration{
+        position:fixed; inset:0; z-index:9999;
+        display:flex; align-items:center; justify-content:center;
+        background:rgba(0,0,0,.72);
+        opacity:0; animation:rareFadeIn .25s ease-out forwards;
+        pointer-events:none;
+      }
+      .rare-pull-celebration .rare-pull-card{
+        display:flex; flex-direction:column; align-items:center; gap:10px;
+        padding:26px 34px; border-radius:20px;
+        background:radial-gradient(circle at 50% 20%, rgba(255,255,255,.12), rgba(10,10,20,.9));
+        border:2px solid var(--rarity, #ffd166);
+        box-shadow:0 0 60px var(--rarity, #ffd166), 0 0 140px var(--rarity, #ffd166);
+        transform:scale(.7);
+        animation:rarePop .6s cubic-bezier(.2,1.4,.4,1) forwards;
+      }
+      .rare-pull-card img{
+        width:150px; height:150px; object-fit:cover; border-radius:14px;
+        box-shadow:0 0 30px var(--rarity, #ffd166);
+      }
+      .rare-pull-card .rare-title{
+        font-size:13px; letter-spacing:.15em; color:var(--rarity, #ffd166);
+        font-weight:800; text-transform:uppercase;
+      }
+      .rare-pull-card .rare-name{
+        font-size:22px; font-weight:900; color:#fff; text-align:center;
+      }
+      .rare-pull-card .rare-tier{
+        font-size:13px; color:#cfd3ff; text-align:center;
+      }
+      @keyframes rareFadeIn{ to{ opacity:1; } }
+      @keyframes rarePop{
+        0%{ transform:scale(.6); }
+        60%{ transform:scale(1.08); }
+        100%{ transform:scale(1); }
+      }
+      .rare-pull-celebration.rare-fade-out{
+        animation:rareFadeIn .35s ease-in reverse forwards;
+      }
+    </style>
+    <div class="rare-pull-card" style="--rarity:${rarityColor(personagem.raridade)}">
+      <div class="rare-title">✨ Invocação Raríssima ✨</div>
+      <img src="${bannerStaticSrc(personagem)}" alt="${personagem.nome}" draggable="false" onerror="this.style.display='none';">
+      <div class="rare-name">${personagem.nome}</div>
+      <div class="rare-tier">${personagem.tier}</div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  setTimeout(() => {
+    overlay.classList.add('rare-fade-out');
+    setTimeout(() => overlay.remove(), 400);
+  }, 2200);
+}
+
 function showResults(resultados) {
   const box = document.getElementById('gacha-result');
   if (!box) return;
+
+  const raros = resultados.filter((p) => AUTO_DESCARTE_BLOQUEADOS.has(p.id) && p.id !== 'PetHunge' && p.id !== 'ChucroHunge');
+  raros.forEach((personagem, index) => {
+    setTimeout(() => mostrarCelebracaoRaro(personagem), index * 2600);
+  });
 
   box.classList.remove('hidden');
 
@@ -2447,7 +2515,7 @@ function renderInventory(tab = inventoryActiveTab) {
       return `<article class="pet-style-card inventory-unit ${rarityInfo[p.raridade]?.cls || ''} ${equipados.imagem === id ? 'equipped' : ''} ${isFused ? 'character-fused' : ''}" style="--rarity:${rarityColor(p.raridade)}">
       <div class="pet-card-top"><span class="rarity-label">${p.tier}</span><span class="pet-count">#${index + 1}</span></div>
       ${isFused ? '<div class="fused-badge">★ FUNDIDO</div>' : ''}
-      <div class="pet-media asset-frame">${mediaCard(p.arquivo, p.nome.slice(0,2).toUpperCase())}</div>
+      <div class="pet-media asset-frame">${mediaCard(p.id === 'KauanBanner' ? 'KauanBanner.webp' : p.arquivo, p.nome.slice(0,2).toUpperCase())}</div>
       <div class="pet-name-row"><h3>${p.nome}</h3>${equipados.imagem === id ? '<span class="equipped-mini">✓ EQUIPADO</span>' : ''}</div>
       <div class="pet-rarity">${p.tier}</div><p>${p.buff}</p>
       <div class="current-damage">⚔ Dano atual: +${danoAtualPercent(p, isFused)}%</div>

@@ -194,7 +194,8 @@
         bossMusic.currentTime = 0;
       }
 
-      bossMusic = new Audio(`Boss${bossId}Music.mp3`);
+      const arquivoMusica = Number(bossId) === 10 ? 'Boss6Music.mp3' : `Boss${bossId}Music.mp3`;
+      bossMusic = new Audio(arquivoMusica);
       bossMusic.loop = true;
       bossMusic.preload = 'auto';
       bossMusic.volume = 0.22;
