@@ -411,7 +411,7 @@ function updateNotificationBadges() {
       missoes: prontos,
       bosses: bossesDisponiveis,
       temas: temaDisponivel,
-      melhorias: moedasGlobais >= 1800 * (lifeUpgrades + 1) ? 1 : 0,
+      melhorias: moedasGlobais >= 900 * (lifeUpgrades + 1) ? 1 : 0,
       inventario: personagensNovos
     };
 
@@ -1724,18 +1724,39 @@ function mostrarFusaoVisual(p, bonusPercent){
   document.body.appendChild(overlay);
 }
 
-function fuseCharacter(id){
+async function fuseCharacter(id){
   const jaFundidas = fused[id] || 0;
   const naoFundidas = count(id) - jaFundidas;
   if (naoFundidas < 5) return;
-  let removed = 0;
-  inventario.possuidos = inventario.possuidos.filter(x => x === id && removed < 5 ? (removed++, false) : true);
-  inventario.possuidos.push(id);
-  fused[id] = jaFundidas + 1;
-  const p = personagens.find(x => x.id === id), b = getCharacterStats(p);
-  if (!fusionBonuses[id]) fusionBonuses[id] = 1 + b.dmg * .5;
-  save(); renderCharacters(); renderInventory(); updateResources();
-  mostrarFusaoVisual(p, Math.round((fusionBonuses[id] - 1) * 100));
+
+  try {
+    const { data, error } = await window.supabaseClient.rpc(
+      'fundir_personagem',
+      { p_personagem_id: id }
+    );
+
+    if (error) throw error;
+
+    if (data?.inventory?.possuidos) {
+      inventario.possuidos = data.inventory.possuidos;
+    }
+    if (data?.fused) {
+      Object.keys(fused).forEach(k => delete fused[k]);
+      Object.assign(fused, data.fused);
+    }
+    if (data?.fusion_bonuses) {
+      Object.keys(fusionBonuses).forEach(k => delete fusionBonuses[k]);
+      Object.assign(fusionBonuses, data.fusion_bonuses);
+    }
+
+    const p = personagens.find(x => x.id === id);
+    save(); renderCharacters(); renderInventory(); updateResources();
+    mostrarFusaoVisual(p, Math.round((fusionBonuses[id] - 1) * 100));
+
+  } catch (erro) {
+    console.error('Erro ao fundir personagem:', erro);
+    alert(erro.message || 'Não foi possível fundir o personagem.');
+  }
 }
 
 document.getElementById('btn-fundir').onclick=()=>{const id=[...new Set(inventario.possuidos)].find(x=>count(x)>=5&&!fused[x]);if(id)fuseCharacter(id);else alert('Tenha 5 cópias iguais e ainda não fundidas.')};
@@ -2174,7 +2195,7 @@ function renderShop(cat = 'skill1') {
       </article>`;
   }).join('');
 
-  const lifeCost = 1800 * (lifeUpgrades + 1);
+  const lifeCost = 900 * (lifeUpgrades + 1);
   const lifeTotal = 800 + calcularBonusVidaPermanente();
   c.innerHTML = `
     <div class="shop-tabs">
@@ -2397,11 +2418,11 @@ function renderUpgrades() {
   const c = document.getElementById('melhorias-conteudo');
   if (!c) return;
   const atual = 800 + calcularBonusVidaPermanente();
-  const proximoCusto = 1800 * (lifeUpgrades + 1);
+  const proximoCusto = 900 * (lifeUpgrades + 1);
   const pode = moedasGlobais >= proximoCusto;
   const niveis = Array.from({ length: 12 }, (_, i) => {
     const nivel = lifeUpgrades + i + 1;
-    const custo = 1800 * nivel;
+    const custo = 900 * nivel;
     const liberado = i === 0 ? pode : false;
     return `<div class="upgrade-node ${i === 0 && pode ? 'ready' : ''}"><span>NÍVEL ${nivel}</span><b>+500 ❤️</b><small>🪙 ${fmt(custo)}</small></div>`;
   }).join('');
